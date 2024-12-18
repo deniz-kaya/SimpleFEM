@@ -1,0 +1,14 @@
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\bin\Debug\net8.0\SimpleFEM.exe
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\bin\Debug\net8.0\SimpleFEM.deps.json
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\bin\Debug\net8.0\SimpleFEM.runtimeconfig.json
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\bin\Debug\net8.0\SimpleFEM.dll
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\bin\Debug\net8.0\SimpleFEM.pdb
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.AssemblyInfoInputs.cache
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.AssemblyInfo.cs
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.csproj.CoreCompileInputs.cache
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.dll
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\refint\SimpleFEM.dll
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.pdb
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\SimpleFEM.genruntimeconfig.cache
+C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\obj\Debug\net8.0\ref\SimpleFEM.dll
