@@ -23,7 +23,7 @@ class Program
                 {
                      if (ImGui.MenuItem("hellow")) {}
                      
-                     ImGui.EndMenu();
+                     ImGui.EndMenu();   
                 }
 
                 if (ImGui.BeginMenu("Settings"))
@@ -37,7 +37,7 @@ class Program
             rlImGui.End();
             Raylib.EndDrawing();
         }
-
+            
         rlImGui.Shutdown();
         Raylib.CloseWindow();
     }
