@@ -2,11 +2,11 @@
 using rlImGui_cs;
 using Raylib_cs;
 
-namespace SimpleFEM;
+namespace SimpleFEM_TEST;
 
-class Program
+class aProgram
 {
-    static void Main(string[] args)
+    static void aMain(string[] args)
     {
         Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
         Raylib.InitWindow(1024, 1024, "Test Window");

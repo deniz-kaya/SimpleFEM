@@ -1,43 +1,8 @@
 ﻿using System.Net.NetworkInformation;
 using Microsoft.VisualBasic;
 
-namespace SimpleFEM;
+namespace SimpleFEM_TEST;
 
-
-public class FunkyList<T>
-{
-    
-    private Dictionary<int, T> dict;
-    private int count;
-
-    public Dictionary<int, T>.KeyCollection Keys()
-    {
-        return dict.Keys;
-    }
-    
-    public void Remove(int index)
-    {
-        dict.Remove(index);
-    }
-
-    public void Add(T item)
-    {
-        dict.Add(count++, item);
-    }
-
-    public T this[int index]
-    {
-        get
-        {
-            return dict[dict.Keys.ElementAt(index)];
-        }
-        set 
-        {
-            dict[dict.Keys.ElementAt(index)] = 
-        }
-        
-    }
-}
 
 public static class MatrixHelper 
 {
@@ -67,13 +32,7 @@ public static class MatrixHelper
         }
     }
 }
-public class Structure
-{
-    public Structure()
-    {
-        
-    }
-}
+
 
 public class Node
 {

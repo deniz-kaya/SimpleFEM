@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using System.Reflection.Metadata;
 
 namespace SimpleFEM;
@@ -64,7 +65,7 @@ public class Data
         {
             get
             {
-                if (index < 0 || !_Occupied[index] || index >= _ElementCount)
+                if (!ValidIndex(index))
                 {
                     throw new IndexOutOfRangeException("Invalid index.");
                 }
@@ -75,7 +76,7 @@ public class Data
             }
             set
             {
-                if (index < 0 || !_Occupied[index] || index >= _ElementCount)
+                if (!ValidIndex(index))
                 {
                     throw new IndexOutOfRangeException("Invalid index.");
                 }
@@ -88,7 +89,9 @@ public class Data
 
         public bool ValidIndex(int index)
         {
-            return !(index < 0 || !_Occupied[index] || index >= _ElementCount);
+            bool indexTooSmall = index < 0;
+            bool isntOccupied = !_Occupied[index];
+            return !(indexTooSmall || isntOccupied);
         }
         public bool RemoveAt(int index)
         {
@@ -152,7 +155,7 @@ public class Data
         {
             for (int i = 0; i < _Elements.Length; i++)
             {
-                if (!_Occupied[i])
+                if (_Occupied[i])
                 {
                     yield return _Elements[i];
                 }
@@ -173,6 +176,18 @@ public class Data
         public double X;
         public double Y;
 
+        public (double, double) Pos
+        {
+            get
+            {
+                return (X, Y);
+            }
+            set
+            {
+                X = value.Item1;
+                Y = value.Item2;
+            }
+        }
         public double GetSquareDistance(double x, double y)
         {
             return Math.Pow(Math.Abs(X - x), 2) + Math.Pow(Math.Abs(Y - y), 2);
@@ -181,7 +196,7 @@ public class Data
 
     public struct BoundaryCondition
     {
-        public int NodeId;
+        public int NodeID;
         public bool FixedY;
         public bool FixedX;
         public bool FixedMoment;
@@ -267,6 +282,32 @@ public class Data
             return false;
         }
 
+        public bool RemoveNodeConnectedBoundaryConditions(int id)
+        {
+            foreach (int i in BoundaryConditions.GetIndexes())
+            {
+                if (BoundaryConditions[i].NodeID == id)
+                {
+                    BoundaryConditions.RemoveAt(i);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        public bool RemoveNodeConnectedLoads(int id)
+        {
+            foreach (int i in Loads.GetIndexes())
+            {
+                if (Loads[i].NodeID == id)
+                {
+                    Loads.RemoveAt(i);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
         public bool RemoveNodeConnectedElements(int id)
         {
             bool returnVal = false;
@@ -281,12 +322,35 @@ public class Data
 
             return returnVal;
         }
-        public void AddBoundaryCondition(BoundaryCondition boundaryCondition)
-        {
 
+        public void ModifyLoad(Load load)
+        {
+            if (!Nodes.ValidIndex(load.NodeID))
+            {
+                return;
+            }
+            foreach (int i in Loads.GetIndexes())
+            {
+                if (Loads[i].NodeID == load.NodeID)
+                {
+                    Loads[i] = load;
+                    return;
+                } 
+            }
+            
+            //if code reaches here, load on this node does not exist therefore we must add it
+            
+            Loads.Add(load);
+        }
+        public void ModifyBoundaryCondition(BoundaryCondition boundaryCondition)
+        { 
+            if (!Nodes.ValidIndex(boundaryCondition.NodeID))
+            {
+                return;
+            }
             foreach (int i in BoundaryConditions.GetIndexes())
             {
-                if (BoundaryConditions[i].NodeId == boundaryCondition.Node1Id)
+                if (BoundaryConditions[i].NodeID == boundaryCondition.NodeID)
                 {
                     BoundaryConditions[i] = boundaryCondition;
                     return;
@@ -298,16 +362,43 @@ public class Data
             
             BoundaryConditions.Add(boundaryCondition);
         }
-        
+
+        public bool RemoveElement(int id)
+        {
+            if (Elements.ValidIndex(id))
+            {
+                Elements.RemoveAt(id);
+                return true;
+            }
+
+            return false;
+        }
         public bool RemoveNode(int id)
         {
+            RemoveNodeConnectedElements(id);
+            RemoveNodeConnectedLoads(id);
+            RemoveNodeConnectedBoundaryConditions(id);
             return Nodes.RemoveAt(id);
+        }
+
+        public bool CheckForElementCollisions(Element element)
+        {
+            foreach (int i in Elements.GetIndexes())
+            {
+                if (Elements[i].Node1Id == element.Node1Id && Elements[i].Node2Id == element.Node2Id)
+                {
+                    return false;
+                }
+            }
+            
+            return true;
+            
         }
         
         public bool AddElement(int node1Id, int node2Id, Material material)
         {
             Element candidateElement = new Element(node1Id, node2Id, material);
-            if (!Elements.Exists(candidateElement))
+            if (node1Id != node2Id && Nodes.ValidIndex(node1Id)  && Nodes.ValidIndex(node2Id) && CheckForElementCollisions(candidateElement))
             {
                 Elements.Add(candidateElement);
                 return true;

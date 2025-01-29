@@ -1,8 +1,8 @@
-﻿namespace SimpleFEM;
+﻿namespace SimpleFEM_TEST;
 
 public class UserInterface
 {
-    public UserInterface(int )
+    public UserInterface(int something)
     {
         
     }

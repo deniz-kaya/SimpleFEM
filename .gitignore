@@ -1,1 +1,4 @@
 alglib-4.04.0.csharp.gpl.zip
+Solver.cs 
+#solver.cs was used initially to test some ideas, it is not to be included in the main program
+Test.cs
