@@ -11,4 +11,9 @@
       <PackageReference Include="rlImgui-cs" Version="2.1.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Test.cs" />
+      <None Include="Test.cs" />
+    </ItemGroup>
+
 </Project>

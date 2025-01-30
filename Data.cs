@@ -8,19 +8,19 @@ public class Data
 {
     public class RecyclingList<T> : IEnumerable<T>
     {
-        private T[] _Elements;
-        private Stack<int> _FreeSpots;
+        private T[] elements;
+        private Stack<int> freeSpots;
 
-        private bool[] _Occupied;
+        private bool[] occupied;
 
-        private int _ElementCount;
+        private int elementCount;
 
         public bool Exists(T item, out int index)
         {
             index = -1;
             foreach (int i in GetIndexes())
             {
-                if (EqualityComparer<T>.Default.Equals(_Elements[i], item))
+                if (EqualityComparer<T>.Default.Equals(elements[i], item))
                 {
                     index = i;
                     return true;
@@ -33,7 +33,7 @@ public class Data
         {
             foreach (int i in GetIndexes())
             {
-                if (EqualityComparer<T>.Default.Equals(_Elements[i], item))
+                if (EqualityComparer<T>.Default.Equals(elements[i], item))
                 {
                     return true;
                 }
@@ -42,23 +42,23 @@ public class Data
         }
         
         public int Count {
-            get { return _ElementCount; }
+            get { return elementCount; }
             private set
             {
-                _ElementCount = value;
+                elementCount = value;
             }
         }
 
         public bool ExistsAt(int index)
         {
-            return _Occupied[index];
+            return occupied[index];
         }
         public RecyclingList(int initialCapacity = 100)
         {
-            _Elements = new T[initialCapacity];
-            _Occupied = new bool[initialCapacity];
-            _ElementCount = 0;
-            _FreeSpots = new Stack<int>();
+            elements = new T[initialCapacity];
+            occupied = new bool[initialCapacity];
+            elementCount = 0;
+            freeSpots = new Stack<int>();
         }
 
         public T this[int index]
@@ -71,7 +71,7 @@ public class Data
                 }
                 else
                 {
-                    return _Elements[index];
+                    return elements[index];
                 }
             }
             set
@@ -82,7 +82,7 @@ public class Data
                 }
                 else
                 {
-                    _Elements[index] = value;
+                    elements[index] = value;
                 }
             }
         }
@@ -90,16 +90,16 @@ public class Data
         public bool ValidIndex(int index)
         {
             bool indexTooSmall = index < 0;
-            bool isntOccupied = !_Occupied[index];
+            bool isntOccupied = !occupied[index];
             return !(indexTooSmall || isntOccupied);
         }
         public bool RemoveAt(int index)
         {
             if (ValidIndex(index))
             {
-                _Occupied[index] = false;
-                _ElementCount--;
-                _FreeSpots.Push(index);
+                occupied[index] = false;
+                elementCount--;
+                freeSpots.Push(index);
                 return true;
             }
 
@@ -108,11 +108,11 @@ public class Data
         
         public bool Remove(T item)
         {
-            for (int i = 0; i < _Elements.Length; i++)
+            for (int i = 0; i < elements.Length; i++)
             {
-                if (_Occupied[i])
+                if (occupied[i])
                 {
-                    if (EqualityComparer<T>.Default.Equals(_Elements[i], item))
+                    if (EqualityComparer<T>.Default.Equals(elements[i], item))
                     {
                         RemoveAt(i);
                         return true;
@@ -126,25 +126,25 @@ public class Data
         public void Add(T item)
         {
             int index;
-            if (_FreeSpots.Count != 0)
+            if (freeSpots.Count != 0)
             {
-                index = _FreeSpots.Pop();
+                index = freeSpots.Pop();
             }
             else
             {
-                index = _ElementCount;
+                index = elementCount;
             }
-            _Elements[index] = item;
-            _Occupied[index] = true;
-            _ElementCount++;
+            elements[index] = item;
+            occupied[index] = true;
+            elementCount++;
         }
 
         public List<int> GetIndexes()
         {
             List<int> indexes = new List<int>();
-            for (int i = 0; i < _Elements.Length; i++)
+            for (int i = 0; i < elements.Length; i++)
             {
-                if (_Occupied[i])
+                if (occupied[i])
                 {
                     indexes.Add(i);
                 }
@@ -153,11 +153,11 @@ public class Data
         }
         public IEnumerator<T> GetEnumerator()
         {
-            for (int i = 0; i < _Elements.Length; i++)
+            for (int i = 0; i < elements.Length; i++)
             {
-                if (_Occupied[i])
+                if (occupied[i])
                 {
-                    yield return _Elements[i];
+                    yield return elements[i];
                 }
             }
         }
@@ -196,6 +196,13 @@ public class Data
 
     public struct BoundaryCondition
     {
+        public BoundaryCondition(int nodeID, bool fixedY, bool fixedX, bool fixedMoment)
+        {
+            this.NodeID = nodeID;
+            this.FixedY = fixedY;
+            this.FixedX = fixedX;
+            this.FixedMoment = fixedMoment;
+        }
         public int NodeID;
         public bool FixedY;
         public bool FixedX;
@@ -231,6 +238,13 @@ public class Data
 
     public class Load
     {
+        public Load(int nodeID, double forceX, double forceY, double moment)
+        {
+            this.NodeID = nodeID;
+            this.ForceX = forceX;
+            this.ForceY = forceY;
+            this.Moment = moment;
+        }
         public int NodeID;
         public double ForceX;
         public double ForceY;
@@ -245,7 +259,8 @@ public class Data
         public RecyclingList<BoundaryCondition> BoundaryConditions;
 
         public string StructureName;
-
+        
+        static public Material TestMaterial = new Material {E = 1.0f, Poisson = 1.0f, Density = 1.0f};
         public Structure(string name)
         {
             Nodes = new RecyclingList<Node>();
@@ -323,44 +338,48 @@ public class Data
             return returnVal;
         }
 
-        public void ModifyLoad(Load load)
+        public void ModifyLoad(int nodeID, float forceX, float forceY, float moment)
         {
-            if (!Nodes.ValidIndex(load.NodeID))
+            
+            if (!Nodes.ValidIndex(nodeID))
             {
                 return;
             }
+            Load modifiedLoad = new Load(nodeID, forceX, forceY, moment);
             foreach (int i in Loads.GetIndexes())
             {
-                if (Loads[i].NodeID == load.NodeID)
+                if (Loads[i].NodeID == nodeID)
                 {
-                    Loads[i] = load;
+                    Loads[i] = modifiedLoad;
                     return;
                 } 
             }
             
             //if code reaches here, load on this node does not exist therefore we must add it
             
-            Loads.Add(load);
+            Loads.Add(modifiedLoad);
         }
-        public void ModifyBoundaryCondition(BoundaryCondition boundaryCondition)
+        public void ModifyBoundaryCondition(int nodeID, bool fixedX, bool fixedY, bool fixedMoment)
         { 
-            if (!Nodes.ValidIndex(boundaryCondition.NodeID))
+            if (!Nodes.ValidIndex(nodeID))
             {
                 return;
             }
+
+            BoundaryCondition modifiedBoundaryCondition = new BoundaryCondition(nodeID, fixedX, fixedY, fixedMoment);
             foreach (int i in BoundaryConditions.GetIndexes())
             {
-                if (BoundaryConditions[i].NodeID == boundaryCondition.NodeID)
+                if (BoundaryConditions[i].NodeID == nodeID)
                 {
-                    BoundaryConditions[i] = boundaryCondition;
+                    BoundaryConditions[i] = modifiedBoundaryCondition;
                     return;
                 }
             }
-            
+
             // if code reaches here, that means that it hasn't found a boundary condition with given nodeID
             // so we should add it to the list
             
-            BoundaryConditions.Add(boundaryCondition);
+            BoundaryConditions.Add(modifiedBoundaryCondition);
         }
 
         public bool RemoveElement(int id)
