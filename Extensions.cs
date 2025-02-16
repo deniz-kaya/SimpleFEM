@@ -7,6 +7,19 @@ namespace SimpleFEM;
 
 public static class Vector2Extensions
 {
+    public static bool LiesWithinRect(this Vector2 vector, Vector2 pos1, Vector2 pos2)
+    {
+        if (pos1 == pos2)
+        {
+            return false;
+        }
+        float maxX = Math.Max(pos1.X, pos2.X);
+        float minX = Math.Min(pos1.X, pos2.X);
+        float maxY = Math.Max(pos1.Y, pos2.Y);
+        float minY = Math.Min(pos1.Y, pos2.Y);
+        
+        return vector.X >= minX && vector.X <= maxX && vector.Y >= minY && vector.Y <= maxY;
+    }
     public static Vector2 Round(this Vector2 vector)
     {
         return new(
@@ -54,6 +67,8 @@ public class RecyclingList<T> : IEnumerable<T>
         private bool[] occupied;
 
         private int elementCount;
+
+        public int LastAddedIndex { get; private set; }
 
         public bool Exists(T item, out int index)
         {
@@ -176,6 +191,7 @@ public class RecyclingList<T> : IEnumerable<T>
             }
             elements[index] = item;
             occupied[index] = true;
+            LastAddedIndex = index;
             elementCount++;
         }
 

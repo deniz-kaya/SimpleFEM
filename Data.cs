@@ -7,28 +7,14 @@ namespace SimpleFEM;
 
 public struct Node
 {
-    public Node(float x, float y)
+    public Node(Vector2 position)
     {
-        X = x; Y = y;
+        this.pos = position;
     }
-    public float X;
-    public float Y;
-
-    public Vector2 Pos
-    {
-        get
-        {
-            return new Vector2(X, Y);
-        }
-        set
-        {
-            X = value.X;
-            Y = value.Y;
-        }
-    }
+    public Vector2 pos;
     public float GetDistance(Vector2 pos)
     {
-        return Vector2.Distance(this.Pos, pos);
+        return Vector2.Distance(this.pos, pos);
     }
 }
 

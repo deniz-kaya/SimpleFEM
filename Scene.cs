@@ -116,12 +116,10 @@ public class Scene
     {
         foreach (Element e in structure.Elements)
         {
-            int startX = Convert.ToInt32(structure.Nodes[e.Node1Id].X);
-            int startY = Convert.ToInt32(structure.Nodes[e.Node1Id].Y);
-            int endX = Convert.ToInt32(structure.Nodes[e.Node2Id].X);
-            int endY = Convert.ToInt32(structure.Nodes[e.Node2Id].Y);
+            Vector2 pos1 = structure.Nodes[e.Node1Id].pos;
+            Vector2 pos2 = structure.Nodes[e.Node2Id].pos;
 
-            Raylib.DrawLineEx(new Vector2(startX, startY), new Vector2(endX, endY), 2, Color.Green);
+            Raylib.DrawLineEx(pos1, pos2, 2, Color.Green);
         }
     }
 
@@ -144,7 +142,7 @@ public class Scene
     {
         foreach (Node n in structure.Nodes)
         {
-            Raylib.DrawCircleV(n.Pos, 3, Color.Red);
+            Raylib.DrawCircleV(n.pos, 3, Color.Red);
         }
     }
     private void DrawGrid()

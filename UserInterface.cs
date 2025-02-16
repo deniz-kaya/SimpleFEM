@@ -10,12 +10,16 @@ namespace SimpleFEM;
 
 public class UserInterface
 {
+    public Scene scene;
     private Structure structure;
+    
     private float footerHeight = 20f;
     private float mainMenuBarHeight;
+    
     public UserInterface(Structure structure)
     {
         this.structure = structure;
+        scene = new Scene(structure);
     }
     public void DrawMainDockSpace()
     {
@@ -44,7 +48,7 @@ public class UserInterface
         ImGui.End();
         ImGui.PopStyleVar(5);
     }
-    public void ShowMainMenu()
+    public void ShowMainMenuBar()
     {
         ImGui.BeginMainMenuBar();
         {
@@ -57,7 +61,6 @@ public class UserInterface
             }
         }
     }
-
     public (Vector2 pos, Vector2 size) GetUsableArea()
     {
         Vector2 viewportSize = ImGui.GetMainViewport().Size;
@@ -66,26 +69,32 @@ public class UserInterface
     }
     public void ShowFooter()
     {
-
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar 
             | ImGuiWindowFlags.NoCollapse
             | ImGuiWindowFlags.NoDocking
             | ImGuiWindowFlags.NoScrollbar
             | ImGuiWindowFlags.NoNav;
         
-        Vector2 size = ImGui.GetMainViewport().Size;
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.One);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(5,3));
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
         
+        Vector2 size = ImGui.GetMainViewport().Size;
         ImGui.SetNextWindowSize(new Vector2(size.X, footerHeight));
         ImGui.SetNextWindowPos(new Vector2(0, size.Y-footerHeight));
+        
         ImGui.Begin("Footer", windowFlags);
 
-        ImGui.Text("Testing");
-        ImGui.SameLine();
-        ImGui.Text(footerHeight.ToString());
-        ImGui.End();
+        float width = ImGui.GetContentRegionAvail().X;
         
+        //Left of the footer
+        ImGui.Text("This is footer text");
+        //Right of the footer
+        string mousePosition = scene.worldPos.ToString();
+        
+        ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
+        ImGui.Text(mousePosition);
+        
+        ImGui.End();
         
         ImGui.PopStyleVar(10);
     }
@@ -144,10 +153,11 @@ public class UserInterface
         }
         ImGui.End();
     }
+    
+    private int loadNodeID = 0;
+    private float loadX = 0f, loadY = 0f, loadMoment = 0f;
     public void ShowLoadsTab()
     {
-        int loadNodeID = 0;
-        float loadX = 0f, loadY = 0f, loadMoment = 0f;
         if (ImGui.Button("Add Load"))
         {
             ImGui.OpenPopup("AddLoad");
@@ -211,10 +221,11 @@ public class UserInterface
 
         }
     }
+    
+    private int node1ID = 0, node2ID = 0;
+    private Material material = new Material();
     public void ShowElementsTab()
     {   
-        int node1ID = 0, node2ID = 0;
-        Material material = new Material();
         if (ImGui.Button("Add Element"))
         {
             ImGui.OpenPopup("AddElement");
@@ -268,10 +279,11 @@ public class UserInterface
 
         }
     }
+    
+    private int boundaryConditionNodeID = 0;
+    private bool fixedY = false, fixedX = false, fixedMoment = false;
     public void ShowBoundaryConditionsTab()
     {
-        int boundaryConditionNodeID = 0;
-        bool fixedY = false, fixedX = false, fixedMoment = false;
         if (ImGui.Button("Modify Boundary Condition"))
         {
             ImGui.OpenPopup("ModifyBoundaryCondition");
@@ -332,9 +344,9 @@ public class UserInterface
 
         }
     }
+    private float nodeX = 0f, nodeY = 0f;
     public void ShowNodesTab()
     {
-        float nodeX = 0f, nodeY = 0f;   
         if (ImGui.Button("Add Node"))
         {
             ImGui.OpenPopup("AddNode");
@@ -346,7 +358,7 @@ public class UserInterface
             ImGui.InputFloat("Y", ref nodeY);
             if (ImGui.Button("Add Node"))
             {
-                this.structure.AddNode(nodeX, nodeY);
+                this.structure.AddNode(new Vector2(nodeX, nodeY));
             }
             ImGui.SameLine();
             if (ImGui.Button("Close"))
@@ -369,13 +381,14 @@ public class UserInterface
             
             foreach (int i in structure.Nodes.GetIndexes())
             {
+                Vector2 nodePos = structure.Nodes[i].pos;
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.Text(i.ToString());
                 ImGui.TableNextColumn();
-                ImGui.Text(structure.Nodes[i].X.ToString());
+                ImGui.Text(nodePos.X.ToString());
                 ImGui.TableNextColumn();
-                ImGui.Text(structure.Nodes[i].Y.ToString());
+                ImGui.Text(nodePos.Y.ToString());
                 ImGui.TableNextColumn();
                 if (ImGui.Button("Remove"))
                 {

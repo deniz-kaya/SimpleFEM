@@ -17,7 +17,7 @@ class Program
         Raylib.SetTargetFPS(60);
         
         Structure structure = new("Test Structure");
-        UserInterface userInterface = new(structure);
+        UserInterface UI = new(structure);
         Scene scene = new Scene(structure);
         
         while (!Raylib.WindowShouldClose())
@@ -25,17 +25,19 @@ class Program
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.RayWhite);
             rlImGui.Begin();
-            userInterface.ShowFooter();
-            //ImGui.DockSpaceOverViewport(0, ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
-            userInterface.DrawMainDockSpace();
             
             //DRAW EVERYTHING BELOW ME
-            userInterface.ShowMainMenu();
-            scene.ShowSceneWindow();
             
-            scene.ProcessInputs();
+            UI.ShowFooter();
+            UI.ShowMainMenuBar();
+            
+            UI.DrawMainDockSpace();
+            
+            UI.scene.ShowSceneWindow();
+            
+            UI.scene.ProcessInputs();
 
-            userInterface.ShowSimpleEditGUI();
+            UI.ShowSimpleEditGUI();
             
             ImGui.ShowDemoWindow();
             //DRAW EVERYTHING ABOVE ME

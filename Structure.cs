@@ -1,4 +1,5 @@
 ﻿using System.Data.Common;
+using System.Numerics;
 
 namespace SimpleFEM;
 
@@ -22,26 +23,27 @@ public class Structure
             StructureName = name;
         }
 
-
-        public bool CheckForNodeCollisions(Node node)
+        public void RemoveElement(int index)
         {
-            foreach (Node n in Nodes)
+            Elements.RemoveAt(index);
+        }
+        public int CheckForNodeCollisions(Vector2 testPos)
+        {
+            foreach (int i in Nodes.GetIndexes())
             {
-                if (n.X == node.X && n.Y == node.Y)
+                if (Nodes[i].pos == testPos)
                 {
-                    return true;
+                    return i;
                 }
             }
-
-            return false;
+            return -1;
         }
 
-        public bool AddNode(float x, float y)
+        public bool AddNode(Vector2 position)
         {
-            Node candidateNode = new Node(x, y);
-            if (!CheckForNodeCollisions(candidateNode))
+            if (CheckForNodeCollisions(position) == -1)
             {
-                Nodes.Add(candidateNode);
+                Nodes.Add(new Node(position));
                 return true;
             }
 
