@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections;
+using System.Numerics;
 using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
@@ -19,7 +20,15 @@ class Program
         Structure structure = new("Test Structure");
         UserInterface UI = new(structure);
         Scene scene = new Scene(structure);
-        
+        //STRUCTURE SETUP
+        Material mat = new Material();
+        structure.AddNode(new Node(new Vector2(0f,0f)));
+        structure.AddNode(new Node(new Vector2(0f,50f)));
+        structure.AddNode(new Node(new Vector2(100f,0f)));
+        structure.AddElement(0, 1, mat);
+        structure.AddElement(0, 2, mat);
+        structure.AddElement(1, 2, mat);
+        //
         while (!Raylib.WindowShouldClose())
         {
             Raylib.BeginDrawing();

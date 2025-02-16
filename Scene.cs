@@ -12,13 +12,18 @@ public class Scene
     private Vector2 SceneWindowPosition;
     private Vector2 SceneWindowSize;
     private Structure structure;
+    private StructureToolbox toolbox;
     public bool SceneWindowHovered;
     
     //settings
     private int gridSpacing = 50;
     public int cameraSpeed = 20;
-    
-    public Vector2? worldPos
+
+    private Vector2 worldPosition
+    {
+        get => GetScreenToScenePos(ImGui.GetMousePos());
+    }
+    public Vector2? nullablePosition
     {
         get => SceneWindowHovered ? GetScreenToScenePos(ImGui.GetMousePos()) : null;
     }
@@ -31,6 +36,7 @@ public class Scene
     private RenderTexture2D viewTexture;
     public Scene(Structure structure)
     {
+        this.toolbox = new StructureToolbox(structure);
         this.structure = structure;
         FirstRender = true;
     }
@@ -123,7 +129,7 @@ public class Scene
         }
     }
 
-    public void ProcessInputs()
+    private void HandleCameraMovementInput()
     {
         if (ImGui.IsKeyDown(ImGuiKey.RightArrow))
             camera.Target += new Vector2(cameraSpeed / camera.Zoom, 0);
@@ -137,6 +143,53 @@ public class Scene
             camera.Zoom += camera.Zoom + 0.25f > 6 ? 0f : 0.25f;
         if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
             camera.Zoom -= camera.Zoom - 0.25f < 0.1f ? 0f : 0.25f;
+    }
+
+    public void HandleSelectionInput()
+    {
+        if (ImGui.IsKeyDown(ImGuiKey.MouseLeft) && SceneWindowHovered)
+        {
+            if (!toolbox.SelectStarted)
+            {
+                toolbox.SetFirstSelectPos(worldPosition);
+            }
+            toolbox.SetSecondSelectPos(worldPosition);
+        }
+    }
+    public void ProcessInputs()
+    {
+        switch (toolbox.CurrentTool)
+        {
+            case Tool.None:
+                HandleCameraMovementInput();
+                
+                break;
+            case Tool.AddNode:
+                if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
+                {
+                    toolbox.AddNode();
+                    toolbox.SwitchState(Tool.AddNode);
+                }
+
+                break;
+            case Tool.SelectNodes:
+                HandleSelectionInput();
+                if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+                {
+                    toolbox.SelectNodesWithinArea();
+                }
+                break;
+            case Tool.SelectElements:
+                HandleSelectionInput();
+                if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+                {
+                    toolbox.SelectElementsWithinArea();
+                }
+
+                break;
+            
+
+        }
     }
     private void DrawNodes()
     {

@@ -39,11 +39,12 @@ public class Structure
             return -1;
         }
 
-        public bool AddNode(Vector2 position)
+        public bool AddNode(Node node)
         {
-            if (CheckForNodeCollisions(position) == -1)
+            
+            if (CheckForNodeCollisions(node.pos) == -1)
             {
-                Nodes.Add(new Node(position));
+                Nodes.Add(node);
                 return true;
             }
 

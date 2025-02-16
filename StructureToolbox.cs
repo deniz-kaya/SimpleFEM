@@ -8,22 +8,13 @@ namespace SimpleFEM;
 //inputs are processed inside of scene, relevant toolbox methods are called to extract information from structure 
 public class StructureToolbox
 {
-    public enum Tool
-    {
-        None = 0,
-        AddNode = 1,
-        AddElement = 2,
-        SelectNode = 3,
-        SelectElement = 4,
-        DeleteSeltected = 5,
-        MoveNode = 6,
-    }
-
     public int selectionFeather = 10;
     private Structure structure;
-    public Tool CurrentTool = Tool.None;
+    public Tool CurrentTool { get; private set; }
+    public bool SelectStarted { get; private set; }
     public StructureToolbox(Structure structure)
     {
+        CurrentTool = Tool.None;
         this.structure = structure;
     }
     List<int> selectedNodes = new List<int>();
@@ -31,7 +22,7 @@ public class StructureToolbox
     private Vector2 selectPos1 = Vector2.Zero;
     private Vector2 selectPos2 = Vector2.Zero;
     
-    public void ResetState(Tool switchToTool = Tool.None)
+    public void SwitchState(Tool switchToTool = Tool.None)
     {
         CurrentTool = switchToTool;
         selectPos1 = Vector2.Zero;
@@ -40,18 +31,32 @@ public class StructureToolbox
         selectedNodes.Clear();
     }
 
+    public void SetFirstSelectPos(Vector2 pos)
+    {
+        selectPos1 = pos;
+        SelectStarted = true;
+    }
+
+    public void SetSecondSelectPos(Vector2 pos)
+    {
+        selectPos2 = pos;
+    }
+    public void AddNode()
+    {
+        structure.Nodes.Add(new Node(selectPos1));
+    }
     public void AddElement()
     {
         int node1 = structure.CheckForNodeCollisions(selectPos1);
         int node2 = structure.CheckForNodeCollisions(selectPos2);
         if (node1 == -1)
         {
-            structure.AddNode(selectPos1);
+            structure.AddNode(new Node(selectPos1));
             node1 = structure.Nodes.LastAddedIndex;
         }
         if (node2 == -1)
         {
-            structure.AddNode(selectPos2);
+            structure.AddNode(new Node(selectPos2));
             node2 = structure.Nodes.LastAddedIndex;
         }
         structure.AddElement(node1, node2, new Material());

@@ -89,7 +89,7 @@ public class UserInterface
         //Left of the footer
         ImGui.Text("This is footer text");
         //Right of the footer
-        string mousePosition = scene.worldPos.ToString();
+        string mousePosition = scene.nullablePosition.ToString();
         
         ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
         ImGui.Text(mousePosition);
@@ -344,6 +344,7 @@ public class UserInterface
 
         }
     }
+    
     private float nodeX = 0f, nodeY = 0f;
     public void ShowNodesTab()
     {
@@ -358,7 +359,7 @@ public class UserInterface
             ImGui.InputFloat("Y", ref nodeY);
             if (ImGui.Button("Add Node"))
             {
-                this.structure.AddNode(new Vector2(nodeX, nodeY));
+                this.structure.AddNode(new Node(new Vector2(nodeX, nodeY)));
             }
             ImGui.SameLine();
             if (ImGui.Button("Close"))

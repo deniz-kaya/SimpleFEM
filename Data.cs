@@ -5,6 +5,17 @@ using System.Reflection.Metadata;
 
 namespace SimpleFEM;
 
+public enum Tool
+{
+    None = 0,
+    AddNode = 1,
+    AddElement = 2,
+    SelectNodes = 3,
+    SelectElements = 4,
+    DeleteSeltected = 5,
+    MoveNode = 6,
+        
+}
 public struct Node
 {
     public Node(Vector2 position)
