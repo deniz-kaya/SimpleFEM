@@ -1,13 +1,16 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using ImGuiNET;
+using rlImGui_cs;
+using Raylib_cs;
 using SimpleFEM;
 
 namespace SimpleFEM;
 
 public class UserInterface
 {
-    private Data.Structure structure;
-    public UserInterface(Data.Structure structure)
+    private Structure structure;
+    public UserInterface(Structure structure)
     {
         this.structure = structure;
     }
@@ -17,7 +20,7 @@ public class UserInterface
     
     //Elements
     private int node1ID, node2ID;
-    private Data.Material material;
+    private Material material;
     
     //Boundary Conditions
     private int boundaryConditionNodeID;
@@ -27,18 +30,15 @@ public class UserInterface
     private int loadNodeID;
     private float loadX, loadY, loadMoment;
     
+    //TODO all parameters above that are to do with the SimpleEditGUI can probably be put into the subroutines themselves, check it out
     
     public void ShowSimpleEditGUI()
     {
-        Console.WriteLine("reached simpleeditygui");
         ImGui.Begin("Simple Edit GUI");
-        Console.WriteLine("ImGui.Begin executed!");
-        ImGui.Text("Test text");
         if (ImGui.BeginTabBar("Property Select Tab Bar"))
         {
             if (ImGui.BeginTabItem("Nodes"))
             {
-                Console.WriteLine("reached to nodes bit");
                 ShowNodesTab();
                 ImGui.EndTabItem();
             }
@@ -68,9 +68,7 @@ public class UserInterface
                 // bc's  - loads
                 if (ImGui.BeginTable("AllQuadView", 2, ImGuiTableFlags.Borders))
                 {
-                    ImGui.TableSetupColumn("");
-                    ImGui.TableSetupColumn("");
-                    
+
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     ShowNodesTab();
@@ -83,14 +81,7 @@ public class UserInterface
                     ShowLoadsTab();
                     ImGui.EndTable();
                 }
-                // ShowNodesTab();
-                // ImGui.SameLine();
-                // ShowElementsTab();
-                //
-                // ShowBoundaryConditionsTab();
-                // ImGui.SameLine();
-                // ShowLoadsTab();
-                
+
                 ImGui.EndTabItem();
             }
         }
@@ -174,7 +165,7 @@ public class UserInterface
             ImGui.InputInt("Node 2", ref node2ID);
             if (ImGui.Button("Add Element"))
             {
-                this.structure.AddElement(node1ID, node2ID, Data.Structure.TestMaterial);
+                this.structure.AddElement(node1ID, node2ID, Structure.TestMaterial);
             }
 
             ImGui.SameLine();
@@ -216,7 +207,6 @@ public class UserInterface
 
         }
     }
-    
     public void ShowBoundaryConditionsTab()
     {
         if (ImGui.Button("Modify Boundary Condition"))
@@ -326,7 +316,7 @@ public class UserInterface
                 ImGui.TableNextColumn();
                 if (ImGui.Button("Remove"))
                 {
-                    structure.Nodes.RemoveAt(i);
+                    structure.RemoveNode(i);
                 }
                 
             }

@@ -1,4 +1,5 @@
-﻿using ImGuiNET;
+﻿using System.Numerics;
+using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
 
@@ -8,26 +9,37 @@ class Program
 {
     static void Main(string[] args)
     {
-        Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
         
-        Raylib.InitWindow(1024, 1024, "Test Window");
+        Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+        
+        Raylib.InitWindow(1600, 900, "SimpleFEM");
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
         
-        Data.Structure structure = new("Test Structure");
+        Structure structure = new("Test Structure");
         UserInterface userInterface = new(structure);
+        Scene scene = new Scene(structure);
         
         while (!Raylib.WindowShouldClose())
         {
             Raylib.BeginDrawing();
-            Raylib.ClearBackground(Color.Black);
+            Raylib.ClearBackground(Color.RayWhite);
             rlImGui.Begin();
+            
+            ImGui.DockSpaceOverViewport(0, ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+
             //DRAW EVERYTHING BELOW ME
+            
+            scene.ShowSceneWindow();
+            
+            scene.ProcessInputs();
+
             userInterface.ShowSimpleEditGUI();
             
-            
             ImGui.ShowDemoWindow();
+            
             //DRAW EVERYTHING ABOVE ME
+            
             rlImGui.End();
             Raylib.EndDrawing();
         }

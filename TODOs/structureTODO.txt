@@ -1,0 +1,2 @@
+﻿- add boundarycondition and load into node
+- implement solver (easy to say)
