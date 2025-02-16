@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
@@ -10,28 +11,84 @@ namespace SimpleFEM;
 public class UserInterface
 {
     private Structure structure;
+    private float footerHeight = 20f;
+    private float mainMenuBarHeight;
     public UserInterface(Structure structure)
     {
         this.structure = structure;
     }
-    
-    //Nodes
-    private float nodeX, nodeY;
-    
-    //Elements
-    private int node1ID, node2ID;
-    private Material material;
-    
-    //Boundary Conditions
-    private int boundaryConditionNodeID;
-    private bool fixedY, fixedX, fixedMoment;
-    
-    //Loads
-    private int loadNodeID;
-    private float loadX, loadY, loadMoment;
-    
-    //TODO all parameters above that are to do with the SimpleEditGUI can probably be put into the subroutines themselves, check it out
-    
+    public void DrawMainDockSpace()
+    {
+        (Vector2 pos, Vector2 size) usableArea = GetUsableArea();
+        ImGui.SetNextWindowPos(usableArea.pos);
+        ImGui.SetNextWindowSize(usableArea.size);
+        ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar 
+                                 | ImGuiWindowFlags.NoCollapse 
+                                 | ImGuiWindowFlags.NoResize 
+                                 | ImGuiWindowFlags.NoMove
+                                 | ImGuiWindowFlags.NoScrollbar
+                                 | ImGuiWindowFlags.NoNav
+                                 | ImGuiWindowFlags.NoBackground
+                                 | ImGuiWindowFlags.NoInputs
+                                 | ImGuiWindowFlags.NoMouseInputs
+                                 | ImGuiWindowFlags.NoScrollWithMouse
+                                 | ImGuiWindowFlags.NoDecoration
+                                 | ImGuiWindowFlags.NoBackground 
+                                 | ImGuiWindowFlags.NoDocking;
+        
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
+        
+        ImGui.Begin("Dockspace", flags);
+        ImGui.DockSpace(ImGui.GetID("MainDockSpace"), Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode);
+        ImGui.End();
+        ImGui.PopStyleVar(5);
+    }
+    public void ShowMainMenu()
+    {
+        ImGui.BeginMainMenuBar();
+        {
+            mainMenuBarHeight = ImGui.GetWindowHeight();
+            if (ImGui.BeginMenu("File"))
+            {
+                ImGui.MenuItem("File");
+                ImGui.SeparatorText("Test");
+                ImGui.Text(DateTime.Now.ToString());
+            }
+        }
+    }
+
+    public (Vector2 pos, Vector2 size) GetUsableArea()
+    {
+        Vector2 viewportSize = ImGui.GetMainViewport().Size;
+        return (new Vector2(0,mainMenuBarHeight), 
+            Vector2.Subtract(viewportSize, new Vector2(0,mainMenuBarHeight + footerHeight)));
+    }
+    public void ShowFooter()
+    {
+
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar 
+            | ImGuiWindowFlags.NoCollapse
+            | ImGuiWindowFlags.NoDocking
+            | ImGuiWindowFlags.NoScrollbar
+            | ImGuiWindowFlags.NoNav;
+        
+        Vector2 size = ImGui.GetMainViewport().Size;
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.One);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
+        
+        ImGui.SetNextWindowSize(new Vector2(size.X, footerHeight));
+        ImGui.SetNextWindowPos(new Vector2(0, size.Y-footerHeight));
+        ImGui.Begin("Footer", windowFlags);
+
+        ImGui.Text("Testing");
+        ImGui.SameLine();
+        ImGui.Text(footerHeight.ToString());
+        ImGui.End();
+        
+        
+        ImGui.PopStyleVar(10);
+    }
     public void ShowSimpleEditGUI()
     {
         ImGui.Begin("Simple Edit GUI");
@@ -89,6 +146,8 @@ public class UserInterface
     }
     public void ShowLoadsTab()
     {
+        int loadNodeID = 0;
+        float loadX = 0f, loadY = 0f, loadMoment = 0f;
         if (ImGui.Button("Add Load"))
         {
             ImGui.OpenPopup("AddLoad");
@@ -153,7 +212,9 @@ public class UserInterface
         }
     }
     public void ShowElementsTab()
-    {
+    {   
+        int node1ID = 0, node2ID = 0;
+        Material material = new Material();
         if (ImGui.Button("Add Element"))
         {
             ImGui.OpenPopup("AddElement");
@@ -209,6 +270,8 @@ public class UserInterface
     }
     public void ShowBoundaryConditionsTab()
     {
+        int boundaryConditionNodeID = 0;
+        bool fixedY = false, fixedX = false, fixedMoment = false;
         if (ImGui.Button("Modify Boundary Condition"))
         {
             ImGui.OpenPopup("ModifyBoundaryCondition");
@@ -271,7 +334,7 @@ public class UserInterface
     }
     public void ShowNodesTab()
     {
-        
+        float nodeX = 0f, nodeY = 0f;   
         if (ImGui.Button("Add Node"))
         {
             ImGui.OpenPopup("AddNode");

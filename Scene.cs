@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using System.Threading.Tasks.Dataflow;
 using Raylib_cs;
-using Raylib_cs;
 using ImGuiNET;
 using rlImGui_cs;
 
@@ -13,11 +12,16 @@ public class Scene
     private Vector2 SceneWindowPosition;
     private Vector2 SceneWindowSize;
     private Structure structure;
+    public bool SceneWindowHovered;
     
     //settings
     private int gridSpacing = 50;
     public int cameraSpeed = 20;
     
+    public Vector2? worldPos
+    {
+        get => SceneWindowHovered ? GetScreenToScenePos(ImGui.GetMousePos()) : null;
+    }
     private bool FirstRender;
     public float CameraZoom
     {
@@ -42,14 +46,16 @@ public class Scene
         ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar;
         
         //optional
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0f,0f));        
-        ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, Vector2.Zero);
-        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
+        // ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(0f,0f));        
+        // ImGui.PushStyleVar(ImGuiStyleVar.FramePadding, Vector2.Zero);
+        // ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
         ImGui.Begin("Scene Window", flags);
+        
+        SceneWindowHovered = ImGui.IsWindowHovered();
         
         if (FirstRender)
         {
-            SceneWindowPosition = ImGui.GetWindowPos();
+            SceneWindowPosition = ImGui.GetCursorScreenPos();
             SceneWindowSize = ImGui.GetContentRegionAvail();
             
             camera = new Camera2D(Vector2.Divide(SceneWindowSize,2), Vector2.Zero, 0f, 1f);
@@ -60,7 +66,7 @@ public class Scene
         }
         else
         {
-            SceneWindowPosition = ImGui.GetWindowPos();
+            SceneWindowPosition = ImGui.GetCursorScreenPos();
             ProcessWindowSizeChanges(ImGui.GetContentRegionAvail());
         }
         RenderSceneToTexture();

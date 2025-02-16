@@ -25,11 +25,12 @@ class Program
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.RayWhite);
             rlImGui.Begin();
+            userInterface.ShowFooter();
+            //ImGui.DockSpaceOverViewport(0, ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
+            userInterface.DrawMainDockSpace();
             
-            ImGui.DockSpaceOverViewport(0, ImGui.GetMainViewport(), ImGuiDockNodeFlags.PassthruCentralNode);
-
             //DRAW EVERYTHING BELOW ME
-            
+            userInterface.ShowMainMenu();
             scene.ShowSceneWindow();
             
             scene.ProcessInputs();
@@ -37,7 +38,6 @@ class Program
             userInterface.ShowSimpleEditGUI();
             
             ImGui.ShowDemoWindow();
-            
             //DRAW EVERYTHING ABOVE ME
             
             rlImGui.End();
