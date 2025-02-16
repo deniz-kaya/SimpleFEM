@@ -88,6 +88,9 @@ public class Scene
         }
         RenderSceneToTexture();
         rlImGui.ImageRenderTexture(viewTexture);
+        
+        ShowPopup();
+        
         ImGui.PopStyleVar(10);
 
         ImGui.End();
@@ -136,17 +139,37 @@ public class Scene
 
     }
 
-    private void ShowSelectedNodePopup()
+    private PopupType nextPopup = PopupType.None;
+    private bool PopupOpen = false;
+    private void ShowPopup()
     {
-        if (ImGui.BeginPopup("Select Node Popup"))
+        switch (nextPopup)
         {
-            
+             case PopupType.None:
+                 return;
+             case PopupType.SingleNodeActions:
+                 ShowSingleNodeActionsPopup();
+                 break;
+        }
+    }
+    private void ShowSingleNodeActionsPopup()
+    {
+        ImGui.OpenPopup("Select_Node_Popup");
+        if (PopupOpen = ImGui.BeginPopup("Select_Node_Popup"))
+        {
+            Console.WriteLine("Showed popup");
             if (ImGui.Selectable("Show Properties"))
             {
                 Console.WriteLine("Show Properties Reached");
             }
+
             ImGui.EndPopup();
-        } 
+        }
+
+        if (!PopupOpen)
+        {
+            nextPopup = PopupType.None;
+        }
     }
     private void DrawElements()
     {
@@ -205,7 +228,8 @@ public class Scene
 
         if (ImGui.IsKeyPressed(ImGuiKey.MouseRight) && toolbox.selectedNodes.Count == 1)
         {
-            ImGui.OpenPopup("Select Node Popup");
+            Console.WriteLine("Attempting to show popup");
+            nextPopup = PopupType.SingleNodeActions;
         }
         DebugHelpers.PrintList(toolbox.selectedNodes);
         switch (toolbox.CurrentTool)

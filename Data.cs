@@ -5,6 +5,15 @@ using System.Reflection.Metadata;
 
 namespace SimpleFEM;
 
+public enum PopupType
+{
+    None,
+    SingleNodeActions,
+    SingleElementProperties,
+    MultiNodeProperties,
+    MultiElementProperties,
+}
+
 public enum Tool
 {
     None = 0,

@@ -61,6 +61,7 @@ public class UserInterface
             }
         }
     }
+    
     public (Vector2 pos, Vector2 size) GetUsableArea()
     {
         Vector2 viewportSize = ImGui.GetMainViewport().Size;
