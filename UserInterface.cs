@@ -98,6 +98,35 @@ public class UserInterface
         
         ImGui.PopStyleVar(10);
     }
+
+    private Tool selectedTool = Tool.None;
+    public void ShowToolBox()
+    {
+        ImGui.Begin("Toolbox");
+        if (ImGui.BeginCombo("Tool", Tool.None.ToString()))
+        {
+
+            foreach (Tool t in Enum.GetValues(typeof(Tool)))
+            {
+                if (ImGui.Selectable(t.ToString(), selectedTool == t))
+                {
+                    selectedTool = t;
+                }
+
+                if (selectedTool == t)
+                {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
+        }
+        ImGui.End();
+        if (selectedTool != scene.SelectedTool)
+        {
+            scene.SelectedTool = selectedTool;
+        }
+    }
+        
     public void ShowSimpleEditGUI()
     {
         ImGui.Begin("Simple Edit GUI");
@@ -398,7 +427,6 @@ public class UserInterface
                 
             }
             ImGui.EndTable();
-
         }
     }
 }

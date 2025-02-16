@@ -5,6 +5,31 @@ using Raylib_cs;
 
 namespace SimpleFEM;
 
+public static class DebugHelpers
+{
+    public static void PrintList(List<int> list)
+    {
+        string s = "[";
+        foreach (int i in list)
+        {
+            s += ($"{i.ToString()}, ");
+        }
+
+        s += "]";
+        Console.WriteLine(s);
+    }
+}
+public static class RectangleExtensions
+{
+    public static Rectangle GetRectangleFromPoints(Vector2 point1, Vector2 point2)
+    {
+        float posX = MathF.Min(point1.X, point2.X);
+        float posY = MathF.Min(point1.Y, point2.Y);
+        float width = MathF.Abs(point1.X - point2.X);
+        float height = MathF.Abs(point1.Y - point2.Y);
+        return new Rectangle(posX, posY, width, height);
+    }
+}
 public static class Vector2Extensions
 {
     public static bool LiesWithinRect(this Vector2 vector, Vector2 pos1, Vector2 pos2)

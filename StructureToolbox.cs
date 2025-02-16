@@ -5,26 +5,62 @@ namespace SimpleFEM;
 //takes structure as input, builds on top of structure
 //selected nodes, elements etc are all insidf eof htis 
 //it is stored inside of scene
-//inputs are processed inside of scene, relevant toolbox methods are called to extract information from structure 
+//inputs are processed inside of scene, relevant toolbox methods are called to extract information from structure
 public class StructureToolbox
 {
     public int selectionFeather = 10;
     private Structure structure;
     public Tool CurrentTool { get; private set; }
-    public bool SelectStarted { get; private set; }
+    public bool MultiInputStarted { get; private set; }
     public StructureToolbox(Structure structure)
     {
-        CurrentTool = Tool.None;
+        selectedNodes = new();
+        selectedElements = new();
+        SwitchState(Tool.None);
         this.structure = structure;
     }
-    List<int> selectedNodes = new List<int>();
-    private List<int> selectedElements = new List<int>();
-    private Vector2 selectPos1 = Vector2.Zero;
-    private Vector2 selectPos2 = Vector2.Zero;
-    
+    public List<int> selectedNodes { get; private set;}
+    public List<int> selectedElements { get; private set;}
+    public Vector2 selectPos1 { get; private set; }
+    public Vector2 selectPos2 { get; private set; }
+
+    public void SelectNearbyNode(Vector2 point)
+    {
+        selectedNodes.Clear();
+        int candidateNode = CheckForNodesCloseToPos(point, 10);
+        if (candidateNode != -1)
+        {
+            selectedNodes.Add(candidateNode);
+        }
+    }
+    public int CheckForNodesCloseToPos(Vector2 point, int threshold)
+    {
+        foreach (int i in structure.Nodes.GetIndexes())
+        {
+            if (Vector2.Distance(point, structure.Nodes[i].pos) <= threshold)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+    public void SoftSwitchState(Tool switchToTool = Tool.None)
+    {
+        CurrentTool = switchToTool;
+        MultiInputStarted = false;
+        selectPos1 = Vector2.Zero;
+        selectPos2 = Vector2.Zero;
+    }
+
+    public void GetPositionInformation()
+    {
+        throw new NotImplementedException();
+    }
     public void SwitchState(Tool switchToTool = Tool.None)
     {
         CurrentTool = switchToTool;
+        MultiInputStarted = false;
         selectPos1 = Vector2.Zero;
         selectPos2 = Vector2.Zero;
         selectedElements.Clear();
@@ -34,7 +70,7 @@ public class StructureToolbox
     public void SetFirstSelectPos(Vector2 pos)
     {
         selectPos1 = pos;
-        SelectStarted = true;
+        MultiInputStarted = true;
     }
 
     public void SetSecondSelectPos(Vector2 pos)
@@ -43,7 +79,7 @@ public class StructureToolbox
     }
     public void AddNode()
     {
-        structure.Nodes.Add(new Node(selectPos1));
+        structure.AddNode(new Node(selectPos1));
     }
     public void AddElement()
     {

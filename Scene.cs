@@ -14,7 +14,12 @@ public class Scene
     private Structure structure;
     private StructureToolbox toolbox;
     public bool SceneWindowHovered;
-    
+
+    public Tool SelectedTool
+    {
+        get => toolbox.CurrentTool;
+        set => toolbox.SoftSwitchState(value);
+    }
     //settings
     private int gridSpacing = 50;
     public int cameraSpeed = 20;
@@ -23,6 +28,8 @@ public class Scene
     {
         get => GetScreenToScenePos(ImGui.GetMousePos());
     }
+    
+
     public Vector2? nullablePosition
     {
         get => SceneWindowHovered ? GetScreenToScenePos(ImGui.GetMousePos()) : null;
@@ -47,6 +54,10 @@ public class Scene
         
     }
 
+    private Vector2 SnapToGrid(Vector2 pos)
+    {
+        return pos.RoundToNearest(gridSpacing);
+    }
     public void ShowSceneWindow()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar;
@@ -109,23 +120,47 @@ public class Scene
         DrawNodes();
         
         Raylib.DrawCircleV(pos, 2, Color.Black);
-        Raylib.DrawCircleV(pos.RoundToNearest(gridSpacing), 6, Color.Green);
-        Raylib.DrawPixelV(pos.RoundToNearest(gridSpacing), Color.Red);
-        
+
+        if (toolbox.CurrentTool == Tool.SelectElements || toolbox.CurrentTool == Tool.SelectNodes)
+        {
+            Raylib.DrawRectangleRec(
+                RectangleExtensions.GetRectangleFromPoints(toolbox.selectPos1, toolbox.selectPos2), 
+                new Color(199, 199, 199, 59));
+        }
+        else if (toolbox.CurrentTool == Tool.AddElement)
+        {
+            Raylib.DrawLineEx(toolbox.selectPos1, toolbox.selectPos2, 2, Color.Green);
+        }
         Raylib.EndMode2D();
         Raylib.EndTextureMode();
 
     }
 
-    
+    private void ShowSelectedNodePopup()
+    {
+        if (ImGui.BeginPopup("Select Node Popup"))
+        {
+            
+            if (ImGui.Selectable("Show Properties"))
+            {
+                Console.WriteLine("Show Properties Reached");
+            }
+            ImGui.EndPopup();
+        } 
+    }
     private void DrawElements()
     {
-        foreach (Element e in structure.Elements)
+        foreach (int i in structure.Elements.GetIndexes())
         {
+            Element e = structure.Elements[i];
             Vector2 pos1 = structure.Nodes[e.Node1Id].pos;
             Vector2 pos2 = structure.Nodes[e.Node2Id].pos;
-
-            Raylib.DrawLineEx(pos1, pos2, 2, Color.Green);
+            Color c = Color.Green;
+            if (toolbox.selectedElements.Contains(i))
+            {
+                c = Color.Orange;
+            }
+            Raylib.DrawLineEx(pos1, pos2, 2, c);
         }
     }
 
@@ -145,19 +180,34 @@ public class Scene
             camera.Zoom -= camera.Zoom - 0.25f < 0.1f ? 0f : 0.25f;
     }
 
-    public void HandleSelectionInput()
+    public void HandleMultiplePositionInput(bool gridSnap = false)
     {
-        if (ImGui.IsKeyDown(ImGuiKey.MouseLeft) && SceneWindowHovered)
+        Vector2 pos = gridSnap ? SnapToGrid(worldPosition) : worldPosition;
+        if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
         {
-            if (!toolbox.SelectStarted)
+            if (!toolbox.MultiInputStarted)
             {
-                toolbox.SetFirstSelectPos(worldPosition);
+                DoIdleSelection = false;
+                toolbox.SetFirstSelectPos(pos);
             }
-            toolbox.SetSecondSelectPos(worldPosition);
+            toolbox.SetSecondSelectPos(pos);
         }
     }
+
+    private bool DoIdleSelection = true;
     public void ProcessInputs()
     {
+        if (!SceneWindowHovered) return;
+        if (DoIdleSelection)
+        {
+            toolbox.SelectNearbyNode(worldPosition);
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.MouseRight) && toolbox.selectedNodes.Count == 1)
+        {
+            ImGui.OpenPopup("Select Node Popup");
+        }
+        DebugHelpers.PrintList(toolbox.selectedNodes);
         switch (toolbox.CurrentTool)
         {
             case Tool.None:
@@ -167,35 +217,75 @@ public class Scene
             case Tool.AddNode:
                 if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
                 {
+                    toolbox.SetFirstSelectPos(SnapToGrid(worldPosition));
                     toolbox.AddNode();
                     toolbox.SwitchState(Tool.AddNode);
                 }
 
                 break;
-            case Tool.SelectNodes:
-                HandleSelectionInput();
+            case Tool.AddElement:
+                HandleMultiplePositionInput(true);
                 if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+                {
+                    toolbox.AddElement();
+                    toolbox.SwitchState(Tool.AddElement);
+                }
+
+                break;
+            case Tool.SelectNodes:
+                HandleMultiplePositionInput();
+                if (toolbox.MultiInputStarted)
                 {
                     toolbox.SelectNodesWithinArea();
                 }
+                if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+                {
+                    if (toolbox.selectedNodes.Count == 0)
+                    {
+                        DoIdleSelection = true;
+                    }
+                    toolbox.SoftSwitchState(Tool.SelectNodes);
+                }
                 break;
             case Tool.SelectElements:
-                HandleSelectionInput();
-                if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+                HandleMultiplePositionInput();
+                if (toolbox.MultiInputStarted)
                 {
                     toolbox.SelectElementsWithinArea();
                 }
+                if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+                {
+                    if (toolbox.selectedNodes.Count == 0)
+                    {
+                        DoIdleSelection = true;
+                    }
+                    toolbox.SoftSwitchState(Tool.SelectElements);
+                }
+            
+                break;
+            case Tool.DeleteSeltected:
+                if (ImGui.IsKeyPressed(ImGuiKey.Delete))
+                {
+                    toolbox.DeleteSelectedElements();
+                    toolbox.DeleteSelectedNodes();
+                    toolbox.SwitchState(Tool.None);
+                }
 
                 break;
-            
-
+            case Tool.MoveNode:
+                break;
         }
     }
     private void DrawNodes()
     {
-        foreach (Node n in structure.Nodes)
+        foreach (int i in structure.Nodes.GetIndexes())
         {
-            Raylib.DrawCircleV(n.pos, 3, Color.Red);
+            Color c = Color.Red;
+            if (toolbox.selectedNodes.Contains(i))
+            {
+                c = Color.Orange;
+            }
+            Raylib.DrawCircleV(structure.Nodes[i].pos, 3, c);
         }
     }
     private void DrawGrid()

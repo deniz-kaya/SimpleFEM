@@ -45,10 +45,10 @@ class Program
             UI.scene.ShowSceneWindow();
             
             UI.scene.ProcessInputs();
+            UI.ShowToolBox();
 
             UI.ShowSimpleEditGUI();
             
-            ImGui.ShowDemoWindow();
             //DRAW EVERYTHING ABOVE ME
             
             rlImGui.End();
