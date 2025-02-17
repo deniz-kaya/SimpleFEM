@@ -153,6 +153,11 @@ public class Structure
                 {
                     return false;
                 }
+                if (Elements[i].Node1Id == element.Node2Id && Elements[i].Node2Id == element.Node1Id)
+                {
+                    return false;
+                }
+
             }
             
             return true;
@@ -162,7 +167,7 @@ public class Structure
         public bool AddElement(int node1Id, int node2Id, Material material)
         {
             Element candidateElement = new Element(node1Id, node2Id, material);
-            if (node1Id != node2Id && Nodes.ValidIndex(node1Id)  && Nodes.ValidIndex(node2Id) && CheckForElementCollisions(candidateElement))
+            if (node1Id != node2Id && Nodes.ValidIndex(node1Id) && Nodes.ValidIndex(node2Id) && CheckForElementCollisions(candidateElement))
             {
                 Elements.Add(candidateElement);
                 return true;

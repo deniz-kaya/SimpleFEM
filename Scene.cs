@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using System.Threading.Tasks.Dataflow;
 using Raylib_cs;
 using ImGuiNET;
@@ -13,8 +14,10 @@ public class Scene
     private Vector2 SceneWindowSize;
     private Structure structure;
     private StructureToolbox toolbox;
+    
+    //FLAGS
     public bool SceneWindowHovered;
-
+    private bool FirstRender;
     public Tool SelectedTool
     {
         get => toolbox.CurrentTool;
@@ -29,18 +32,17 @@ public class Scene
         get => GetScreenToScenePos(ImGui.GetMousePos());
     }
     
-
     public Vector2? nullablePosition
     {
         get => SceneWindowHovered ? GetScreenToScenePos(ImGui.GetMousePos()) : null;
     }
-    private bool FirstRender;
+    
     public float CameraZoom
     {
         get => camera.Zoom;
         set => camera.Zoom = value;
     }
-    private RenderTexture2D viewTexture;
+    
     public Scene(Structure structure)
     {
         this.toolbox = new StructureToolbox(structure);
@@ -58,6 +60,7 @@ public class Scene
     {
         return pos.RoundToNearest(gridSpacing);
     }
+    
     public void ShowSceneWindow()
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar;
@@ -88,135 +91,24 @@ public class Scene
         }
         RenderSceneToTexture();
         rlImGui.ImageRenderTexture(viewTexture);
-        
-        ShowPopup();
-        
+
+        ProcessInputs();
+        DefinePopups();
         ImGui.PopStyleVar(10);
+
 
         ImGui.End();
     }
-
-    private void ProcessWindowSizeChanges(Vector2 newWindowSize)
-    {
-        if (SceneWindowSize != newWindowSize)
-        {
-            Raylib.UnloadRenderTexture(viewTexture);
-            viewTexture = RaylibExtensions.LoadRenderTextureV(newWindowSize);
-            camera.Offset = Vector2.Divide(newWindowSize, 2);
-            SceneWindowSize = newWindowSize;
-        }
-    }
-
-    private void RenderSceneToTexture()
-    {
-        Raylib.BeginTextureMode(viewTexture);
-        Raylib.BeginMode2D(camera);
-        
-        Vector2 pos = GetScreenToScenePos(ImGui.GetMousePos());
-
-        Raylib.ClearBackground(Color.RayWhite);
-            
-        DrawGrid(); 
     
-        DrawElements();
-
-        DrawNodes();
-        
-        Raylib.DrawCircleV(pos, 2, Color.Black);
-
-        if (toolbox.CurrentTool == Tool.SelectElements || toolbox.CurrentTool == Tool.SelectNodes)
-        {
-            Raylib.DrawRectangleRec(
-                RectangleExtensions.GetRectangleFromPoints(toolbox.selectPos1, toolbox.selectPos2), 
-                new Color(199, 199, 199, 59));
-        }
-        else if (toolbox.CurrentTool == Tool.AddElement)
-        {
-            Raylib.DrawLineEx(toolbox.selectPos1, toolbox.selectPos2, 2, Color.Green);
-        }
-        Raylib.EndMode2D();
-        Raylib.EndTextureMode();
-
-    }
-
-    private PopupType nextPopup = PopupType.None;
-    private bool PopupOpen = false;
     private void ShowPopup()
     {
-        switch (nextPopup)
+        if (toolbox.selectedNodes.Count == 1)
         {
-             case PopupType.None:
-                 return;
-             case PopupType.SingleNodeActions:
-                 ShowSingleNodeActionsPopup();
-                 break;
-        }
-    }
-    private void ShowSingleNodeActionsPopup()
-    {
-        ImGui.OpenPopup("Select_Node_Popup");
-        if (PopupOpen = ImGui.BeginPopup("Select_Node_Popup"))
-        {
-            Console.WriteLine("Showed popup");
-            if (ImGui.Selectable("Show Properties"))
-            {
-                Console.WriteLine("Show Properties Reached");
-            }
-
-            ImGui.EndPopup();
-        }
-
-        if (!PopupOpen)
-        {
-            nextPopup = PopupType.None;
-        }
-    }
-    private void DrawElements()
-    {
-        foreach (int i in structure.Elements.GetIndexes())
-        {
-            Element e = structure.Elements[i];
-            Vector2 pos1 = structure.Nodes[e.Node1Id].pos;
-            Vector2 pos2 = structure.Nodes[e.Node2Id].pos;
-            Color c = Color.Green;
-            if (toolbox.selectedElements.Contains(i))
-            {
-                c = Color.Orange;
-            }
-            Raylib.DrawLineEx(pos1, pos2, 2, c);
+            ImGui.OpenPopup("Select_Node_Popup");
         }
     }
 
-    private void HandleCameraMovementInput()
-    {
-        if (ImGui.IsKeyDown(ImGuiKey.RightArrow))
-            camera.Target += new Vector2(cameraSpeed / camera.Zoom, 0);
-        if (ImGui.IsKeyDown(ImGuiKey.LeftArrow))
-            camera.Target -= new Vector2(cameraSpeed / camera.Zoom, 0);
-        if (ImGui.IsKeyDown(ImGuiKey.DownArrow))
-            camera.Target += new Vector2(0, cameraSpeed / camera.Zoom);
-        if (ImGui.IsKeyDown(ImGuiKey.UpArrow))
-            camera.Target -= new Vector2(0, cameraSpeed / camera.Zoom);
-        if (ImGui.IsKeyPressed(ImGuiKey.PageUp))
-            camera.Zoom += camera.Zoom + 0.25f > 6 ? 0f : 0.25f;
-        if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
-            camera.Zoom -= camera.Zoom - 0.25f < 0.1f ? 0f : 0.25f;
-    }
-
-    public void HandleMultiplePositionInput(bool gridSnap = false)
-    {
-        Vector2 pos = gridSnap ? SnapToGrid(worldPosition) : worldPosition;
-        if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
-        {
-            if (!toolbox.MultiInputStarted)
-            {
-                DoIdleSelection = false;
-                toolbox.SetFirstSelectPos(pos);
-            }
-            toolbox.SetSecondSelectPos(pos);
-        }
-    }
-
+    //INPUT HANDLING
     private bool DoIdleSelection = true;
     public void ProcessInputs()
     {
@@ -226,12 +118,12 @@ public class Scene
             toolbox.SelectNearbyNode(worldPosition);
         }
 
-        if (ImGui.IsKeyPressed(ImGuiKey.MouseRight) && toolbox.selectedNodes.Count == 1)
+        if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
         {
-            Console.WriteLine("Attempting to show popup");
-            nextPopup = PopupType.SingleNodeActions;
+            ShowPopup();
         }
         DebugHelpers.PrintList(toolbox.selectedNodes);
+        Console.WriteLine(toolbox.selectedNodes.Count);
         switch (toolbox.CurrentTool)
         {
             case Tool.None:
@@ -300,6 +192,85 @@ public class Scene
                 break;
         }
     }
+    private void HandleCameraMovementInput()
+    {
+        if (ImGui.IsKeyDown(ImGuiKey.RightArrow))
+            camera.Target += new Vector2(cameraSpeed / camera.Zoom, 0);
+        if (ImGui.IsKeyDown(ImGuiKey.LeftArrow))
+            camera.Target -= new Vector2(cameraSpeed / camera.Zoom, 0);
+        if (ImGui.IsKeyDown(ImGuiKey.DownArrow))
+            camera.Target += new Vector2(0, cameraSpeed / camera.Zoom);
+        if (ImGui.IsKeyDown(ImGuiKey.UpArrow))
+            camera.Target -= new Vector2(0, cameraSpeed / camera.Zoom);
+        if (ImGui.IsKeyPressed(ImGuiKey.PageUp))
+            camera.Zoom += camera.Zoom + 0.25f > 6 ? 0f : 0.25f;
+        if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
+            camera.Zoom -= camera.Zoom - 0.25f < 0.1f ? 0f : 0.25f;
+    }
+    public void HandleMultiplePositionInput(bool gridSnap = false)
+    {
+        Vector2 pos = gridSnap ? SnapToGrid(worldPosition) : worldPosition;
+        if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
+        {
+            if (!toolbox.MultiInputStarted)
+            {
+                DoIdleSelection = false;
+                toolbox.SetFirstSelectPos(pos);
+            }
+            toolbox.SetSecondSelectPos(pos);
+        }
+    }
+    
+    
+    
+    //DRAWING TO TEXTURE
+    private RenderTexture2D viewTexture;
+    private void RenderSceneToTexture()
+    {
+        Raylib.BeginTextureMode(viewTexture);
+        Raylib.BeginMode2D(camera);
+        
+        Vector2 pos = GetScreenToScenePos(ImGui.GetMousePos());
+
+        Raylib.ClearBackground(Color.RayWhite);
+            
+        DrawGrid(); 
+    
+        DrawElements();
+
+        DrawNodes();
+        
+        Raylib.DrawCircleV(pos, 2, Color.Black);
+
+        if (toolbox.CurrentTool == Tool.SelectElements || toolbox.CurrentTool == Tool.SelectNodes)
+        {
+            Raylib.DrawRectangleRec(
+                RectangleExtensions.GetRectangleFromPoints(toolbox.selectPos1, toolbox.selectPos2), 
+                new Color(199, 199, 199, 59));
+        }
+        else if (toolbox.CurrentTool == Tool.AddElement)
+        {
+            Raylib.DrawLineEx(toolbox.selectPos1, toolbox.selectPos2, 2, Color.Green);
+        }
+        Raylib.EndMode2D();
+        Raylib.EndTextureMode();
+
+    }
+    private void DrawElements()
+    {
+        foreach (int i in structure.Elements.GetIndexes())
+        {
+            Element e = structure.Elements[i];
+            Vector2 pos1 = structure.Nodes[e.Node1Id].pos;
+            Vector2 pos2 = structure.Nodes[e.Node2Id].pos;
+            Color c = Color.Green;
+            if (toolbox.selectedElements.Contains(i))
+            {
+                c = Color.Orange;
+            }
+            Raylib.DrawLineEx(pos1, pos2, 2, c);
+        }
+    }
     private void DrawNodes()
     {
         foreach (int i in structure.Nodes.GetIndexes())
@@ -321,8 +292,35 @@ public class Scene
         Raylib.DrawGrid(200,gridSpacing);
         Rlgl.PopMatrix();
     }
-    public void UpdateCameraTarget(Vector2 target)
+    private void ProcessWindowSizeChanges(Vector2 newWindowSize)
+        {
+            if (SceneWindowSize != newWindowSize)
+            {
+                Raylib.UnloadRenderTexture(viewTexture);
+                viewTexture = RaylibExtensions.LoadRenderTextureV(newWindowSize);
+                camera.Offset = Vector2.Divide(newWindowSize, 2);
+                SceneWindowSize = newWindowSize;
+            }
+        }
+    
+    //POPUPS
+    private void DefinePopups()
     {
-        camera.Target = target;
+        SelectNodePopupDefinition();
+    }
+    private void SelectNodePopupDefinition()
+    {
+        if (ImGui.BeginPopup("Select_Node_Popup"))
+        {
+            Console.WriteLine("Showed popup");
+            if (ImGui.Selectable("Show Properties"))
+            {
+                Console.WriteLine("Show Properties Reached");
+            }
+
+            ImGui.EndPopup();
+        }
+
     }
 }
+

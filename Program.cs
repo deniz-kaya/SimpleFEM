@@ -44,7 +44,7 @@ class Program
             
             UI.scene.ShowSceneWindow();
             
-            UI.scene.ProcessInputs();
+            //UI.scene.ProcessInputs();
             UI.ShowToolBox();
 
             UI.ShowSimpleEditGUI();
