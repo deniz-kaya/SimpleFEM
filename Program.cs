@@ -14,13 +14,15 @@ class Program
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         
         Raylib.InitWindow(1600, 900, "SimpleFEM");
+        Raylib.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
         
         Structure structure = new("Test Structure");
         UserInterface UI = new(structure);
         Scene scene = new Scene(structure);
-        //STRUCTURE SETUP
+        
+        //TEST STRUCTURE SETUP
         Material mat = new Material();
         structure.AddNode(new Node(new Vector2(0f,0f)));
         structure.AddNode(new Node(new Vector2(0f,50f)));
@@ -29,6 +31,7 @@ class Program
         structure.AddElement(0, 2, mat);
         structure.AddElement(1, 2, mat);
         //
+        
         while (!Raylib.WindowShouldClose())
         {
             Raylib.BeginDrawing();
@@ -45,7 +48,7 @@ class Program
             UI.scene.ShowSceneWindow();
             
             //UI.scene.ProcessInputs();
-            UI.ShowToolBox();
+            //UI.ShowToolBox();
 
             UI.ShowSimpleEditGUI();
             

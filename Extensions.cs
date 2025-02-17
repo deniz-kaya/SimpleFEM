@@ -32,6 +32,24 @@ public static class RectangleExtensions
 }
 public static class Vector2Extensions
 {
+    public static float DistanceToLineSegment(this Vector2 pos, Vector2 linePos1, Vector2 linePos2)
+    {
+        //using dot product formula to figure out "amount of position vector" in the direction of the line
+        float t = Vector2.Dot(pos- linePos1, linePos2 - linePos1) / Vector2.DistanceSquared(linePos1, linePos2);
+        
+        //if t > 1, that means the amount of position vector in direction of line is more than line itself
+        // so closest is the point we didn't use to get the position
+        //if t < 0 that means the amount of position vector in direction is negative
+        // so closest is the point we did use to get the position
+        //otherwise, closest point lies somewhere within the line and t gives us the % of where it is with relation to length of line
+        if (t > 0 && t < 1)
+        {
+            Vector2 closesPointOnSegment = linePos1 + t * (linePos2 - linePos1);
+            return Vector2.Distance(closesPointOnSegment, pos);
+        }
+        return float.MaxValue;
+        
+    }
     public static bool LiesWithinRect(this Vector2 vector, Vector2 pos1, Vector2 pos2)
     {
         if (pos1 == pos2)

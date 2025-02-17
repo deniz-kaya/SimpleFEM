@@ -88,7 +88,7 @@ public class UserInterface
         float width = ImGui.GetContentRegionAvail().X;
         
         //Left of the footer
-        ImGui.Text("This is footer text");
+        ImGui.Text($"Selected Tool: {scene.SelectedTool.ToString()}");
         //Right of the footer
         string mousePosition = scene.nullablePosition.ToString();
         
@@ -138,7 +138,6 @@ public class UserInterface
                 ShowNodesTab();
                 ImGui.EndTabItem();
             }
-        
             if (ImGui.BeginTabItem("Elements"))
             {
                 ShowElementsTab();

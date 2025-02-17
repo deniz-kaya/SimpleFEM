@@ -12,6 +12,10 @@ public class StructureToolbox
     private Structure structure;
     public Tool CurrentTool { get; private set; }
     public bool MultiInputStarted { get; private set; }
+    public bool EmptySelection
+    {
+        get => selectedElements.Count == 0 && selectedNodes.Count == 0;
+    }
     public StructureToolbox(Structure structure)
     {
         selectedNodes = new();
@@ -24,16 +28,48 @@ public class StructureToolbox
     public Vector2 selectPos1 { get; private set; }
     public Vector2 selectPos2 { get; private set; }
 
-    public void SelectNearbyNode(Vector2 point)
+    public bool SelectNearbyElement(Vector2 point)
     {
+        selectedElements.Clear();
+        selectedNodes.Clear();
+        int candidateElement = CheckForElementsCloseToPos(point, 10);
+        if (candidateElement != -1)
+        {
+            selectedElements.Add(candidateElement);
+            return true;
+        }
+
+        return false;
+    }
+    public bool SelectNearbyNode(Vector2 point)
+    {
+        selectedElements.Clear();
         selectedNodes.Clear();
         int candidateNode = CheckForNodesCloseToPos(point, 10);
-        if (candidateNode != -1)
+        if (candidateNode != -1) 
         {
             selectedNodes.Add(candidateNode);
+            return true;
         }
+
+        return false;
     }
-    public int CheckForNodesCloseToPos(Vector2 point, int threshold)
+
+    public int CheckForElementsCloseToPos(Vector2 point, float threshold)
+    {
+        foreach (int i in structure.Elements.GetIndexes())
+        {
+            Vector2 node1Pos = structure.Nodes[structure.Elements[i].Node1Id].pos;
+            Vector2 node2Pos = structure.Nodes[structure.Elements[i].Node2Id].pos;
+            if (point.DistanceToLineSegment(node1Pos, node2Pos) < threshold)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+    public int CheckForNodesCloseToPos(Vector2 point, float threshold)
     {
         foreach (int i in structure.Nodes.GetIndexes())
         {

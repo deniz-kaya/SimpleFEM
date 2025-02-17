@@ -21,8 +21,6 @@ public enum Tool
     AddElement = 2,
     SelectNodes = 3,
     SelectElements = 4,
-    DeleteSeltected = 5,
-    MoveNode = 6,
         
 }
 public struct Node

@@ -16,7 +16,9 @@ public class Scene
     private StructureToolbox toolbox;
     
     //FLAGS
-    public bool SceneWindowHovered;
+    public bool SceneWindowHovered { get; private set; }
+
+    
     private bool FirstRender;
     public Tool SelectedTool
     {
@@ -115,22 +117,28 @@ public class Scene
         if (!SceneWindowHovered) return;
         if (DoIdleSelection)
         {
-            toolbox.SelectNearbyNode(worldPosition);
+            if (!toolbox.SelectNearbyNode(worldPosition))
+            {
+                
+                toolbox.SelectNearbyElement(worldPosition);
+            }
         }
 
         if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
         {
             ShowPopup();
         }
-        DebugHelpers.PrintList(toolbox.selectedNodes);
-        Console.WriteLine(toolbox.selectedNodes.Count);
+
+        SwitchTools();
         switch (toolbox.CurrentTool)
         {
             case Tool.None:
+                DoIdleSelection = true;
                 HandleCameraMovementInput();
                 
                 break;
             case Tool.AddNode:
+                DoIdleSelection = true;
                 if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
                 {
                     toolbox.SetFirstSelectPos(SnapToGrid(worldPosition));
@@ -140,6 +148,7 @@ public class Scene
 
                 break;
             case Tool.AddElement:
+                DoIdleSelection = true;
                 HandleMultiplePositionInput(true);
                 if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
                 {
@@ -152,11 +161,12 @@ public class Scene
                 HandleMultiplePositionInput();
                 if (toolbox.MultiInputStarted)
                 {
+                    DoIdleSelection = false;
                     toolbox.SelectNodesWithinArea();
                 }
                 if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
                 {
-                    if (toolbox.selectedNodes.Count == 0)
+                    if (toolbox.EmptySelection)
                     {
                         DoIdleSelection = true;
                     }
@@ -167,29 +177,28 @@ public class Scene
                 HandleMultiplePositionInput();
                 if (toolbox.MultiInputStarted)
                 {
+                    DoIdleSelection = false;
                     toolbox.SelectElementsWithinArea();
                 }
                 if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
                 {
-                    if (toolbox.selectedNodes.Count == 0)
+                    if (toolbox.EmptySelection)
                     {
                         DoIdleSelection = true;
                     }
                     toolbox.SoftSwitchState(Tool.SelectElements);
                 }
-            
+                
                 break;
-            case Tool.DeleteSeltected:
-                if (ImGui.IsKeyPressed(ImGuiKey.Delete))
-                {
-                    toolbox.DeleteSelectedElements();
-                    toolbox.DeleteSelectedNodes();
-                    toolbox.SwitchState(Tool.None);
-                }
+        }
+        Console.WriteLine(toolbox.CurrentTool.ToString());
 
-                break;
-            case Tool.MoveNode:
-                break;
+        if (ImGui.IsKeyPressed(ImGuiKey.Delete))
+        {
+            if (!toolbox.EmptySelection)
+            {
+                ImGui.OpenPopup("ConfirmDeleteModal");
+            }
         }
     }
     private void HandleCameraMovementInput()
@@ -220,8 +229,37 @@ public class Scene
             toolbox.SetSecondSelectPos(pos);
         }
     }
-    
-    
+
+    public void SwitchTools()
+    {
+        if (ImGui.IsKeyPressed(ImGuiKey.M))
+        {
+            Console.WriteLine("key pressed");
+
+            SelectedTool = Tool.None;
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.A))
+        {
+            Console.WriteLine("key pressed");
+            SelectedTool = Tool.AddNode;
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.E))
+        {
+            SelectedTool = Tool.AddElement;
+            Console.WriteLine(toolbox.CurrentTool.ToString());
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.Z))
+        {
+            SelectedTool = Tool.SelectNodes;            Console.WriteLine(toolbox.CurrentTool.ToString());
+
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.D))            
+        {
+            SelectedTool = Tool.SelectElements;            Console.WriteLine(toolbox.CurrentTool.ToString());
+
+        }
+        
+    }   
     
     //DRAWING TO TEXTURE
     private RenderTexture2D viewTexture;
@@ -307,6 +345,34 @@ public class Scene
     private void DefinePopups()
     {
         SelectNodePopupDefinition();
+        ConfirmDeleteModalDefinition();
+    }
+
+    private void ConfirmDeleteModalDefinition()
+    {
+        if (ImGui.BeginPopupModal("ConfirmDeleteModal"))
+        {
+            int elementCount = toolbox.selectedElements.Count;
+            int nodeCount = toolbox.selectedNodes.Count;
+            
+            ImGui.Text("Are you sure you want to delete?");
+            ImGui.Text($"{elementCount} element(s)");
+            ImGui.Text($"{nodeCount} node(s)");
+            if (ImGui.Button("Cancel") || ImGui.IsKeyPressed(ImGuiKey.Escape))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            
+            if (ImGui.Button("Delete") || ImGui.IsKeyPressed(ImGuiKey.Enter))
+            {
+                toolbox.DeleteSelectedElements();
+                toolbox.DeleteSelectedNodes();
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SetItemDefaultFocus();
+            ImGui.EndPopup();
+        }
     }
     private void SelectNodePopupDefinition()
     {
