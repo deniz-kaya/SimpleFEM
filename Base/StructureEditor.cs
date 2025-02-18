@@ -5,34 +5,20 @@ using SimpleFEM.Interfaces;
 
 namespace SimpleFEM.Base;
 
-public class StructureManager
+public class StructureEditor
 {
-    public struct Settings
-    {
-        public float IdleSelectionFeather;
-
-        public Settings(float idleSelectionFeather)
-        {
-            IdleSelectionFeather = idleSelectionFeather;
-        }
-
-        public static Settings Default = new Settings(10f);
-
-    }
-    
     protected List<int> SelectedElements { get; private set; }
     protected List<int> SelectedNodes { get; private set; }
-    protected bool MultiInputStarted { get; private set; }
-    protected bool MultiInputCompleted { get; private set; }
+    protected bool MultiInputStarted;
+    public bool DoIdleSelection { get; protected set; }
+    protected bool MultiInputCompleted;
     public bool EmptySelection => SelectedElements.Count == 0 && SelectedNodes.Count == 0;
     protected Vector2 SelectionPos1;
     protected Vector2 SelectionPos2;
     protected IStructure Structure;
-    protected Settings settings;
     
-    public StructureManager(IStructure structure, Settings? settings = null)
+    public StructureEditor(IStructure structure)
     {
-        this.settings = settings ?? Settings.Default;
         
         SelectedElements = new List<int>();
         SelectedNodes = new List<int>();
@@ -41,23 +27,6 @@ public class StructureManager
     }
     
     /// <summary>
-    /// Tries selecting nodes around the position, if not found tries selecting elements instead.
-    /// This order is to make sure that nodes can also be selected, as otherwise their valid selecting areas would mostly be covered by elements' ones.
-    /// </summary>
-    /// <param name="position">the position to select around</param>
-    /// <returns>True if selection was successful, false if otherwise.</returns>
-    protected bool IdleSelection(Vector2 position)
-    {
-
-        if (MultiInputStarted) return false;
-        if (!EmptySelection) return false;
-        if (!SelectNearbyNode(position))
-        {
-            return SelectNearbyElement(position);
-        }
-        return true;
-    }
-    /// <summary>
     /// Resets the selection lists.
     /// </summary>
     public void ResetSelection()
@@ -65,16 +34,17 @@ public class StructureManager
         SelectedElements.Clear();
         SelectedNodes.Clear();
     }
-    
+
     /// <summary>
     /// Tries selecting an element nearby the position.
     /// </summary>
     /// <param name="position">the position to select around</param>
+    /// <param name="threshold">acceptable threshold distance from position</param>
     /// <returns>True if an element was selected.</returns>
-    public bool SelectNearbyElement(Vector2 position)
+    public bool SelectNearbyElement(Vector2 position, float threshold)
     {
         ResetSelection();
-        int candidateElement = CheckForElementsCloseToPos(position, settings.IdleSelectionFeather);
+        int candidateElement = CheckForElementsCloseToPos(position, threshold);
         if (candidateElement != -1)
         {
             SelectedElements.Add(candidateElement);
@@ -106,16 +76,17 @@ public class StructureManager
 
         return -1;
     }
-    
+
     /// <summary>
     /// Tries selecting a node that is nearby the position.
     /// </summary>
     /// <param name="position">the position to select around</param>
+    /// <param name="threshold">acceptable threshold distance from position</param>
     /// <returns>True if a node was selected, false otherwise.</returns>
-    public bool SelectNearbyNode(Vector2 position)
+    public bool SelectNearbyNode(Vector2 position, float threshold)
     {
         ResetSelection();
-        int candidateNode = CheckForNodesCloseToPos(position, settings.IdleSelectionFeather);
+        int candidateNode = CheckForNodesCloseToPos(position, threshold);
         if (candidateNode != -1) 
         {
             SelectedNodes.Add(candidateNode);

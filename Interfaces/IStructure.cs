@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using SimpleFEM.Types;
 
 namespace SimpleFEM.Interfaces;
 using SimpleFEM.Types.StructureTypes;
@@ -20,5 +21,6 @@ public interface IStructure
     
     public List<int> GetNodeIndexesSorted();
     public List<int> GetElementIndexesSorted();
+    public StructureSettings GetStructureSettings();
 
 }

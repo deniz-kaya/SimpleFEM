@@ -7,5 +7,6 @@ public enum Tool
     AddElement = 2,
     SelectNodes = 3,
     SelectElements = 4,
+    Move = 5,
         
 }

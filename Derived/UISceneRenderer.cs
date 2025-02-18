@@ -7,8 +7,8 @@ using SimpleFEM.Base;
 namespace SimpleFEM.Derived;
 public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
 {
-    
-    public bool SceneWindowHovered;
+
+    public bool SceneWindowHovered { get; private set; }
     public Vector2 TextureStartPosition;
     
     public Vector2 GetScenePos(Vector2 screenPos)

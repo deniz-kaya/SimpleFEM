@@ -1,10 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
 using SimpleFEM.Base;
 using SimpleFEM.Interfaces;
 using SimpleFEM.Types;
+using SimpleFEM.Types.StructureTypes;
+using Material = Raylib_cs.Material;
 
 namespace SimpleFEM;
 
@@ -20,14 +23,23 @@ class Program
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
 
-        IStructure structure = new InMemoryStructure("test structure");
-        UserInterface ui = new UserInterface(structure, new UserInterfaceSettings() {FooterHeight = 30f});
+        IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
         
+        //STRUCTURE SETUP
+        structure.AddNode(new Vector2(0f,0f));
+        structure.AddNode(new Vector2(0f,50f));
+        structure.AddNode(new Vector2(100f,0f));
+        structure.AddElement(new Element(0, 1));
+        structure.AddElement(new Element(0, 2));
+        structure.AddElement(new Element(1, 2));
+        //
+        UserInterface ui = new UserInterface(structure, UserSettings.Default);
+
+        Vector2 pos = Vector2.Zero;
         
         while (!Raylib.WindowShouldClose())
         {
             Raylib.BeginDrawing();
-            Raylib.ClearBackground(Color.RayWhite);
             rlImGui.Begin();
             
             //DRAW EVERYTHING BELOW ME
@@ -41,8 +53,9 @@ class Program
             ImGui.Begin("Test");
             ImGui.Text("It compiled!");
             ImGui.End();
+           
             
-            
+            ui.HandleInputs();
             
             //DRAW EVERYTHING ABOVE ME
             
