@@ -1,3 +1,0 @@
-﻿- add option for padding 
-- fix padding issue when tab bar is not hidden
-- add standardised colour-scheme structure or something like that

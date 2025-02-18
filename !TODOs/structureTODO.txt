@@ -1,4 +1,0 @@
-﻿- add boundarycondition and load into node
-- implement solver (easy to say)
-
-- fix the shitty ass removat recycling list
