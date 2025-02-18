@@ -2,19 +2,21 @@
 
 namespace SimpleFEM;
 
-public class InMemoryStructure : BaseStructure
+public class InMemoryStructure : IStructure
 {
     public RecyclingList<Node> Nodes;
     public RecyclingList<Element> Elements;
-
-    public InMemoryStructure(string name) : base(name)
+    private string StructureName;
+    public InMemoryStructure(string name) 
     {
+        StructureName = name;
         Nodes = new RecyclingList<Node>();
         Elements = new RecyclingList<Element>();
     }
     
+    public string GetName() => StructureName;
     
-    public override bool AddNode(Vector2 pos)
+    public bool AddNode(Vector2 pos)
     {
         foreach (Node n in Nodes)
         {
@@ -28,7 +30,7 @@ public class InMemoryStructure : BaseStructure
         return true;
     }
 
-    public override bool AddElement(Element element)
+    public bool AddElement(Element element)
     {
         if (Nodes.ValidIndex(element.Node1ID) && Nodes.ValidIndex(element.Node2ID) && element.Node1ID != element.Node2ID)
         {
@@ -38,7 +40,7 @@ public class InMemoryStructure : BaseStructure
         return false;
     }
 
-    public override bool AddElement(Element element, out int index)
+    public bool AddElement(Element element, out int index)
     {
         if (Nodes.ValidIndex(element.Node1ID) && Nodes.ValidIndex(element.Node2ID) && element.Node1ID != element.Node2ID)
         {
@@ -51,7 +53,7 @@ public class InMemoryStructure : BaseStructure
         return false;
     }
 
-    public override bool AddNode(Vector2 pos, out int index)
+    public bool AddNode(Vector2 pos, out int index)
     {
         foreach (Node n in Nodes)
         {
@@ -67,7 +69,7 @@ public class InMemoryStructure : BaseStructure
         return true;
     }
 
-    public override void RemoveNode(int nodeID)
+    public void RemoveNode(int nodeID)
     {
         if (Nodes.ValidIndex(nodeID))
         {
@@ -88,19 +90,43 @@ public class InMemoryStructure : BaseStructure
         
     }
     
-    public override void RemoveElement(int ElementID)
+    public void RemoveElement(int elementID)
     {
-        if (Elements.ValidIndex(ElementID))
+        if (Elements.ValidIndex(elementID))
         {
-            Elements.RemoveAt(ElementID);
+            Elements.RemoveAt(elementID);
         }
         else
         {
             throw new IndexOutOfRangeException("Invalid ElementID");
         }
     }
+
+    public Node GetNode(int nodeID)
+    {
+        if (Nodes.ValidIndex(nodeID))
+        {
+            return Nodes[nodeID];
+        }
+        else
+        {
+            throw new IndexOutOfRangeException("Invalid NodeID");
+        }
+    }
+
+    public Element GetElement(int elementID)
+    {
+        if (Elements.ValidIndex(elementID))
+        {
+            return Elements[elementID];
+        }
+        else
+        {
+            throw new IndexOutOfRangeException("Invalid NodeID");
+        }
+    }
     
-    public override void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition)
+    public void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition)
     {
         if (Nodes.ValidIndex(nodeID))
         {
@@ -112,7 +138,7 @@ public class InMemoryStructure : BaseStructure
         }
     }
 
-    public override void GetBoundaryCondition(int nodeID, out BoundaryCondition boundaryCondition)
+    public void GetBoundaryCondition(int nodeID, out BoundaryCondition boundaryCondition)
     {
         if (Nodes.ValidIndex(nodeID))
         {
@@ -125,7 +151,7 @@ public class InMemoryStructure : BaseStructure
 
     }
 
-    public override void SetLoad(int nodeID, Load load)
+    public void SetLoad(int nodeID, Load load)
     {
         if (Nodes.ValidIndex(nodeID))
         {
@@ -137,7 +163,7 @@ public class InMemoryStructure : BaseStructure
         }
     }
 
-    public override void GetLoad(int nodeID, out Load load)
+    public void GetLoad(int nodeID, out Load load)
     {
         if (Nodes.ValidIndex(nodeID))
         {
@@ -147,5 +173,15 @@ public class InMemoryStructure : BaseStructure
         {
             throw new IndexOutOfRangeException("Invalid NodeID");
         }
+    }
+
+    public List<int> GetElementIndexes()
+    {
+        return Elements.GetIndexes();
+    }
+
+    public List<int> GetNodeIndexes()
+    {
+        return Nodes.GetIndexes();
     }
 }
