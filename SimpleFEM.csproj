@@ -28,8 +28,4 @@
       <None Include="Old\Extensions.cs" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Derived\" />
-    </ItemGroup>
-
 </Project>

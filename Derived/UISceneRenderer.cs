@@ -4,17 +4,16 @@ using Raylib_cs;
 using rlImGui_cs;
 using SimpleFEM.Base;
 
-namespace SimpleFEM.UIHelpers;
+namespace SimpleFEM.Derived;
 public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
 {
     
     public bool SceneWindowHovered;
     public Vector2 TextureStartPosition;
     
-    public Vector2? GetWorldPos(Vector2 screenPos)
+    public Vector2 GetScenePos(Vector2 screenPos)
     {
-        if (SceneWindowHovered) return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera);
-        return null;
+        return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera);
     }
 
     public UISceneRenderer() : this(new Vector2(100f,100f)) {}

@@ -15,13 +15,13 @@ public struct Node
     public BoundaryCondition BoundaryCondition;
     public Load Load;
 
-    public void SetBoundaryCondition(BoundaryCondition boundaryCondition)
+    public Node WithBoundaryCondition(BoundaryCondition boundaryCondition)
     {
-        BoundaryCondition = boundaryCondition;
+        return new Node(Pos, BoundaryCondition, Load);
     }
 
-    public void SetLoad(Load load)
+    public Node WithLoad(Load load)
     {
-        Load = load;
+        return new Node(Pos, BoundaryCondition, load);
     }
 }

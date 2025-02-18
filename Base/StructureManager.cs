@@ -20,7 +20,6 @@ public class StructureManager
 
     }
     
-    public Tool CurrentTool { get; private set; }
     protected List<int> SelectedElements { get; private set; }
     protected List<int> SelectedNodes { get; private set; }
     protected bool MultiInputStarted { get; private set; }
@@ -34,30 +33,48 @@ public class StructureManager
     public StructureManager(IStructure structure, Settings? settings = null)
     {
         this.settings = settings ?? Settings.Default;
+        
+        SelectedElements = new List<int>();
+        SelectedNodes = new List<int>();
         Structure = structure;
-
         MultiInputStarted = false;
     }
-    protected bool IdleSelection(Vector2 pos)
+    
+    /// <summary>
+    /// Tries selecting nodes around the position, if not found tries selecting elements instead.
+    /// This order is to make sure that nodes can also be selected, as otherwise their valid selecting areas would mostly be covered by elements' ones.
+    /// </summary>
+    /// <param name="position">the position to select around</param>
+    /// <returns>True if selection was successful, false if otherwise.</returns>
+    protected bool IdleSelection(Vector2 position)
     {
-        bool successfulSelection = false;
+
         if (MultiInputStarted) return false;
         if (!EmptySelection) return false;
-        if (!SelectNearbyNode(pos))
+        if (!SelectNearbyNode(position))
         {
-            return SelectNearbyElement(pos);
+            return SelectNearbyElement(position);
         }
         return true;
     }
+    /// <summary>
+    /// Resets the selection lists.
+    /// </summary>
     public void ResetSelection()
     {
         SelectedElements.Clear();
         SelectedNodes.Clear();
     }
-    public bool SelectNearbyElement(Vector2 point)
+    
+    /// <summary>
+    /// Tries selecting an element nearby the position.
+    /// </summary>
+    /// <param name="position">the position to select around</param>
+    /// <returns>True if an element was selected.</returns>
+    public bool SelectNearbyElement(Vector2 position)
     {
         ResetSelection();
-        int candidateElement = CheckForElementsCloseToPos(point, settings.IdleSelectionFeather);
+        int candidateElement = CheckForElementsCloseToPos(position, settings.IdleSelectionFeather);
         if (candidateElement != -1)
         {
             SelectedElements.Add(candidateElement);
@@ -66,14 +83,22 @@ public class StructureManager
 
         return false;
     }
-    public int CheckForElementsCloseToPos(Vector2 point, float threshold)
+    
+    /// <summary>
+    /// Checks for elements that are within the threshold distance to the position.
+    /// Returns the element index that is smallest out of the qualifying elements. 
+    /// </summary>
+    /// <param name="position">the position to check around</param>
+    /// <param name="threshold">acceptable distance to the node</param>
+    /// <returns>-1 if there are no elements within the threshold distance, the element ID otherwise</returns>
+    public int CheckForElementsCloseToPos(Vector2 position, float threshold)
     {
         foreach (int i in Structure.GetElementIndexesSorted())
         {
             Element e = Structure.GetElement(i);
             Vector2 node1Pos = Structure.GetNode(e.Node1ID).Pos;
             Vector2 node2Pos = Structure.GetNode(e.Node2ID).Pos;
-            if (point.DistanceToLineSegment(node1Pos, node2Pos) < threshold)
+            if (position.DistanceToLineSegment(node1Pos, node2Pos) < threshold)
             {
                 return i;
             }
@@ -81,10 +106,16 @@ public class StructureManager
 
         return -1;
     }
-    public bool SelectNearbyNode(Vector2 point)
+    
+    /// <summary>
+    /// Tries selecting a node that is nearby the position.
+    /// </summary>
+    /// <param name="position">the position to select around</param>
+    /// <returns>True if a node was selected, false otherwise.</returns>
+    public bool SelectNearbyNode(Vector2 position)
     {
         ResetSelection();
-        int candidateNode = CheckForNodesCloseToPos(point, settings.IdleSelectionFeather);
+        int candidateNode = CheckForNodesCloseToPos(position, settings.IdleSelectionFeather);
         if (candidateNode != -1) 
         {
             SelectedNodes.Add(candidateNode);

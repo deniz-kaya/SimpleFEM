@@ -1,8 +1,10 @@
-﻿using System.Numerics;
+﻿using System.Runtime.CompilerServices;
 using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
-using SimpleFEM.Types.StructureTypes;
+using SimpleFEM.Base;
+using SimpleFEM.Interfaces;
+using SimpleFEM.Types;
 
 namespace SimpleFEM;
 
@@ -17,20 +19,10 @@ class Program
         Raylib.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
+
+        IStructure structure = new InMemoryStructure("test structure");
+        UserInterface ui = new UserInterface(structure, new UserInterfaceSettings() {FooterHeight = 30f});
         
-        Structure structure = new("Test Structure");
-        UserInterface UI = new(structure);
-        SceneRenderer sceneRenderer = new SceneRenderer(structure);
-        
-        //TEST STRUCTURE SETUP
-        Material mat = new Material();
-        structure.AddNode(new Node(new Vector2(0f,0f)));
-        structure.AddNode(new Node(new Vector2(0f,50f)));
-        structure.AddNode(new Node(new Vector2(100f,0f)));
-        structure.AddElement(0, 1, mat);
-        structure.AddElement(0, 2, mat);
-        structure.AddElement(1, 2, mat);
-        //
         
         while (!Raylib.WindowShouldClose())
         {
@@ -39,26 +31,18 @@ class Program
             rlImGui.Begin();
             
             //DRAW EVERYTHING BELOW ME
+            //ImGui.DockSpaceOverViewport();
+            ui.DrawMainDockspace();
+            
+            ui.DrawMainMenuBar();
+            ui.DrawFooter();
+            ui.DrawSceneWindow();
+            
             ImGui.Begin("Test");
-            if (ImGui.BeginPopupModal("ModifyBoundaryCondition", ImGuiWindowFlags.AlwaysAutoResize))
-            {
-                ImGui.Text("Yippeeee!!");
-                
-            }
+            ImGui.Text("It compiled!");
             ImGui.End();
             
             
-            UI.ShowFooter();
-            UI.ShowMainMenuBar();
-            
-            UI.DrawMainDockSpace();
-            
-            UI.SceneRenderer.ShowSceneWindow();
-            
-            //UI.scene.ProcessInputs();
-            //UI.ShowToolBox();
-
-            UI.ShowSimpleEditGUI();
             
             //DRAW EVERYTHING ABOVE ME
             

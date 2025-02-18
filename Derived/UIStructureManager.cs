@@ -1,12 +1,12 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 using SimpleFEM.Base;
+using SimpleFEM.Interfaces;
 using SimpleFEM.SceneObjects;
 using SimpleFEM.Types.StructureTypes;
 
-namespace SimpleFEM.UIHelpers;
-using SimpleFEM.Interfaces;
-using SimpleFEM.Base;
+namespace SimpleFEM.Derived;
+
 // TODO not necessarily here but overall, manage protected, private and public fields to make sense
 
 public class UIStructureManager : StructureManager, IUIStructureHelper
@@ -24,6 +24,12 @@ public class UIStructureManager : StructureManager, IUIStructureHelper
     public Queue<ISceneObject> GetSceneObjects(DrawSettings drawSettings)
     {
         Queue<ISceneObject> renderQueue = new Queue<ISceneObject>();
+        //background
+        renderQueue.Enqueue(new BackgroundObject(Color.White));
+        
+        //grid
+        // TODO variables
+        renderQueue.Enqueue(new GridObject(200, 50f));
         
         //Elements
         QueueElementSceneObjects(ref renderQueue, drawSettings);

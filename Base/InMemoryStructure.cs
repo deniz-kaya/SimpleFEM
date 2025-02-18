@@ -133,7 +133,7 @@ public class InMemoryStructure : IStructure
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            Nodes[nodeID].SetBoundaryCondition(boundaryCondition);
+            Nodes[nodeID] = Nodes[nodeID].WithBoundaryCondition(boundaryCondition);
         }
         else
         {
@@ -158,7 +158,7 @@ public class InMemoryStructure : IStructure
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            Nodes[nodeID].SetLoad(load);
+            Nodes[nodeID] = Nodes[nodeID].WithLoad(load);
         }
         else
         {

@@ -69,36 +69,6 @@ public class UserInterface
             Vector2.Subtract(viewportSize, new Vector2(0,mainMenuBarHeight + footerHeight)));
     }
     public void ShowFooter()
-    {
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar 
-            | ImGuiWindowFlags.NoCollapse
-            | ImGuiWindowFlags.NoDocking
-            | ImGuiWindowFlags.NoScrollbar
-            | ImGuiWindowFlags.NoNav;
-        
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(5,3));
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
-        
-        Vector2 size = ImGui.GetMainViewport().Size;
-        ImGui.SetNextWindowSize(new Vector2(size.X, footerHeight));
-        ImGui.SetNextWindowPos(new Vector2(0, size.Y-footerHeight));
-        
-        ImGui.Begin("Footer", windowFlags);
-
-        float width = ImGui.GetContentRegionAvail().X;
-        
-        //Left of the footer
-        ImGui.Text($"Selected Tool: {SceneRenderer.SelectedTool.ToString()}");
-        //Right of the footer
-        string mousePosition = SceneRenderer.nullablePosition.ToString();
-        
-        ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
-        ImGui.Text(mousePosition);
-        
-        ImGui.End();
-        
-        ImGui.PopStyleVar(10);
-    }
 
     private Tool selectedTool = Tool.None;
     public void ShowToolBox()

@@ -40,6 +40,11 @@ public class SceneRenderer
             currentTextureSize = newSize;
         }
     }
+
+    public void SetRenderQueue(Queue<ISceneObject> queue)
+    {
+        this.SceneObjects = queue;
+    }
     public RenderTexture2D GetSceneTexture(Vector2 textureSize)
     {
         if (SceneObjects.Count == 0) throw new InvalidOperationException("Render queue is empty");
