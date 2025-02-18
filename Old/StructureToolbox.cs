@@ -11,7 +11,7 @@ public class StructureToolbox
     public int selectionFeather = 10;
     private Structure structure;
     public Tool CurrentTool { get; private set; }
-    public bool MultiInputStarted { get; private set; }`
+    public bool MultiInputStarted { get; private set; }
     
     public bool EmptySelection
     {

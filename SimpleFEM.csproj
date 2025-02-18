@@ -15,4 +15,13 @@
       <Compile Remove="Test.cs" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Old\Structure.cs" />
+      <None Include="Old\Structure.cs" />
+      <Compile Remove="Old\StructureToolbox.cs" />
+      <None Include="Old\StructureToolbox.cs" />
+      <Compile Remove="Old\Scene.cs" />
+      <None Include="Old\Scene.cs" />
+    </ItemGroup>
+
 </Project>

@@ -20,7 +20,7 @@ class Program
         
         Structure structure = new("Test Structure");
         UserInterface UI = new(structure);
-        Scene scene = new Scene(structure);
+        SceneRenderer sceneRenderer = new SceneRenderer(structure);
         
         //TEST STRUCTURE SETUP
         Material mat = new Material();
@@ -53,7 +53,7 @@ class Program
             
             UI.DrawMainDockSpace();
             
-            UI.scene.ShowSceneWindow();
+            UI.SceneRenderer.ShowSceneWindow();
             
             //UI.scene.ProcessInputs();
             //UI.ShowToolBox();

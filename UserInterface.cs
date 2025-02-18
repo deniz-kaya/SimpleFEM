@@ -10,7 +10,7 @@ namespace SimpleFEM;
 
 public class UserInterface
 {
-    public Scene scene;
+    public SceneRenderer SceneRenderer;
     private Structure structure;
     
     private float footerHeight = 20f;
@@ -19,7 +19,7 @@ public class UserInterface
     public UserInterface(Structure structure)
     {
         this.structure = structure;
-        scene = new Scene(structure);
+        SceneRenderer = new SceneRenderer(structure);
     }
     public void DrawMainDockSpace()
     {
@@ -88,9 +88,9 @@ public class UserInterface
         float width = ImGui.GetContentRegionAvail().X;
         
         //Left of the footer
-        ImGui.Text($"Selected Tool: {scene.SelectedTool.ToString()}");
+        ImGui.Text($"Selected Tool: {SceneRenderer.SelectedTool.ToString()}");
         //Right of the footer
-        string mousePosition = scene.nullablePosition.ToString();
+        string mousePosition = SceneRenderer.nullablePosition.ToString();
         
         ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
         ImGui.Text(mousePosition);
@@ -122,9 +122,9 @@ public class UserInterface
             ImGui.EndCombo();
         }
         ImGui.End();
-        if (selectedTool != scene.SelectedTool)
+        if (selectedTool != SceneRenderer.SelectedTool)
         {
-            scene.SelectedTool = selectedTool;
+            SceneRenderer.SelectedTool = selectedTool;
         }
     }
         

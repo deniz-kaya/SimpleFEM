@@ -1,0 +1,37 @@
+﻿using System.Numerics;
+using ImGuiNET;
+using Raylib_cs;
+using rlImGui_cs;
+
+namespace SimpleFEM.UIHelpers;
+
+public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
+{
+    
+    public bool SceneWindowHovered;
+    public Vector2 TextureStartPosition;
+    
+    public Vector2? GetWorldPos(Vector2 screenPos)
+    {
+        if (SceneWindowHovered) return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera);
+        return null;
+    }
+
+    public UISceneRenderer() : this(new Vector2(100f,100f)) {}
+
+    public void ShowSceneWindow()
+    {
+        ImGui.Begin("Scene Window");
+           
+        SceneWindowHovered = ImGui.IsWindowHovered();
+        
+        TextureStartPosition = ImGui.GetCursorScreenPos();
+        
+        ProcessTextureSizeChanges(ImGui.GetContentRegionAvail());
+        
+        rlImGui.ImageRenderTexture(GetSceneTexture(ImGui.GetContentRegionAvail()));
+        
+        
+        ImGui.End();
+    }
+}

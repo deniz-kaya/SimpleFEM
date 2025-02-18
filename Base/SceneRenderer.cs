@@ -1,0 +1,58 @@
+﻿using System.ComponentModel.Design;
+using System.Numerics;
+using Raylib_cs;
+
+namespace SimpleFEM;
+
+public class SceneRenderer
+{
+    private Queue<ISceneObject> SceneObjects;
+    protected Vector2 currentTextureSize;
+    protected Camera2D camera;
+    private RenderTexture2D texture;
+    readonly static Vector2 DefaultTextureSize = new Vector2(100f, 100f);
+    public SceneRenderer(Vector2 textureSize)
+    {
+        currentTextureSize = textureSize;
+        texture = RaylibExtensions.LoadRenderTextureV(currentTextureSize);
+        camera = new Camera2D(currentTextureSize / 2, Vector2.Zero, 0f, 1f);
+        SceneObjects = new Queue<ISceneObject>();
+    }
+
+    public void PushObject(ISceneObject sceneObject)
+    {
+        SceneObjects.Enqueue(sceneObject);
+    }
+
+    public void ClearQueue()
+    {
+        SceneObjects.Clear();
+    }
+    protected void ProcessTextureSizeChanges(Vector2 newSize)
+    {
+        if (currentTextureSize != newSize)
+        {
+            Raylib.UnloadRenderTexture(texture);
+            texture = RaylibExtensions.LoadRenderTextureV(newSize);
+            camera.Offset = Vector2.Divide(newSize, 2);
+            currentTextureSize = newSize;
+        }
+    }
+    public RenderTexture2D GetSceneTexture(Vector2 textureSize)
+    {
+        if (SceneObjects.Count == 0) throw new InvalidOperationException("Render queue is empty");
+        ProcessTextureSizeChanges(textureSize);
+        Raylib.BeginTextureMode(texture);
+        Raylib.BeginMode2D(camera);
+        while (SceneObjects.Count > 0)
+        {
+            SceneObjects.Dequeue().Render();
+        }
+        Raylib.EndMode2D();
+        Raylib.EndTextureMode();
+        
+        //clear queue just in case
+        ClearQueue();
+        return texture;
+    }
+}
