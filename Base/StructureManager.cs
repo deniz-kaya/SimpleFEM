@@ -1,11 +1,9 @@
-﻿using System.Collections.Immutable;
-using System.ComponentModel;
-using System.Diagnostics.Tracing;
-using System.Numerics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using SimpleFEM.Extensions;
+using SimpleFEM.Types.StructureTypes;
+using SimpleFEM.Interfaces;
 
-namespace SimpleFEM;
+namespace SimpleFEM.Base;
 
 public class StructureManager
 {
@@ -70,7 +68,7 @@ public class StructureManager
     }
     public int CheckForElementsCloseToPos(Vector2 point, float threshold)
     {
-        foreach (int i in Structure.GetElementIndexes())
+        foreach (int i in Structure.GetElementIndexesSorted())
         {
             Element e = Structure.GetElement(i);
             Vector2 node1Pos = Structure.GetNode(e.Node1ID).Pos;
@@ -97,7 +95,7 @@ public class StructureManager
     }
     private int CheckForNodesCloseToPos(Vector2 point, float threshold)
     {
-        foreach (int i in Structure.GetNodeIndexes())
+        foreach (int i in Structure.GetNodeIndexesSorted())
         {
             if (Vector2.Distance(point, Structure.GetNode(i).Pos) <= threshold)
             {
@@ -140,7 +138,7 @@ public class StructureManager
     protected List<int> GetNodesWithinArea(Vector2 pos1, Vector2 pos2)
     {
         List<int> nodes = new List<int>();
-        foreach (int i in Structure.GetNodeIndexes())
+        foreach (int i in Structure.GetNodeIndexesSorted())
         {
             Vector2 nodePos = Structure.GetNode(i).Pos;
             if (nodePos.LiesWithinRect(pos1, pos2))
@@ -156,7 +154,7 @@ public class StructureManager
     {
         List<int> elements = new List<int>();
         List<int> nodesWithinArea = GetNodesWithinArea(pos1, pos2);
-        foreach (int i in Structure.GetElementIndexes())
+        foreach (int i in Structure.GetElementIndexesSorted())
         {
             Element e = Structure.GetElement(i);
             if (nodesWithinArea.Contains(e.Node1ID) && nodesWithinArea.Contains(e.Node2ID))

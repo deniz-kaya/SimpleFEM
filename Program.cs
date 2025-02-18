@@ -1,8 +1,8 @@
-﻿using System.Collections;
-using System.Numerics;
+﻿using System.Numerics;
 using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
+using SimpleFEM.Types.StructureTypes;
 
 namespace SimpleFEM;
 

@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
 
-namespace SimpleFEM;
+namespace SimpleFEM.Base;
+using SimpleFEM.Types.StructureTypes;
+using SimpleFEM.Interfaces;
+using SimpleFEM.Extensions;
 
 public class InMemoryStructure : IStructure
 {
@@ -175,12 +178,12 @@ public class InMemoryStructure : IStructure
         }
     }
 
-    public List<int> GetElementIndexes()
+    public List<int> GetElementIndexesSorted()
     {
         return Elements.GetIndexes();
     }
 
-    public List<int> GetNodeIndexes()
+    public List<int> GetNodeIndexesSorted()
     {
         return Nodes.GetIndexes();
     }

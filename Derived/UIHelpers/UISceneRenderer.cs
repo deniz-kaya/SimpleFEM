@@ -2,9 +2,9 @@
 using ImGuiNET;
 using Raylib_cs;
 using rlImGui_cs;
+using SimpleFEM.Base;
 
 namespace SimpleFEM.UIHelpers;
-
 public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
 {
     
@@ -30,7 +30,6 @@ public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
         ProcessTextureSizeChanges(ImGui.GetContentRegionAvail());
         
         rlImGui.ImageRenderTexture(GetSceneTexture(ImGui.GetContentRegionAvail()));
-        
         
         ImGui.End();
     }

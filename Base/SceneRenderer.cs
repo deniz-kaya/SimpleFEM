@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.Design;
 using System.Numerics;
 using Raylib_cs;
+using SimpleFEM.Interfaces;
+using SimpleFEM.Extensions;
 
-namespace SimpleFEM;
+namespace SimpleFEM.Base;
 
 public class SceneRenderer
 {

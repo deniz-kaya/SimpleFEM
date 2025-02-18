@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 
-namespace SimpleFEM;
-
+namespace SimpleFEM.Interfaces;
+using SimpleFEM.Types.StructureTypes;
 public interface IStructure
 {
     public string GetName();
@@ -17,7 +17,8 @@ public interface IStructure
     public void SetLoad(int nodeID, Load load);
     public void GetBoundaryCondition(int nodeID, out BoundaryCondition boundaryCondition);
     public void GetLoad(int nodeID, out Load load);
-    public List<int> GetNodeIndexes();
-    public List<int> GetElementIndexes();
+    
+    public List<int> GetNodeIndexesSorted();
+    public List<int> GetElementIndexesSorted();
 
 }

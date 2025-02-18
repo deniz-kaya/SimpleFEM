@@ -1,4 +1,4 @@
-﻿namespace SimpleFEM;
+﻿namespace SimpleFEM.Interfaces;
 
 public interface ISceneObject
 {
