@@ -6,7 +6,11 @@ using ImGuiNET;
 using rlImGui_cs;
 
 namespace SimpleFEM;
-
+//NOTE
+//This routine is horrible atm 
+//It handles both rendering the scene and interacting with the window
+//I want to separate these two, have a class called SceneToolboxHandler or something that inherits Scene
+// TODO abstract scene toolbox handling
 public class Scene
 {
     public Camera2D camera;
@@ -75,9 +79,10 @@ public class Scene
         
         SceneWindowHovered = ImGui.IsWindowHovered();
         
+        SceneWindowPosition = ImGui.GetCursorScreenPos();
+        
         if (FirstRender)
         {
-            SceneWindowPosition = ImGui.GetCursorScreenPos();
             SceneWindowSize = ImGui.GetContentRegionAvail();
             
             camera = new Camera2D(Vector2.Divide(SceneWindowSize,2), Vector2.Zero, 0f, 1f);
@@ -88,16 +93,14 @@ public class Scene
         }
         else
         {
-            SceneWindowPosition = ImGui.GetCursorScreenPos();
             ProcessWindowSizeChanges(ImGui.GetContentRegionAvail());
         }
+        
         RenderSceneToTexture();
         rlImGui.ImageRenderTexture(viewTexture);
 
         ProcessInputs();
         DefinePopups();
-        ImGui.PopStyleVar(10);
-
 
         ImGui.End();
     }
@@ -106,6 +109,7 @@ public class Scene
     {
         if (toolbox.selectedNodes.Count == 1)
         {
+            //ImGui.OpenPopup("ModifyBoundaryCondition");
             ImGui.OpenPopup("Select_Node_Popup");
         }
     }
@@ -299,8 +303,8 @@ public class Scene
         foreach (int i in structure.Elements.GetIndexes())
         {
             Element e = structure.Elements[i];
-            Vector2 pos1 = structure.Nodes[e.Node1Id].pos;
-            Vector2 pos2 = structure.Nodes[e.Node2Id].pos;
+            Vector2 pos1 = structure.Nodes[e.Node1ID].Pos;
+            Vector2 pos2 = structure.Nodes[e.Node2ID].Pos;
             Color c = Color.Green;
             if (toolbox.selectedElements.Contains(i))
             {
@@ -318,7 +322,7 @@ public class Scene
             {
                 c = Color.Orange;
             }
-            Raylib.DrawCircleV(structure.Nodes[i].pos, 3, c);
+            Raylib.DrawCircleV(structure.Nodes[i].Pos, 3, c);
         }
     }
     private void DrawGrid()
@@ -331,15 +335,15 @@ public class Scene
         Rlgl.PopMatrix();
     }
     private void ProcessWindowSizeChanges(Vector2 newWindowSize)
+    {
+        if (SceneWindowSize != newWindowSize)
         {
-            if (SceneWindowSize != newWindowSize)
-            {
-                Raylib.UnloadRenderTexture(viewTexture);
-                viewTexture = RaylibExtensions.LoadRenderTextureV(newWindowSize);
-                camera.Offset = Vector2.Divide(newWindowSize, 2);
-                SceneWindowSize = newWindowSize;
-            }
+            Raylib.UnloadRenderTexture(viewTexture);
+            viewTexture = RaylibExtensions.LoadRenderTextureV(newWindowSize);
+            camera.Offset = Vector2.Divide(newWindowSize, 2);
+            SceneWindowSize = newWindowSize;
         }
+    }
     
     //POPUPS
     private void DefinePopups()
@@ -381,7 +385,7 @@ public class Scene
             Console.WriteLine("Showed popup");
             if (ImGui.Selectable("Show Properties"))
             {
-                Console.WriteLine("Show Properties Reached");
+                ImGui.OpenPopup("ModifyBoundaryCondition");
             }
 
             ImGui.EndPopup();

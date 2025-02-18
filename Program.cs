@@ -39,6 +39,14 @@ class Program
             rlImGui.Begin();
             
             //DRAW EVERYTHING BELOW ME
+            ImGui.Begin("Test");
+            if (ImGui.BeginPopupModal("ModifyBoundaryCondition", ImGuiWindowFlags.AlwaysAutoResize))
+            {
+                ImGui.Text("Yippeeee!!");
+                
+            }
+            ImGui.End();
+            
             
             UI.ShowFooter();
             UI.ShowMainMenuBar();

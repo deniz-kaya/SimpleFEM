@@ -1,4 +1,1 @@
-﻿- create add node and add element tools
-- footer
-- toolbar
-- main menu bar
+﻿- toolbar

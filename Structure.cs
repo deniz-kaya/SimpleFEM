@@ -7,18 +7,14 @@ public class Structure
     {
         public RecyclingList<Node> Nodes;
         public RecyclingList<Element> Elements;
-        public RecyclingList<Load> Loads;
-        public RecyclingList<BoundaryCondition> BoundaryConditions;
 
         public string StructureName;
-        
+
         static public Material TestMaterial = new Material {E = 1.0f, Poisson = 1.0f, Density = 1.0f};
         public Structure(string name)
         {
             Nodes = new RecyclingList<Node>();
             Elements = new RecyclingList<Element>();
-            Loads = new RecyclingList<Load>();
-            BoundaryConditions = new RecyclingList<BoundaryCondition>();
 
             StructureName = name;
         }
@@ -31,7 +27,7 @@ public class Structure
         {
             foreach (int i in Nodes.GetIndexes())
             {
-                if (Nodes[i].pos == testPos)
+                if (Nodes[i].Pos == testPos)
                 {
                     return i;
                 }
@@ -41,8 +37,7 @@ public class Structure
 
         public bool AddNode(Node node)
         {
-            
-            if (CheckForNodeCollisions(node.pos) == -1)
+            if (CheckForNodeCollisions(node.Pos) == -1)
             {
                 Nodes.Add(node);
                 return true;
@@ -51,45 +46,19 @@ public class Structure
             return false;
         }
 
-        public bool RemoveNodeConnectedBoundaryConditions(int id)
-        {
-            foreach (int i in BoundaryConditions.GetIndexes())
-            {
-                if (BoundaryConditions[i].NodeID == id)
-                {
-                    BoundaryConditions.RemoveAt(i);
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-        public bool RemoveNodeConnectedLoads(int id)
-        {
-            foreach (int i in Loads.GetIndexes())
-            {
-                if (Loads[i].NodeID == id)
-                {
-                    Loads.RemoveAt(i);
-                    return true;
-                }
-            }
-            
-            return false;
-        }
         public bool RemoveNodeConnectedElements(int id)
         {
-            bool returnVal = false;
+            bool atLeastOneElementRemoved = false;
             foreach (int i in Elements.GetIndexes())
             {
-                if (Elements[i].Node1Id == id || Elements[i].Node2Id == id)
+                if (Elements[i].Node1ID == id || Elements[i].Node2ID == id)
                 {
-                    returnVal = true;
+                    atLeastOneElementRemoved = true;
                     Elements.RemoveAt(i);
                 }
             }
 
-            return returnVal;
+            return atLeastOneElementRemoved;
         }
 
         public void ModifyLoad(int nodeID, float forceX, float forceY, float moment)
@@ -149,11 +118,11 @@ public class Structure
         {
             foreach (int i in Elements.GetIndexes())
             {
-                if (Elements[i].Node1Id == element.Node1Id && Elements[i].Node2Id == element.Node2Id)
+                if (Elements[i].Node1ID == element.Node1ID && Elements[i].Node2ID == element.Node2ID)
                 {
                     return false;
                 }
-                if (Elements[i].Node1Id == element.Node2Id && Elements[i].Node2Id == element.Node1Id)
+                if (Elements[i].Node1ID == element.Node2ID && Elements[i].Node2ID == element.Node1ID)
                 {
                     return false;
                 }

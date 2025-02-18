@@ -293,9 +293,9 @@ public class UserInterface
                 ImGui.TableNextColumn();
                 ImGui.Text(i.ToString());
                 ImGui.TableNextColumn();
-                ImGui.Text(structure.Elements[i].Node1Id.ToString());
+                ImGui.Text(structure.Elements[i].Node1ID.ToString());
                 ImGui.TableNextColumn();
-                ImGui.Text(structure.Elements[i].Node2Id.ToString());
+                ImGui.Text(structure.Elements[i].Node2ID.ToString());
                 ImGui.TableNextColumn();
                 // TODO IMPLEMENT VIEWING MATERIAL
                 if (ImGui.Button("Remove"))
@@ -411,7 +411,7 @@ public class UserInterface
             
             foreach (int i in structure.Nodes.GetIndexes())
             {
-                Vector2 nodePos = structure.Nodes[i].pos;
+                Vector2 nodePos = structure.Nodes[i].Pos;
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.Text(i.ToString());

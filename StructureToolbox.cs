@@ -59,8 +59,8 @@ public class StructureToolbox
     {
         foreach (int i in structure.Elements.GetIndexes())
         {
-            Vector2 node1Pos = structure.Nodes[structure.Elements[i].Node1Id].pos;
-            Vector2 node2Pos = structure.Nodes[structure.Elements[i].Node2Id].pos;
+            Vector2 node1Pos = structure.Nodes[structure.Elements[i].Node1ID].Pos;
+            Vector2 node2Pos = structure.Nodes[structure.Elements[i].Node2ID].Pos;
             if (point.DistanceToLineSegment(node1Pos, node2Pos) < threshold)
             {
                 return i;
@@ -73,7 +73,7 @@ public class StructureToolbox
     {
         foreach (int i in structure.Nodes.GetIndexes())
         {
-            if (Vector2.Distance(point, structure.Nodes[i].pos) <= threshold)
+            if (Vector2.Distance(point, structure.Nodes[i].Pos) <= threshold)
             {
                 return i;
             }
@@ -88,11 +88,6 @@ public class StructureToolbox
         selectPos1 = Vector2.Zero;
         selectPos2 = Vector2.Zero;
     }
-
-    public void GetPositionInformation()
-    {
-        throw new NotImplementedException();
-    }
     public void SwitchState(Tool switchToTool = Tool.None)
     {
         CurrentTool = switchToTool;
@@ -102,13 +97,11 @@ public class StructureToolbox
         selectedElements.Clear();
         selectedNodes.Clear();
     }
-
     public void SetFirstSelectPos(Vector2 pos)
     {
         selectPos1 = pos;
         MultiInputStarted = true;
     }
-
     public void SetSecondSelectPos(Vector2 pos)
     {
         selectPos2 = pos;
@@ -133,6 +126,15 @@ public class StructureToolbox
         }
         structure.AddElement(node1, node2, new Material());
     }
+
+    public bool AddBoundaryConditions(BoundaryCondition boundaryCondition)
+    {
+        if (selectedNodes.Count == 0) return false;
+        foreach (int i in selectedNodes)
+        {
+            structure.BoundaryConditions.Add();
+        }
+    }
     public void DeleteSelectedNodes()
     {
         foreach (int i in selectedNodes)
@@ -140,7 +142,6 @@ public class StructureToolbox
             structure.RemoveNode(i);
         }
     }
-
     public void DeleteSelectedElements()
     {
         foreach (int i in selectedElements)
@@ -153,7 +154,7 @@ public class StructureToolbox
         List<int> nodes = new List<int>();
         foreach (int i in structure.Nodes.GetIndexes())
         {
-            Vector2 nodePos = structure.Nodes[i].pos;
+            Vector2 nodePos = structure.Nodes[i].Pos;
             if (nodePos.LiesWithinRect(selectPos1, selectPos2))
             {
                 nodes.Add(i);
@@ -162,7 +163,6 @@ public class StructureToolbox
 
         return nodes;
     }
-
     public void SelectElementsWithinArea()
     {
         selectedElements = GetElementsWithinArea();
@@ -171,24 +171,22 @@ public class StructureToolbox
     {
         selectedNodes = GetNodesWithinArea();
     }
-
     public List<Vector2> GetNodePositionListFromIndexes(List<int> indexes)
     {
         List<Vector2> positions = new List<Vector2>();
         foreach (int i in indexes)
         {
-            positions.Add(structure.Nodes[i].pos);
+            positions.Add(structure.Nodes[i].Pos);
         }
         return positions;
     }
-
     public List<int> GetElementsWithinArea()
     {
         List<int> elements = new List<int>();
         List<int> nodesWithinArea = GetNodesWithinArea();
         foreach (int i in structure.Elements.GetIndexes())
         {
-            if (nodesWithinArea.Contains(structure.Elements[i].Node1Id) && nodesWithinArea.Contains(structure.Elements[i].Node2Id))
+            if (nodesWithinArea.Contains(structure.Elements[i].Node1ID) && nodesWithinArea.Contains(structure.Elements[i].Node2ID))
             {
                 elements.Add(i);
             }

@@ -25,27 +25,36 @@ public enum Tool
 }
 public struct Node
 {
-    public Node(Vector2 position)
+    public Node(Vector2 position, BoundaryCondition boundary = default, Load load = default)
     {
-        this.pos = position;
+        this.Pos = position;
+        BoundaryCondition = boundary;
+        Load = load;
     }
-    public Vector2 pos;
-    public float GetDistance(Vector2 pos)
+    public Vector2 Pos;
+
+    public BoundaryCondition BoundaryCondition;
+    public Load Load;
+
+    public void SetBoundaryCondition(BoundaryCondition boundaryCondition)
     {
-        return Vector2.Distance(this.pos, pos);
+        BoundaryCondition = boundaryCondition;
+    }
+
+    public void SetLoad(Load load)
+    {
+        Load = load;
     }
 }
 
 public struct BoundaryCondition
 {
-    public BoundaryCondition(int nodeID, bool fixedY, bool fixedX, bool fixedMoment)
+    public BoundaryCondition(bool fixedY, bool fixedX, bool fixedMoment)
     {
-        this.NodeID = nodeID;
         this.FixedY = fixedY;
         this.FixedX = fixedX;
         this.FixedMoment = fixedMoment;
     }
-    public int NodeID;
     public bool FixedY;
     public bool FixedX;
     public bool FixedMoment;
@@ -53,43 +62,76 @@ public struct BoundaryCondition
 
 public struct Material
 {
+    public Material(double e, double poisson, double density)
+    {
+        E = e;
+        Poisson = poisson;
+        Density = density;
+    }
     public double E;
     public double Poisson;
     public double Density;
+
+    public static Material Dummy => new Material(1, 1, 1);
+    
 }
 
 public struct Section
 {
+    public Section(double i, double a)
+    {
+        I = i;
+        A = a;
+    }
     public double I;
     public double A;
+    
+    public static Section Dummy => new Section(1, 1);
+
 }
 
-public class Element
+public struct Element
 {
-    public int Node1Id;
-    public int Node2Id;
-    public Material ElementMaterial;
+    public int Node1ID;
+    public int Node2ID;
+    public Material Material;
+    public Section Section;
 
-    public Element(int node1Id, int node2Id, Material elementMaterial)
+    public Element(int node1Id, int node2Id, Material elementMaterial = default, Section elelentSection = default)
     {
-        Node1Id = node1Id;
-        Node2Id = node2Id;
-        ElementMaterial = elementMaterial;
+        Node1ID = node1Id;
+        Node2ID = node2Id;
+        Material = elementMaterial;
+        Section = elelentSection;
     }
 }
 
-public class Load
+public struct Load
 {
-    public Load(int nodeID, double forceX, double forceY, double moment)
+    public Load(double forceX, double forceY, double moment)
     {
-        this.NodeID = nodeID;
         this.ForceX = forceX;
         this.ForceY = forceY;
         this.Moment = moment;
     }
-    public int NodeID;
     public double ForceX;
     public double ForceY;
     public double Moment;
+}
+
+public abstract class BaseStructure(string name)
+{
+    public string StructureName = name;
+    public abstract bool AddElement(Element element);
+    public abstract bool AddElement(Element element, out int index);
+    public abstract bool AddNode(Vector2 pos);
+    public abstract bool AddNode(Vector2 pos, out int index);
+    public abstract void RemoveElement(int elementID);
+    public abstract void RemoveNode(int nodeID);
+    public abstract void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition);
+    public abstract void SetLoad(int nodeID, Load load);
+    public abstract void GetBoundaryCondition(int nodeID, out BoundaryCondition boundaryCondition);
+    public abstract void GetLoad(int nodeID, out Load load);
+    
 }
 
