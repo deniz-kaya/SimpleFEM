@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.ComponentModel;
+using System.Diagnostics.Tracing;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -10,7 +11,6 @@ public class StructureManager
 {
     public struct Settings
     {
-        
         public float IdleSelectionFeather;
 
         public Settings(float idleSelectionFeather)
@@ -32,7 +32,14 @@ public class StructureManager
     protected Vector2 SelectionPos2;
     protected IStructure Structure;
     protected Settings settings;
+    
+    public StructureManager(IStructure structure, Settings? settings = null)
+    {
+        this.settings = settings ?? Settings.Default;
+        Structure = structure;
 
+        MultiInputStarted = false;
+    }
     protected bool IdleSelection(Vector2 pos)
     {
         bool successfulSelection = false;
@@ -44,14 +51,6 @@ public class StructureManager
         }
         return true;
     }
-    public StructureManager(IStructure structure, Settings? settings = null)
-    {
-        this.settings = settings ?? Settings.Default;
-        Structure = structure;
-
-        MultiInputStarted = false;
-    }
-
     public void ResetSelection()
     {
         SelectedElements.Clear();
