@@ -17,15 +17,10 @@
 
     <ItemGroup>
       <Compile Remove="Old\Structure.cs" />
-      <None Include="Old\Structure.cs" />
       <Compile Remove="Old\StructureToolbox.cs" />
-      <None Include="Old\StructureToolbox.cs" />
       <Compile Remove="Old\Scene.cs" />
-      <None Include="Old\Scene.cs" />
       <Compile Remove="Old\UserInterface.cs" />
-      <None Include="Old\UserInterface.cs" />
       <Compile Remove="Old\Extensions.cs" />
-      <None Include="Old\Extensions.cs" />
     </ItemGroup>
 
 </Project>

@@ -43,11 +43,11 @@ class Program
             rlImGui.Begin();
             
             //DRAW EVERYTHING BELOW ME
-            //ImGui.DockSpaceOverViewport();
             ui.DrawMainDockSpace();
             
             ui.DrawMainMenuBar();
             ui.DrawFooter();
+            
             ui.DefineAllPopups();
 
             ui.DrawSceneWindow();

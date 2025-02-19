@@ -135,7 +135,6 @@ public class UserInterface
             
             if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
             {
-                Console.WriteLine("Mouse key pressed");
                 structureEditor.HandleMouseKeyPressedEvent();
             }
 
@@ -180,7 +179,7 @@ public class UserInterface
         }
     }
     //Popups
-    
+    // TODO rename properties to be better
     // Popup Properties
     //---------
     //Load Editor
