@@ -18,19 +18,6 @@ public class UserInterface
         sceneRenderer = new UISceneRenderer();
         this.settings = settings;
     }
-
-    // TODO REMOVE
-    private Vector2 pos = Vector2.Zero;
-    public void TestThing()
-    {
-        ImGui.Begin("AddNode");
-        ImGui.SliderFloat2("x", ref pos, -500f, 500f);
-        if (ImGui.Button("AddNode"))
-        {
-            structureEditor.AddeNode(pos);
-        }
-        ImGui.End();
-    }
     public void HandleToolSwitchInputs()
     {
         if (ImGui.IsKeyPressed(settings.MoveToolKey))
@@ -62,23 +49,27 @@ public class UserInterface
         {
             
             Vector2 scenePos = sceneRenderer.GetScenePos(ImGui.GetMousePos());
-            structureEditor.IdleSelection(scenePos);
+            structureEditor.SetLivePos(scenePos);
+            structureEditor.IdleSelection();
             if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
             {
-                structureEditor.HandleMouseKeyDownEvent(scenePos);
+                structureEditor.HandleMouseKeyDownEvent();
             }
             else if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
             {
-                structureEditor.HandleMouseKeyUpEvent(scenePos);
+                structureEditor.HandleMouseKeyUpEvent();
             }
-            else if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
+            
+            if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
             {
-                structureEditor.HandleMouseKeyPressedEvent(scenePos);
+                Console.WriteLine("Mouse key pressed");
+                structureEditor.HandleMouseKeyPressedEvent();
             }
 
             if (ImGui.IsKeyPressed(ImGuiKey.Delete))
             {
                 structureEditor.DeleteSelectedElements();
+                structureEditor.DeleteSelectedNodes();
             }
         }
     }

@@ -22,5 +22,7 @@ public interface IStructure
     public List<int> GetNodeIndexesSorted();
     public List<int> GetElementIndexesSorted();
     public StructureSettings GetStructureSettings();
+    public int GetNodeCount();
+    public int GetElementCount();
 
 }

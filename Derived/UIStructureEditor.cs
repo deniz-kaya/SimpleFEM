@@ -27,58 +27,71 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     /// </summary>
     /// <param name="position">the position to select around</param>
     /// <returns>True if selection was successful, false if otherwise.</returns>
-    public bool IdleSelection(Vector2 position)
+    public bool IdleSelection()
     {
         if (!DoIdleSelection) return false;
         if (MultiInputStarted) return false;
         if (SelectedNodes.Count + SelectedElements.Count > 1) return false;
-        if (!SelectNearbyNode(position, Settings.IdleSelectionFeather))
+        if (!SelectNearbyNode(LivePos, Settings.IdleSelectionFeather))
         {
-            return SelectNearbyElement(position, Settings.IdleSelectionFeather);
+            return SelectNearbyElement(LivePos, Settings.IdleSelectionFeather);
         }
         return true;
     }
 
-    public void HandleMouseKeyDownEvent(Vector2 position)
+    public void SetLivePos(Vector2 position)
+    {
+        LivePos = position;
+    }
+    public void HandleMouseKeyDownEvent()
     {
         switch (CurrentTool)
         {
             case Tool.SelectElements:
                 
-                HandleMultiInput(position);
+                HandleMultiInput();
                 SelectElementsWithinArea();
                 break;
             case Tool.SelectNodes:
-                HandleMultiInput(position);
+                HandleMultiInput();
                 SelectNodesWithinArea();
                 break;
             case Tool.AddElement:
-                HandleMultiInput(position);
+                HandleMultiInput();
                 break;
         }
     }
 
-    public void HandleMouseKeyPressedEvent(Vector2 position)
+    public void HandleMouseKeyPressedEvent()
     {
         switch (CurrentTool)
         {
             case Tool.AddNode:
-                
-                Structure.AddNode(position.RoundToNearest(Structure.GetStructureSettings().gridSpacing));
+                Vector2 pos = LivePos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
+                Console.WriteLine(Structure.AddNode(pos));
                 break;
         }
     }  
-    // TODO REMOVE
-    public void AddeNode(Vector2 pos)
-    {
-        Structure.AddNode(pos);
-    }
-    
     public void SwitchTool(Tool newTool)
     {
+        switch (newTool)
+        {
+            case Tool.AddNode:
+                ResetSelection();
+                DoIdleSelection = false;
+                break;
+            case Tool.AddElement:
+                ResetSelection();
+                DoIdleSelection = false;
+                break;
+            case Tool.Move:
+                DoIdleSelection = true;
+                break;
+        }
+
         CurrentTool = newTool;
     }
-    public void HandleMouseKeyUpEvent(Vector2 position)
+    public void HandleMouseKeyUpEvent()
     {
         switch (CurrentTool)
         {
@@ -112,8 +125,8 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     }
     private void AddElementBetweenPositions()
     {
-        Vector2 position1 = SelectionPos1.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
-        Vector2 position2 = SelectionPos2.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
+        Vector2 position1 = MultiSelectLockedPos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
+        Vector2 position2 = LivePos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
         if (position1 == position2) return;
         // useless implementation
         // int position1index = -1;
@@ -164,20 +177,19 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     private void FinaliseMultiInput()
     {
         MultiInputStarted = false;
-        if (EmptySelection)
+        if (EmptySelection && CurrentTool != Tool.AddElement)
         {
             DoIdleSelection = true;
         }
     }
-    private void HandleMultiInput(Vector2 position)
+    private void HandleMultiInput()
     {
         if (!MultiInputStarted)
         {
-            SelectionPos1 = position;
+            MultiSelectLockedPos = LivePos;
             DoIdleSelection = false;
             MultiInputStarted = true;
         }
-        SelectionPos2 = position;
     }
     
     
@@ -198,10 +210,30 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         //Nodes
         QueueNodeSceneObjects(ref renderQueue, drawSettings);
         
-        //Selection box
-        if (MultiInputStarted)
+        //Tool based
+        switch (CurrentTool)
         {
-            renderQueue.Enqueue(new SelectionBoxObject(SelectionPos1, SelectionPos2, drawSettings.selectionBoxColor));
+            case Tool.AddNode:
+                renderQueue.Enqueue(new SphereObject(LivePos, drawSettings.selectedNodeColor, drawSettings.nodeRadius));
+                break;
+            case Tool.AddElement:
+                if (!MultiInputStarted) break;
+                float gridSpacing = Structure.GetStructureSettings().gridSpacing;
+                renderQueue.Enqueue(new LineObject(
+                    MultiSelectLockedPos.RoundToNearest(gridSpacing), 
+                    LivePos.RoundToNearest(gridSpacing), 
+                    drawSettings.selectedElementColor,
+                    drawSettings.elementThickness
+                    ));
+                break;
+            case Tool.SelectElements:
+            case Tool.SelectNodes:
+                if (MultiInputStarted)
+                {
+                    renderQueue.Enqueue(new SelectionBoxObject(MultiSelectLockedPos, LivePos, drawSettings.selectionBoxColor));
+                }
+
+                break;
         }
 
         return renderQueue;
@@ -241,7 +273,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         foreach (int i in Structure.GetNodeIndexesSorted())
         {
             Vector2 position = Structure.GetNode(i).Pos;
-            if (SelectedNodes.Count > selectedNodesListIndexTracker && i == selectedNodesListIndexTracker)
+            if (SelectedNodes.Count > selectedNodesListIndexTracker && i == SelectedNodes.ElementAt(selectedNodesListIndexTracker))
             {
                 selectedNodesListIndexTracker++;
                 selectedNodesObject.AddSphere(position);

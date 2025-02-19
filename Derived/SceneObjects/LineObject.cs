@@ -20,7 +20,7 @@ public struct LineObject : ISceneObject
 
     public void Render()
     {
-        Raylib.DrawLineEx(position1, position1, thickness, color);
+        Raylib.DrawLineEx(position1, position2, thickness, color);
     }
     
 }

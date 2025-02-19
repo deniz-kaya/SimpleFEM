@@ -13,8 +13,8 @@ public class StructureEditor
     public bool DoIdleSelection { get; protected set; }
     protected bool MultiInputCompleted;
     public bool EmptySelection => SelectedElements.Count == 0 && SelectedNodes.Count == 0;
-    protected Vector2 SelectionPos1;
-    protected Vector2 SelectionPos2;
+    protected Vector2 MultiSelectLockedPos;
+    protected Vector2 LivePos;
     protected IStructure Structure;
     
     public StructureEditor(IStructure structure)
@@ -130,12 +130,12 @@ public class StructureEditor
     protected void SelectElementsWithinArea()
     {
         SelectedElements.Clear();
-        SelectedElements = GetElementsWithinArea(SelectionPos1, SelectionPos2);
+        SelectedElements = GetElementsWithinArea(MultiSelectLockedPos, LivePos);
     }
     protected void SelectNodesWithinArea()
     {
         SelectedNodes.Clear();
-        SelectedNodes = GetNodesWithinArea(SelectionPos1, SelectionPos2);
+        SelectedNodes = GetNodesWithinArea(MultiSelectLockedPos, LivePos);
     }
     protected List<int> GetNodesWithinArea(Vector2 pos1, Vector2 pos2)
     {

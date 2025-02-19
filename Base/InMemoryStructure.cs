@@ -15,7 +15,7 @@ public class InMemoryStructure : IStructure
     // TODO maybe replace null checks with setting to default from the structure creation screen
     public InMemoryStructure(string name, StructureSettings? settings) 
     {
-        
+        this.settings = settings ?? StructureSettings.Default;
         StructureName = name;
         Nodes = new RecyclingList<Node>();
         Elements = new RecyclingList<Element>();
@@ -219,5 +219,15 @@ public class InMemoryStructure : IStructure
     public List<int> GetNodeIndexesSorted()
     {
         return Nodes.GetIndexes();
+    }
+
+    public int GetNodeCount()
+    {
+        return Nodes.Count;
+    }
+
+    public int GetElementCount()
+    {
+        return Elements.Count;
     }
 }
