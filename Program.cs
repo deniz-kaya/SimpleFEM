@@ -44,17 +44,14 @@ class Program
             
             //DRAW EVERYTHING BELOW ME
             //ImGui.DockSpaceOverViewport();
-            ui.DrawMainDockspace();
+            ui.DrawMainDockSpace();
             
             ui.DrawMainMenuBar();
             ui.DrawFooter();
+            ui.DefineAllPopups();
+
             ui.DrawSceneWindow();
             
-            ImGui.Begin("Test");
-            ImGui.Text("It compiled!");
-            ImGui.End();
-           
-            //hello
             ui.HandleInputs();
             
             //DRAW EVERYTHING ABOVE ME

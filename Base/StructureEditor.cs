@@ -9,6 +9,8 @@ public class StructureEditor
 {
     protected List<int> SelectedElements { get; private set; }
     protected List<int> SelectedNodes { get; private set; }
+    public int SelectedNodeCount => SelectedNodes.Count;
+    public int SelectedElementCount => SelectedElements.Count;
     protected bool MultiInputStarted;
     public bool DoIdleSelection { get; protected set; }
     protected bool MultiInputCompleted;
@@ -108,7 +110,7 @@ public class StructureEditor
         return -1;
     }
 
-    protected void DeleteSelectedNodes()
+    public void DeleteSelectedNodes()
     {
         foreach (int i in SelectedNodes)
         {
@@ -118,7 +120,7 @@ public class StructureEditor
         SelectedNodes.Clear();
     }
 
-    protected void DeleteSelectedElements()
+    public void DeleteSelectedElements()
     {
         foreach (int i in SelectedElements)
         {
@@ -127,6 +129,20 @@ public class StructureEditor
         SelectedElements.Clear();
     }
 
+    public void AddBoundaryConditionToSelectedNodes(BoundaryCondition boundaryCondition)
+    {
+        foreach (int i in SelectedNodes)
+        {
+            Structure.SetBoundaryCondition(i, boundaryCondition);
+        }
+    }
+    public void AddLoadToSelectedNodes(Load load)
+    {
+        foreach (int i in SelectedNodes)
+        {
+            Structure.SetLoad(i, load);
+        }
+    }
     protected void SelectElementsWithinArea()
     {
         SelectedElements.Clear();

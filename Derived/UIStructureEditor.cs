@@ -15,6 +15,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
 {
     public Tool CurrentTool { get; private set; }
     private StructureEditorSettings Settings;
+    
     public UIStructureEditor(IStructure structure, StructureEditorSettings? settings) : base(structure)
     {   
         Settings = settings ?? StructureEditorSettings.Default;
@@ -107,22 +108,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
                 break;
         }
     }
-
-    public void DeleteSelectedElements()
-    {
-        foreach (int i in SelectedElements)
-        {
-            Structure.RemoveElement(i);
-        }
-    }
-
-    public void DeleteSelectedNodes()
-    {
-        foreach (int i in SelectedNodes)
-        {
-            Structure.RemoveNode(i);
-        }
-    }
+    
     private void AddElementBetweenPositions()
     {
         Vector2 position1 = MultiSelectLockedPos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
