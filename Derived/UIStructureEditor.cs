@@ -7,6 +7,7 @@ using SimpleFEM.SceneObjects;
 using SimpleFEM.Types;
 using SimpleFEM.Types.StructureTypes;
 using SimpleFEM.Extensions;
+
 namespace SimpleFEM.Derived;
 
 // TODO not necessarily here but overall, manage protected, private and public fields to make sense

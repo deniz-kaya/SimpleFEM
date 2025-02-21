@@ -2,15 +2,15 @@
 
 public struct Material
 {
-    public Material(double e, double poisson, double density)
+    public Material(float e, float poisson, float density)
     {
         E = e;
         Poisson = poisson;
         Density = density;
     }
-    public double E;
-    public double Poisson;
-    public double Density;
+    public float E;
+    public float Poisson;
+    public float Density;
 
     public static Material Dummy => new Material(1, 1, 1);
     

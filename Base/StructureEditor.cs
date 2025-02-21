@@ -13,7 +13,6 @@ public class StructureEditor
     public int SelectedElementCount => SelectedElements.Count;
     protected bool MultiInputStarted;
     public bool DoIdleSelection { get; protected set; }
-    protected bool MultiInputCompleted;
     public bool EmptySelection => SelectedElements.Count == 0 && SelectedNodes.Count == 0;
     protected Vector2 MultiSelectLockedPos;
     protected Vector2 LivePos;

@@ -2,13 +2,13 @@
 
 public struct Section
 {
-    public Section(double i, double a)
+    public Section(float i, float a)
     {
         I = i;
         A = a;
     }
-    public double I;
-    public double A;
+    public float I;
+    public float A;
     
     public static Section Dummy => new Section(1, 1);
 

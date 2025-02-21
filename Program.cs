@@ -4,6 +4,7 @@ using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
 using SimpleFEM.Base;
+using SimpleFEM.Extensions;
 using SimpleFEM.Interfaces;
 using SimpleFEM.Types;
 using SimpleFEM.Types.StructureTypes;
@@ -14,6 +15,29 @@ namespace SimpleFEM;
 class Program
 {
     static void Main(string[] args)
+    {
+        Matrix6x6 m = new Matrix6x6();
+        m[0,0] = 1.0f;
+        m[1, 1] = 1f;
+        m[2, 2] = 1f;
+        m[3, 3] = 1f;
+        m[4, 4] = 1f;
+        m[5, 5] = 1f;
+        Matrix6x6.DebugPrint(8 * Matrix6x6.Identity);
+        Matrix6x6 test = new Matrix6x6();
+        for (int row = 0; row < 6; row++)
+        {
+            for (int col = 0; col < 6; col++)
+            {
+                test[row, col] = new Random().NextSingle();
+            }
+        }
+        Matrix6x6.DebugPrint(test);
+        
+        Matrix6x6.DebugPrint(test * m);
+        
+    }
+    static void aMain(string[] args)
     {
         
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
