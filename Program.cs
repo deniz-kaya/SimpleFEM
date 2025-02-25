@@ -14,7 +14,7 @@ namespace SimpleFEM;
 
 class Program
 {
-    static void Main(string[] args)
+    static void aMain(string[] args)
     {
         Matrix6x6 m = new Matrix6x6();
         m[0,0] = 1.0f;
@@ -37,7 +37,7 @@ class Program
         Matrix6x6.DebugPrint(test * m);
         
     }
-    static void aMain(string[] args)
+    static void Main(string[] args)
     {
         
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);

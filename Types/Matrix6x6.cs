@@ -28,6 +28,19 @@ public struct Matrix6x6
         return final;
     }
 
+    public static Matrix6x6 Transpose(Matrix6x6 m)
+    {
+        Matrix6x6 t = new Matrix6x6();
+        for (int row = 0; row < 6; row++)
+        {
+            for (int col = 0; col < 6; col++)
+            {
+                t[row,col] = m[col, row];
+            }
+        }
+
+        return t;
+    }
     public static Matrix6x6 operator *(float constant, Matrix6x6 matrix)
     {
         Matrix6x6 final = new Matrix6x6();

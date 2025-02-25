@@ -13,7 +13,7 @@ public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
     
     public Vector2 GetScenePos(Vector2 screenPos)
     {
-        return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera);
+        return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera) * new Vector2(1f,-1f);
     }
 
     public UISceneRenderer() : this(new Vector2(100f,100f)) {}

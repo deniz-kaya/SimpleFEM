@@ -49,12 +49,19 @@ public class SceneRenderer
     {
         if (SceneObjects.Count == 0) throw new InvalidOperationException("Render queue is empty");
         ProcessTextureSizeChanges(textureSize);
+        
         Raylib.BeginTextureMode(texture);
         Raylib.BeginMode2D(camera);
+        Rlgl.PushMatrix();
+        //scale and backface culling thing is required to convert coordinate system into traditional cartesian coordinates
+        //not explicity necessary for program function, but it is good to have it this way as people are more used to it
+        Rlgl.Scalef(1f,-1f,1f);
+        Rlgl.DisableBackfaceCulling();
         while (SceneObjects.Count > 0)
         {
             SceneObjects.Dequeue().Render();
         }
+        Rlgl.PopMatrix();
         Raylib.EndMode2D();
         Raylib.EndTextureMode();
         

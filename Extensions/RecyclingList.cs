@@ -10,7 +10,7 @@ public class RecyclingList<T> : IEnumerable<T>
         private bool[] occupied;
 
         private int elementCount;
-
+        
         public int LastAddedIndex { get; private set; }
 
         public bool Exists(T item, out int index)
