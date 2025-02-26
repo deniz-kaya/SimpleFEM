@@ -9,7 +9,9 @@ public struct Section
     }
     public float I;
     public float A;
+    //533 x 312 x 273
     
+    public static Section UB => new Section(72500f, 348f);
     public static Section Dummy => new Section(1, 1);
 
 }

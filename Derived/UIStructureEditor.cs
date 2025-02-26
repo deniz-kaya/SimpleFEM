@@ -4,9 +4,9 @@ using Raylib_cs;
 using SimpleFEM.Base;
 using SimpleFEM.Interfaces;
 using SimpleFEM.SceneObjects;
-using SimpleFEM.Types;
 using SimpleFEM.Types.StructureTypes;
 using SimpleFEM.Extensions;
+using SimpleFEM.Types.Settings;
 
 namespace SimpleFEM.Derived;
 

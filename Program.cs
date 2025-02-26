@@ -6,9 +6,10 @@ using Raylib_cs;
 using SimpleFEM.Base;
 using SimpleFEM.Extensions;
 using SimpleFEM.Interfaces;
-using SimpleFEM.Types;
+using SimpleFEM.Types.LinAlg;
+using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
-using Material = Raylib_cs.Material;
+
 
 namespace SimpleFEM;
 
@@ -50,13 +51,29 @@ class Program
         IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
         
         //STRUCTURE SETUP
+        SimpleFEM.Types.StructureTypes.Material mat = SimpleFEM.Types.StructureTypes.Material.Steel;
+        SimpleFEM.Types.StructureTypes.Section sect = SimpleFEM.Types.StructureTypes.Section.UB;
+
         structure.AddNode(new Vector2(0f,0f));
         structure.AddNode(new Vector2(0f,50f));
         structure.AddNode(new Vector2(100f,0f));
-        structure.AddElement(new Element(0, 1));
-        structure.AddElement(new Element(0, 2));
-        structure.AddElement(new Element(1, 2));
+        structure.AddElement(new Element(0, 1, mat, sect));
+        structure.AddElement(new Element(0, 2, mat, sect));
+        structure.AddElement(new Element(1, 2, mat, sect));
         //
+        StructureSolver solver = new StructureSolver(structure);
+        Matrix
+            m = solver.GetGlobalStiffnessMatrix();
+        for (int rows = 0; rows < m.Rows; rows++)
+        {
+            for (int cols = 0; cols < m.Columns; cols++)
+            {
+                Console.Write(m[rows, cols]);
+                Console.Write(" ");
+            }
+
+            Console.WriteLine();
+        }
         UserInterface ui = new UserInterface(structure, UserSettings.Default);
 
         Vector2 pos = Vector2.Zero;
@@ -71,13 +88,13 @@ class Program
             
             ui.DrawMainMenuBar();
             ui.DrawFooter();
-            
+            ui.DrawSolveSystemWindow();
+
             ui.DefineAllPopups();
 
             ui.DrawSceneWindow();
-            
+
             ui.HandleInputs();
-            
             //DRAW EVERYTHING ABOVE ME
             
             rlImGui.End();

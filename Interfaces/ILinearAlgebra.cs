@@ -2,7 +2,7 @@
 
 public interface ILinearAlgebra
 {
-    public int GetRows();
-    public int GetColumns();
-    public float this[int row, int column] { get; set; }
+    public int Rows { get; }
+    public int Columns { get; }
+    public ref float this[int row, int column] { get; }
 }

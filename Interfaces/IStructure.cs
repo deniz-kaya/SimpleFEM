@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using SimpleFEM.Types;
+using SimpleFEM.Types.Settings;
 
 namespace SimpleFEM.Interfaces;
 using SimpleFEM.Types.StructureTypes;

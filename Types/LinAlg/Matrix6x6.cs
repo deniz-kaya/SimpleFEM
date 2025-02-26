@@ -1,9 +1,13 @@
-﻿namespace SimpleFEM.Types;
+﻿using SimpleFEM.Interfaces;
 
-public struct Matrix6x6
+namespace SimpleFEM.Types.LinAlg;
+
+public struct Matrix6x6 : ILinearAlgebra
 {
     private float[] mat;
-
+    
+    public int Rows => 6;
+    public int Columns => 6;
     public Matrix6x6()
     {
         mat = new float[36];

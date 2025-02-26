@@ -1,6 +1,6 @@
 ﻿using ImGuiNET;
 
-namespace SimpleFEM.Types;
+namespace SimpleFEM.Types.Settings;
 
 public struct UserSettings
 {

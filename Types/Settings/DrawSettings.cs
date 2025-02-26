@@ -1,6 +1,6 @@
 ﻿using Raylib_cs;
 
-namespace SimpleFEM;
+namespace SimpleFEM.Types.Settings;
 
 public struct DrawSettings
 {

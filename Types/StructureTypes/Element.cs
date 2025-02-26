@@ -7,11 +7,11 @@ public struct Element
     public Material Material;
     public Section Section;
 
-    public Element(int node1Id, int node2Id, Material elementMaterial = default, Section elelentSection = default)
+    public Element(int node1Id, int node2Id, Material elementMaterial = default, Section elementSection = default)
     {
         Node1ID = node1Id;
         Node2ID = node2Id;
         Material = elementMaterial;
-        Section = elelentSection;
+        Section = elementSection;
     }
 }

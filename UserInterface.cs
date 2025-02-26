@@ -4,6 +4,7 @@ using ImGuiNET;
 using SimpleFEM.Derived;
 using SimpleFEM.Interfaces;
 using SimpleFEM.Types;
+using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
 
 namespace SimpleFEM;
@@ -12,6 +13,7 @@ public class UserInterface
 {
     private UIStructureEditor structureEditor;
     private UISceneRenderer sceneRenderer;
+    private UIStructureSolver structureSolver;
     private UserSettings settings;
     
     public UserInterface(IStructure structure, UserSettings settings)
@@ -94,6 +96,28 @@ public class UserInterface
         ImGui.End();
         ImGui.PopStyleVar(2);
 
+    }
+
+    public void Test()
+    {
+        ImGui.Text("This is a test window!");
+        if (ImGui.Button("Test button"))
+        {
+            Console.WriteLine("pressed button!");
+        }
+    }
+    public void DrawSolveSystemWindow()
+    {
+        // TODO rename
+        ImGui.Begin("Solve system window");
+        
+        if (ImGui.Button("Solve current system"))
+        {
+           Console.WriteLine("Solving system");
+           Test();
+        }
+        
+        ImGui.End();
     }
     public void DrawMainMenuBar()
     {

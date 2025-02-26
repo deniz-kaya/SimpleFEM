@@ -2,7 +2,7 @@
 
 namespace SimpleFEM.Extensions;
 
-public class Matrix : ILinearAlgebra
+public struct Matrix : ILinearAlgebra
 {
     private int rows;
     private int columns;
@@ -14,11 +14,9 @@ public class Matrix : ILinearAlgebra
         data = new float[rows * columns];
     }
 
-    public int GetRows() => rows;
-    public int GetColumns() => columns;
-    public float this[int row, int col] 
-    {
-        get => data[row * columns + col];
-        set => data[row * columns + col] = value;
+    public int Rows => rows;
+    public int Columns => columns;
+    public ref float this[int row, int col] {
+        get => ref data[row * columns + col];
     }
 }

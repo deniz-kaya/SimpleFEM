@@ -1,4 +1,6 @@
-﻿namespace SimpleFEM.Interfaces;
+﻿using SimpleFEM.Types.Settings;
+
+namespace SimpleFEM.Interfaces;
 
 public interface IUIStructureHelper
 {

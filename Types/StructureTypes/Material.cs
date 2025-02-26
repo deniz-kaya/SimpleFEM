@@ -12,6 +12,9 @@ public struct Material
     public float Poisson;
     public float Density;
 
+    //from eurocode
+    public static Material Steel => new Material(2.1e11f, 0.3f, 7850f);
+    
     public static Material Dummy => new Material(1, 1, 1);
     
 }
