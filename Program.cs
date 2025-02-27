@@ -9,6 +9,7 @@ using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
+using Vector = SimpleFEM.LinearAlgebra.Vector;
 
 
 namespace SimpleFEM;
@@ -17,27 +18,42 @@ class Program
 {
     static void Main(string[] args)
     {
-        Matrix m = new Matrix(4, 4);
+        Matrix m = new Matrix(5, 5);
         m[0, 0] = 1;
         m[0, 1] = 2;
         m[0, 2] = 3;
-        m[0, 3] = 4;
+        m[0, 3] = 9;
+        m[0, 4] = 4;
         m[1, 0] = 5;
         m[1, 1] = 6;
         m[1, 2] = 7;
         m[1, 3] = 8;
+        m[1, 4] = 1;
         m[2, 0] = 3;
         m[2, 1] = 2;
         m[2, 2] = 3;
         m[2, 3] = 2;
+        m[2, 4] = 8;
         m[3, 0] = 3;
         m[3, 1] = 1;
         m[3, 2] = 7;
         m[3, 3] = 8;
+        m[3, 4] = 2;
+        m[4, 0] = 4;
+        m[4, 1] = 1;
+        m[4, 2] = 5;
+        m[4, 3] = 6;
+        m[4, 4] = 7;
+
+        Vector v = new Vector(5);
+        v[0] = 3;
+        v[1] = 4;
+        v[2] = 5;
+        v[3] = 6;
+        v[4] = 195;
         
-        (Matrix L, Matrix U) k = LinearAlgebra.LinearAlgebra.LUDecompose(m);
-        k.L.DebugPrint();
-        k.U.DebugPrint();
+        Vector z = LinearAlgebra.LinearAlgebra.Solve(v, m);
+        z.DebugPrint();
     }
     static void aMain(string[] args)
     {
