@@ -14,6 +14,7 @@ public class StructureEditor
     protected bool MultiInputStarted;
     public bool DoIdleSelection { get; protected set; }
     public bool EmptySelection => SelectedElements.Count == 0 && SelectedNodes.Count == 0;
+
     protected Vector2 MultiSelectLockedPos;
     protected Vector2 LivePos;
     protected IStructure Structure;

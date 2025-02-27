@@ -2,7 +2,7 @@
 using Raylib_cs;
 using SimpleFEM.Extensions;
 using SimpleFEM.Interfaces;
-using SimpleFEM.Types.LinAlg;
+using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types.StructureTypes;
 
 namespace SimpleFEM.Base;
@@ -22,6 +22,17 @@ public class StructureSolver
         
     }
 
+    public bool StructureConnectedCheck()
+    {
+        Graph graph = new Graph();
+        foreach (int i in structure.GetElementIndexesSorted())
+        {
+            Element e = structure.GetElement(i);
+            graph.AddEdge(e.Node1ID, e.Node2ID);
+        }
+
+        return graph.IsConnected();
+    }
     public Matrix6x6 TransformLocalMatrixIntoGlobal(Matrix6x6 matrix, Element element)
     {
         float angle = GetElementAngle(element);
@@ -117,11 +128,8 @@ public class StructureSolver
     public Matrix6x6 GetLocalStiffnessMatrix(Element element)
     {
         float length = Vector2.Distance(structure.GetNode(element.Node1ID).Pos, structure.GetNode(element.Node2ID).Pos);
-        Console.WriteLine(length);
         float axS = (element.Material.E * element.Section.A) / length; //axial stiffness
-        Console.WriteLine(axS);
         float beS = (element.Material.E * element.Section.I) / length; // bending stiffness
-        Console.WriteLine(beS);
         float beSSq = 6f * (beS / length);  // bending stiffness squared
         float beSCb = 2f * (beSSq / length);  // bending stiffness cubed
 

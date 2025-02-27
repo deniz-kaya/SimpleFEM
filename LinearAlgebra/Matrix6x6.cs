@@ -1,6 +1,6 @@
 ﻿using SimpleFEM.Interfaces;
 
-namespace SimpleFEM.Types.LinAlg;
+namespace SimpleFEM.LinearAlgebra;
 
 public struct Matrix6x6 : ILinearAlgebra
 {

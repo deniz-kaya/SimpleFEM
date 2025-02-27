@@ -3,6 +3,7 @@ using System.Xml;
 using ImGuiNET;
 using SimpleFEM.Derived;
 using SimpleFEM.Interfaces;
+using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
@@ -18,6 +19,7 @@ public class UserInterface
     
     public UserInterface(IStructure structure, UserSettings settings)
     {
+        structureSolver = new UIStructureSolver(structure);
         structureEditor = new UIStructureEditor(structure, StructureEditorSettings.Default);
         sceneRenderer = new UISceneRenderer();
         this.settings = settings;
@@ -113,8 +115,11 @@ public class UserInterface
         
         if (ImGui.Button("Solve current system"))
         {
-           Console.WriteLine("Solving system");
-           Test();
+            Matrix m = structureSolver.GetGlobalStiffnessMatrix();
+            m.DebugPrint();
+            Console.WriteLine(m.Columns);
+            Console.WriteLine(m.Rank);
+            
         }
         
         ImGui.End();

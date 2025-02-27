@@ -15,6 +15,10 @@ namespace SimpleFEM.Derived;
 public class UIStructureEditor : StructureEditor, IUIStructureHelper
 {
     public Tool CurrentTool { get; private set; }
+    
+    private Types.StructureTypes.Material CurrentMaterial = Types.StructureTypes.Material.Steel;
+    private Section CurrentSection = Section.UB;
+    
     private StructureEditorSettings Settings;
     
     public UIStructureEditor(IStructure structure, StructureEditorSettings? settings) : base(structure)
@@ -158,7 +162,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             throw new Exception("Something went seriously wrong, did you forget to implement AddNode properly?");
         }
         // TODO change element and section behaviour
-        Structure.AddElement(new Element(node1ID, node2ID));
+        Structure.AddElement(new Element(node1ID, node2ID, CurrentMaterial, CurrentSection));
 
     }
     private void FinaliseMultiInput()
