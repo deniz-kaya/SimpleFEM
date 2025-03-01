@@ -1,6 +1,6 @@
-﻿using System.Numerics;
-using Raylib_cs;
+﻿using Raylib_cs;
 using SimpleFEM.Extensions;
+using Vector2 = System.Numerics.Vector2;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types.StructureTypes;
@@ -9,29 +9,41 @@ namespace SimpleFEM.Base;
 
 public class StructureSolver
 {
-    private Matrix globalStiffnessMatrix;
-    private IStructure structure;
     private const int DOF = 3;
+    
+    private IStructure structure;
+    protected Matrix CurrentStiffnessMatrix;
+    protected Graph CurrentStructureGraph;
+    protected Vector CurrentForceVector;
+    protected Vector CurrentSolution;
     public StructureSolver(IStructure structure)
     {
         this.structure = structure;
+        CurrentStructureGraph = ConstructStructureGraph();
+        CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
+        CurrentForceVector = GetForceVector();
     }
-
     public void Solve()
     {
-        
+        CurrentSolution = LinAlgMethods.Solve(CurrentStiffnessMatrix, CurrentForceVector);
     }
 
-    public bool StructureConnectedCheck()
+    
+    
+    public Graph ConstructStructureGraph()
     {
         Graph graph = new Graph();
+        foreach (int i in structure.GetNodeIndexesSorted())
+        {
+            graph.AddVertex(i);
+        }
         foreach (int i in structure.GetElementIndexesSorted())
         {
             Element e = structure.GetElement(i);
             graph.AddEdge(e.Node1ID, e.Node2ID);
         }
 
-        return graph.IsConnected();
+        return graph;
     }
     public Matrix6x6 TransformLocalMatrixIntoGlobal(Matrix6x6 matrix, Element element)
     {
@@ -60,20 +72,38 @@ public class StructureSolver
         
         return (transpose * matrix) * transformation;
     }
-    public float GetElementAngle(Element e)
+    public Vector GetForceVector()
     {
-        Vector2 node1Pos = structure.GetNode(e.Node1ID).Pos;
-        Vector2 node2Pos = structure.GetNode(e.Node2ID).Pos;
-        
-        float angle = MathF.Atan((node1Pos.Y- node2Pos.Y)/(node1Pos.X - node2Pos.X));
-        return angle < 0 ? angle + MathF.PI : angle;
+        Dictionary<int, int> idMap = GetMappedNodeIndexes();
+        Vector forceVector = new Vector(idMap.Count * DOF);
+        foreach (int i in idMap.Keys)
+        {
+            Load l = structure.GetNode(i).Load;
+            int currentNode = idMap[i];
+            forceVector[currentNode * DOF] = l.ForceX;
+            forceVector[currentNode * DOF + 1] = l.ForceY;
+            forceVector[currentNode * DOF + 2] = l.Moment;
+        }
+
+        return forceVector;
+    }
+    public Dictionary<int, int> GetMappedNodeIndexes()
+    {
+        List<int> nodeIndexes = structure.GetNodeIndexesSorted();
+        Dictionary<int, int> nodeIDToIndex = new Dictionary<int, int>();
+        for (int i = 0; i < nodeIndexes.Count; i++)
+        {
+            nodeIDToIndex.Add(nodeIndexes[i], i);
+        }
+
+        return nodeIDToIndex;
     }
     public Matrix GetGlobalStiffnessMatrix()
     {
-        
+        Dictionary<int, int> idMap = GetMappedNodeIndexes();
         List<int> elementIndexes = structure.GetElementIndexesSorted();
         Matrix6x6[] elementStiffnessMatrices = new Matrix6x6[elementIndexes.Count];
-        (int, int)[] elementNodeIndexes = new (int, int)[elementStiffnessMatrices.Length]; 
+        (int, int)[] elementNodeIndexes = new (int, int)[elementStiffnessMatrices.Length];
 
         for (int i = 0; i < elementStiffnessMatrices.Length; i++)
         {
@@ -91,8 +121,8 @@ public class StructureSolver
         {
             Matrix6x6 m = elementStiffnessMatrices[i];
             
-            int firstIdx = elementNodeIndexes[i].Item1 * DOF;
-            int secondIdx = elementNodeIndexes[i].Item2 * DOF;
+            int firstIdx = idMap[elementNodeIndexes[i].Item1] * DOF;
+            int secondIdx = idMap[elementNodeIndexes[i].Item2] * DOF;
             
             for (int corner = 0; corner < 4; corner++)
             {
@@ -157,5 +187,43 @@ public class StructureSolver
         return m;
 
     }
+    public float GetElementAngle(Element e)
+    {
+        Vector2 node1Pos = structure.GetNode(e.Node1ID).Pos;
+        Vector2 node2Pos = structure.GetNode(e.Node2ID).Pos;
+        
+        float angle = MathF.Atan((node1Pos.Y- node2Pos.Y)/(node1Pos.X - node2Pos.X));
+        return angle < 0 ? angle + MathF.PI : angle;
+    }
+    
+    //stability checking
+    public bool CheckElementIntersections()
+    {
+        List<int> elementIndexes = structure.GetElementIndexesSorted();
+        int currentIndex = 0;
+        foreach (int idx in structure.GetElementIndexesSorted())
+        {
+            Element e = structure.GetElement(idx);
+            Vector2 pos1 = structure.GetNode(e.Node1ID).Pos;
+            Vector2 pos2 = structure.GetNode(e.Node2ID).Pos;
+            currentIndex++;
+            for (int i = currentIndex; i < elementIndexes.Count; i++)
+            {
+                Element testE = structure.GetElement(elementIndexes[i]);
+                Vector2 testPos1 = structure.GetNode(testE.Node1ID).Pos;
+                Vector2 testPos2 = structure.GetNode(testE.Node2ID).Pos;
+                if (Vector2Extensions.CheckSegmentIntersections(testPos1, pos1, testPos2, pos2))
+                {
+                    return false;
+                }
+                
+            }
+        }
 
+        return true;
+    } 
+    public bool CheckStructureConnected()
+    {
+        return CurrentStructureGraph.IsConnected();
+    }
 }

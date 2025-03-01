@@ -121,6 +121,18 @@ public class UserInterface
             Console.WriteLine(m.Rank);
             
         }
+
+        if (ImGui.Button("test element intersection"))
+        {
+            if (structureSolver.CheckElementIntersections())
+            {
+                Console.WriteLine("there are no intersection");
+            }
+            else
+            {
+                Console.WriteLine("there is intersections");
+            }
+        }
         
         ImGui.End();
     }

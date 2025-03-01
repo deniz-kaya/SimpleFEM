@@ -2,13 +2,13 @@
 
 public struct Load
 {
-    public Load(double forceX, double forceY, double moment)
+    public Load(float forceX, float forceY, float moment)
     {
         this.ForceX = forceX;
         this.ForceY = forceY;
         this.Moment = moment;
     }
-    public double ForceX;
-    public double ForceY;
-    public double Moment;
+    public float ForceX;
+    public float ForceY;
+    public float Moment;
 }

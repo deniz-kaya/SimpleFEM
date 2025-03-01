@@ -2,6 +2,10 @@
 
 public struct StructureSettings
 {
+    public StructureSettings(float gridSpacing)
+    {
+        this.gridSpacing = gridSpacing;
+    }
     public float gridSpacing;
 
     public static StructureSettings Default

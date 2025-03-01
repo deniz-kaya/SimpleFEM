@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using ImGuiNET;
 using rlImGui_cs;
 using Raylib_cs;
+using Material = SimpleFEM.Types.StructureTypes.Material;
 using SimpleFEM.Base;
 using SimpleFEM.Extensions;
 using SimpleFEM.Interfaces;
@@ -16,7 +17,7 @@ namespace SimpleFEM;
 
 class Program
 {
-    static void Main(string[] args)
+    static void aMain(string[] args)
     {
         Matrix m = new Matrix(5, 5);
         m[0, 0] = 1;
@@ -52,10 +53,10 @@ class Program
         v[3] = 6;
         v[4] = 195;
         
-        Vector z = LinearAlgebra.LinearAlgebra.Solve(v, m);
+        Vector z = LinAlgMethods.Solve(m, v);
         z.DebugPrint();
     }
-    static void aMain(string[] args)
+    static void Main(string[] args)
     {
         
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
@@ -68,8 +69,8 @@ class Program
         IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
         
         //STRUCTURE SETUP
-        SimpleFEM.Types.StructureTypes.Material mat = SimpleFEM.Types.StructureTypes.Material.Steel;
-        SimpleFEM.Types.StructureTypes.Section sect = SimpleFEM.Types.StructureTypes.Section.UB;
+        Material mat = Material.Steel;
+        Section sect = Section.UB;
 
         structure.AddNode(new Vector2(0f,0f));
         structure.AddNode(new Vector2(0f,50f));
@@ -78,13 +79,10 @@ class Program
         structure.AddElement(new Element(0, 2, mat, sect));
         structure.AddElement(new Element(1, 2, mat, sect));
         //
-        StructureSolver solver = new StructureSolver(structure); 
-        solver.GetGlobalStiffnessMatrix().DebugPrint();
         
+        StructureSolver solver = new StructureSolver(structure); 
         
         UserInterface ui = new UserInterface(structure, UserSettings.Default);
-
-        Vector2 pos = Vector2.Zero;
         
         while (!Raylib.WindowShouldClose())
         {

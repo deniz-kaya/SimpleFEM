@@ -2,9 +2,9 @@
 
 namespace SimpleFEM.LinearAlgebra;
 
-public static class LinearAlgebra
+public static class LinAlgMethods
 {
-    public static Vector Solve(Vector V, Matrix M)
+    public static Vector Solve(Matrix M, Vector V)
     {
         (Matrix L, Matrix U) = LUDecompose(M);
         // V = ME
