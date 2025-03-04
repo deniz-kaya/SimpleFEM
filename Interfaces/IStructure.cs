@@ -17,8 +17,8 @@ public interface IStructure
     public Node GetNode(int NodeID);
     public void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition);
     public void SetLoad(int nodeID, Load load);
-    public void GetBoundaryCondition(int nodeID, out BoundaryCondition boundaryCondition);
-    public void GetLoad(int nodeID, out Load load);
+    public BoundaryCondition GetBoundaryCondition(int nodeID);
+    public Load GetLoad(int nodeID);
     
     public List<int> GetNodeIndexesSorted();
     public List<int> GetElementIndexesSorted();

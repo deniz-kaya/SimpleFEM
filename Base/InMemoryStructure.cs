@@ -14,6 +14,7 @@ public class InMemoryStructure : IStructure
     private string StructureName;
     private StructureSettings settings;
     // TODO maybe replace null checks with setting to default from the structure creation screen
+    // TODO URGENT change GetLoad and getboundarycondition to return said things
     public InMemoryStructure(string name, StructureSettings? settings) 
     {
         this.settings = settings ?? StructureSettings.Default;
@@ -175,11 +176,11 @@ public class InMemoryStructure : IStructure
         }
     }
 
-    public void GetBoundaryCondition(int nodeID, out BoundaryCondition boundaryCondition)
+    public BoundaryCondition GetBoundaryCondition(int nodeID)
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            boundaryCondition = Nodes[nodeID].BoundaryCondition;
+            return Nodes[nodeID].BoundaryCondition;
         }
         else
         {
@@ -200,11 +201,11 @@ public class InMemoryStructure : IStructure
         }
     }
 
-    public void GetLoad(int nodeID, out Load load)
+    public Load GetLoad(int nodeID)
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            load = Nodes[nodeID].Load;
+            return Nodes[nodeID].Load;
         }
         else
         {

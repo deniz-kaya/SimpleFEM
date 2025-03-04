@@ -24,4 +24,8 @@
       <Compile Remove="Old\Extensions.cs" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="DBs\" />
+    </ItemGroup>
+
 </Project>

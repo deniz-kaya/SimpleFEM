@@ -2,13 +2,13 @@
 
 public struct BoundaryCondition
 {
-    public BoundaryCondition(bool fixedY, bool fixedX, bool fixedMoment)
+    public BoundaryCondition(bool fixedY, bool fixedX, bool fixedRotation)
     {
         this.FixedY = fixedY;
         this.FixedX = fixedX;
-        this.FixedMoment = fixedMoment;
+        this.FixedRotation = fixedRotation;
     }
     public bool FixedY;
     public bool FixedX;
-    public bool FixedMoment;
+    public bool FixedRotation;
 }

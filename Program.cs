@@ -11,12 +11,22 @@ using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
 using Vector = SimpleFEM.LinearAlgebra.Vector;
-
+using Microsoft.Data.Sqlite;
 
 namespace SimpleFEM;
 
 class Program
 {
+    static void bMain(string[] args)
+    {
+        string connectionString = $"Data Source=C:\\Users\\blind\\RiderProjects\\SimpleFEM\\SimpleFEM\\DBs\\test.db";
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            Console.WriteLine("opened connection");
+            
+        }
+    }
     static void aMain(string[] args)
     {
         Matrix m = new Matrix(5, 5);
@@ -66,8 +76,11 @@ class Program
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
 
-        IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
-        
+        //IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
+        IStructure structure = new DatabaseStructure(
+            @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
+            "testStructure",
+            new StructureSettings() { gridSpacing = 50f });
         //STRUCTURE SETUP
         Material mat = Material.Steel;
         Section sect = Section.UB;
