@@ -457,7 +457,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT NodeID, ForceX, ForceY, Moment FROM BoundaryConditions WHERE NodeID = @nodeID;
+                SELECT NodeID, ForceX, ForceY, Moment FROM Loads WHERE NodeID = @nodeID;
             ";
             retrieveCommand.Parameters.AddWithValue("@nodeID", nodeIndex);
 

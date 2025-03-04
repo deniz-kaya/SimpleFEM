@@ -10,6 +10,8 @@ using SimpleFEM.Extensions;
 public class InMemoryStructure : IStructure
 {
     public RecyclingList<Node> Nodes;
+    public Dictionary<int, Load> Loads;
+    public Dictionary<int, BoundaryCondition> BoundaryConditions;
     public RecyclingList<Element> Elements;
     private string StructureName;
     private StructureSettings settings;
@@ -18,6 +20,8 @@ public class InMemoryStructure : IStructure
     public InMemoryStructure(string name, StructureSettings? settings) 
     {
         this.settings = settings ?? StructureSettings.Default;
+        Loads = new Dictionary<int, Load>();
+        BoundaryConditions = new Dictionary<int, BoundaryCondition>();
         StructureName = name;
         Nodes = new RecyclingList<Node>();
         Elements = new RecyclingList<Element>();
@@ -37,9 +41,12 @@ public class InMemoryStructure : IStructure
             {
                 return false;
             }
-        } 
-        
+        }
+
         Nodes.Add(new Node(pos));
+        Loads[Nodes.LastAddedIndex] = default;
+        BoundaryConditions[Nodes.LastAddedIndex] = default;
+
         return true;
     }
 
@@ -119,6 +126,8 @@ public class InMemoryStructure : IStructure
                 }
             }
 
+            Loads[nodeID] = default;
+            BoundaryConditions[nodeID] = default;
             Nodes.RemoveAt(nodeID);
         }
         else
@@ -168,7 +177,7 @@ public class InMemoryStructure : IStructure
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            Nodes[nodeID] = Nodes[nodeID].WithBoundaryCondition(boundaryCondition);
+            BoundaryConditions[nodeID] = boundaryCondition;;
         }
         else
         {
@@ -180,7 +189,7 @@ public class InMemoryStructure : IStructure
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            return Nodes[nodeID].BoundaryCondition;
+            return BoundaryConditions[nodeID];
         }
         else
         {
@@ -193,7 +202,7 @@ public class InMemoryStructure : IStructure
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            Nodes[nodeID] = Nodes[nodeID].WithLoad(load);
+            Loads[nodeID] = load;
         }
         else
         {
@@ -205,7 +214,7 @@ public class InMemoryStructure : IStructure
     {
         if (Nodes.ValidIndex(nodeID))
         {
-            return Nodes[nodeID].Load;
+            return Loads[nodeID];
         }
         else
         {

@@ -76,15 +76,15 @@ class Program
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
 
-        //IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
-        IStructure structure = new DatabaseStructure(
-            @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
-            "testStructure",
-            new StructureSettings() { gridSpacing = 50f });
+        IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
+        // IStructure structure = new DatabaseStructure(
+        //     @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
+        //     "testStructure",
+        //     new StructureSettings() { gridSpacing = 50f });
         //STRUCTURE SETUP
         Material mat = Material.Steel;
         Section sect = Section.UB;
-        
+            
         structure.AddNode(new Vector2(0f,0f));
         structure.AddNode(new Vector2(0f,50f));
         structure.AddNode(new Vector2(100f,0f));

@@ -78,7 +78,7 @@ public class StructureSolver
         Vector forceVector = new Vector(idMap.Count * DOF);
         foreach (int i in idMap.Keys)
         {
-            Load l = structure.GetNode(i).Load;
+            Load l = structure.GetLoad(i);
             int currentNode = idMap[i];
             forceVector[currentNode * DOF] = l.ForceX;
             forceVector[currentNode * DOF + 1] = l.ForceY;
