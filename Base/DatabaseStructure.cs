@@ -41,6 +41,7 @@ public class DatabaseStructure : IStructure
                  conn.Open();
                  SqliteCommand command = conn.CreateCommand();
                  command.CommandText = @"
+                         PRAGMA foreign_keys = ON;
                          CREATE TABLE IF NOT EXISTS Nodes (
                              ID INTEGER PRIMARY KEY,
                              X REAL NOT NULL,
@@ -52,24 +53,24 @@ public class DatabaseStructure : IStructure
                              SectionID INTEGER NOT NULL,
                              Node1ID INTEGER NOT NULL,
                              Node2ID INTEGER NOT NULL,
-                             FOREIGN KEY (MaterialID) REFERENCES Materials(ID),
-                             FOREIGN KEY (SectionID) REFERENCES Sections(ID),
-                             FOREIGN KEY (Node1ID) REFERENCES Nodes(ID),
-                             FOREIGN KEY (Node2ID) REFERENCES Nodes(ID)
+                             FOREIGN KEY (MaterialID) REFERENCES Materials(ID) ON DELETE CASCADE,
+                             FOREIGN KEY (SectionID) REFERENCES Sections(ID) ON DELETE CASCADE,
+                             FOREIGN KEY (Node1ID) REFERENCES Nodes(ID) ON DELETE CASCADE,
+                             FOREIGN KEY (Node2ID) REFERENCES Nodes(ID) ON DELETE CASCADE
                          );
                          CREATE TABLE IF NOT EXISTS Loads (
                              NodeID INTEGER PRIMARY KEY,
                              ForceX REAL NOT NULL,
                              ForceY REAL NOT NULL,
                              Moment REAL NOT NULL, 
-                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID)
+                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID) ON DELETE CASCADE
                          );
                          CREATE TABLE IF NOT EXISTS BoundaryConditions (
                              NodeID INTEGER PRIMARY KEY,
                              FixedX BOOLEAN NOT NULL,
                              FixedY BOOLEAN NOT NULL,
                              FixedRotation BOOLEAN NOT NULL,
-                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID)
+                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID) ON DELETE CASCADE
                          );
                          CREATE TABLE IF NOT EXISTS Sections (
                              ID INTEGER PRIMARY KEY,
@@ -130,7 +131,7 @@ public class DatabaseStructure : IStructure
 
         int id = -1;
         getSectionIDCommand.CommandText = @"
-        SELECT ID FROM Sections WHERE A = @a AND I = @i;
+            SELECT ID FROM Sections WHERE A = @a AND I = @i;
         ";
         getSectionIDCommand.Parameters.AddWithValue("@a", section.A);
         getSectionIDCommand.Parameters.AddWithValue("@i", section.I);
@@ -308,7 +309,6 @@ public class DatabaseStructure : IStructure
                 conn.Close();
                 throw new IndexOutOfRangeException("Tried deleting nonexistent elementID");
             }
-            
 
             using (SqliteTransaction transaction = conn.BeginTransaction())
             {
@@ -326,6 +326,21 @@ public class DatabaseStructure : IStructure
         }
     }
 
+    private void RemoveNodeConnectedFeatures(int nodeID, SqliteConnection conn)
+    {
+        using (SqliteTransaction transaction = conn.BeginTransaction())
+        {
+            SqliteCommand deleteCommand = conn.CreateCommand();
+            deleteCommand.CommandText = @"
+                DELETE FROM Elements WHERE Node1ID = @id OR Node2ID = @id;
+                DELETE FROM Loads WHERE NodeID = @id;
+                DELETE FROM BoundaryConditions WHERE NodeID = @id;
+            ";
+            deleteCommand.Parameters.AddWithValue("@id", nodeID);
+            deleteCommand.ExecuteNonQuery();
+            transaction.Commit();
+        }
+    }
     public void RemoveNode(int nodeID)
     {
         using (SqliteConnection conn = new SqliteConnection(connectionString))
@@ -336,18 +351,18 @@ public class DatabaseStructure : IStructure
                 conn.Close();
                 throw new IndexOutOfRangeException("Tried deleting nonexistent nodeID");
             }
-
-
+            
+            RemoveNodeConnectedFeatures(nodeID, conn);
             using (SqliteTransaction transaction = conn.BeginTransaction())
             {
                 SqliteCommand deleteCommand = conn.CreateCommand();
                 deleteCommand.CommandText = @"
                     DELETE FROM Nodes WHERE ID = @id;
                 ";
-
+ 
                 deleteCommand.Parameters.AddWithValue("@id", nodeID);
                 deleteCommand.ExecuteNonQuery();
-
+                
                 transaction.Commit();
             }
 
@@ -378,6 +393,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
+                PRAGMA foreign_keys = ON;
                 SELECT ID FROM Elements ORDER BY ID ASC;
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
@@ -441,7 +457,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT ID, ForceX, ForceY, Moment FROM BoundaryConditions WHERE ID = @nodeID;
+                SELECT NodeID, ForceX, ForceY, Moment FROM BoundaryConditions WHERE NodeID = @nodeID;
             ";
             retrieveCommand.Parameters.AddWithValue("@nodeID", nodeIndex);
 
@@ -502,9 +518,9 @@ public class DatabaseStructure : IStructure
             {
                 SqliteCommand updateCommand = conn.CreateCommand();
                 updateCommand.CommandText = @"
-                    INSERT INTO Loads (ID, ForceX, ForceY, Moment)
+                    INSERT INTO Loads (NodeID, ForceX, ForceY, Moment)
                     VALUES (@id, @forceX, @forceY, @moment)
-                    ON CONFLICT(ID) DO UPDATE
+                    ON CONFLICT(NodeID) DO UPDATE
                     SET ForceX = @forceX, ForceY = @forceY, Moment = @moment;
                 ";
                 updateCommand.Parameters.AddWithValue("@id", nodeID);
@@ -532,7 +548,7 @@ public class DatabaseStructure : IStructure
             }
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT ID, FixedX, FixedY, FixedRotation FROM BoundaryConditions WHERE ID = @nodeID;
+                SELECT NodeID, FixedX, FixedY, FixedRotation FROM BoundaryConditions WHERE NodeID = @nodeID;
             ";
             retrieveCommand.Parameters.AddWithValue("@nodeID", nodeIndex);
 
@@ -649,9 +665,9 @@ public class DatabaseStructure : IStructure
             {
                 SqliteCommand updateCommand = conn.CreateCommand();
                 updateCommand.CommandText = @"
-                    INSERT INTO BoundaryConditions (ID, FixedX, FixedY, FixedRotation)
+                    INSERT INTO BoundaryConditions (NodeID, FixedX, FixedY, FixedRotation)
                     VALUES (@id, @fixedX, @fixedY, @fixedRotation)
-                    ON CONFLICT(ID) DO UPDATE
+                    ON CONFLICT(NodeID) DO UPDATE
                     SET FixedX = @fixedX, FixedY = @fixedY, FixedRotation = @fixedRotation
                 ";
                 

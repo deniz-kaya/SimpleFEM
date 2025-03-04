@@ -84,7 +84,7 @@ class Program
         //STRUCTURE SETUP
         Material mat = Material.Steel;
         Section sect = Section.UB;
-
+        
         structure.AddNode(new Vector2(0f,0f));
         structure.AddNode(new Vector2(0f,50f));
         structure.AddNode(new Vector2(100f,0f));
