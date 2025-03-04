@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Numerics;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -40,71 +41,75 @@ public class DatabaseStructure : IStructure
                  conn.Open();
                  SqliteCommand command = conn.CreateCommand();
                  command.CommandText = @"
-                         CREATE TABLE IF NOT EXISTS Nodes() (
+                         CREATE TABLE IF NOT EXISTS Nodes (
                              ID INTEGER PRIMARY KEY,
                              X REAL NOT NULL,
-                             Y REAL NOT NULL,
+                             Y REAL NOT NULL
                          );
-                         CREATE TABLE IF NOT EXISTS Elements() (
+                         CREATE TABLE IF NOT EXISTS Elements (
                              ID INTEGER PRIMARY KEY, 
                              MaterialID INTEGER NOT NULL,
                              SectionID INTEGER NOT NULL,
                              Node1ID INTEGER NOT NULL,
                              Node2ID INTEGER NOT NULL,
-                             FOREIGN KEY MaterialID REFERENCES Materials(ID)
-                             FOREIGN KEY SectionID REFERENCES Sections(ID)
-                             FOREIGN KEY Node1ID REFERENCES Nodes(ID)
-                             FOREIGN KEY Node2ID REFERENCES Nodes(ID)
+                             FOREIGN KEY (MaterialID) REFERENCES Materials(ID),
+                             FOREIGN KEY (SectionID) REFERENCES Sections(ID),
+                             FOREIGN KEY (Node1ID) REFERENCES Nodes(ID),
+                             FOREIGN KEY (Node2ID) REFERENCES Nodes(ID)
                          );
-                         CREATE TABLE IF NOT EXISTS Loads() (
+                         CREATE TABLE IF NOT EXISTS Loads (
                              NodeID INTEGER PRIMARY KEY,
                              ForceX REAL NOT NULL,
                              ForceY REAL NOT NULL,
                              Moment REAL NOT NULL, 
-                             FOREIGN KEY Node1ID REFERENCES Nodes(ID)
+                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID)
                          );
-                         CREATE TABLE IF NOT EXISTS BoundaryConditions() (
+                         CREATE TABLE IF NOT EXISTS BoundaryConditions (
                              NodeID INTEGER PRIMARY KEY,
                              FixedX BOOLEAN NOT NULL,
                              FixedY BOOLEAN NOT NULL,
                              FixedRotation BOOLEAN NOT NULL,
+                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID)
                          );
-                         CREATE TABLE IF NOT EXISTS Sections() (
+                         CREATE TABLE IF NOT EXISTS Sections (
                              ID INTEGER PRIMARY KEY,
-                             tag STRING,
                              A REAL NOT NULL,
-                             I REAL NOT NULL,
+                             I REAL NOT NULL
                          );
-                         CREATE TABLE IF NOT EXISTS Materials() (
+                         CREATE TABLE IF NOT EXISTS Materials (
                              ID INTEGER PRIMARY KEY,
-                             tag STRING,
-                             E REAL NOT NULL,
+                             E REAL NOT NULL
                          );
+                        CREATE TABLE IF NOT EXISTS Settings (
+                            ID INTEGER PRIMARY KEY CHECK (ID = 1),
+                            GridSpacing REAL NOT NULL
+                        );
                  ";
-                 if (newDB)
-                 {
-                     command.CommandText += @"
-                         CREATE TABLE IF NOT EXISTS Settings() (
-                             ID INTEGER PRIMARY KEY CHECK (ID = 1),
-                             GridSpacing REAL NOT NULL
-                         );
-                         INSERT INTO Settings (ID, GridSpacing) VALUES (1, @value)
-                     ";
-                     command.Parameters.AddWithValue("@value", settings.gridSpacing);
-                     command.ExecuteNonQuery();
-                 }
-                 else
-                 {
-                     command.ExecuteNonQuery();
-                     command.CommandText = @"
-                         SELECT GridSpacing FROM Settings WHERE ID = 1; 
-                     ";
-                     using (SqliteDataReader reader = command.ExecuteReader())
-                     {
-                         //todo could fail
-                         settings = new StructureSettings(reader.GetFloat(0));
-                     }
-                 }
+                 // todo add the settings table
+                 // if (newDB)
+                 // {
+                 //     command.CommandText += @"
+                 //         CREATE TABLE IF NOT EXISTS Settings() (
+                 //             ID INTEGER PRIMARY KEY CHECK (ID = 1),
+                 //             GridSpacing REAL NOT NULL
+                 //         );
+                 //         INSERT INTO Settings (ID, GridSpacing) VALUES (1, @value)
+                 //     ";
+                 //     command.Parameters.AddWithValue("@value", settings.gridSpacing);
+                 //     command.ExecuteNonQuery();
+                 // }
+                 // else
+                 // {
+                 //     command.ExecuteNonQuery();
+                 //     command.CommandText = @"
+                 //         SELECT GridSpacing FROM Settings WHERE ID = 1; 
+                 //     ";
+                 //     using (SqliteDataReader reader = command.ExecuteReader())
+                 //     {
+                 //         //todo could fail
+                 //         settings = new StructureSettings(reader.GetFloat(0));
+                 //     }
+                 // }
                  conn.Close();
              }
          }
@@ -121,64 +126,58 @@ public class DatabaseStructure : IStructure
     }
     private int GetSectionID(Section section, SqliteConnection conn)
     {
-        SqliteCommand command = conn.CreateCommand();
+        SqliteCommand getSectionIDCommand = conn.CreateCommand();
 
         int id = -1;
-        using (SqliteTransaction transaction = conn.BeginTransaction())
-        {
-            command.CommandText = @"
-            SELECT ID FROM Sections WHERE A = @a, I = @i;
+        getSectionIDCommand.CommandText = @"
+        SELECT ID FROM Sections WHERE A = @a AND I = @i;
         ";
-            command.Parameters.AddWithValue("@a", section.A);
-            command.Parameters.AddWithValue("@i", section.I);
-            object result = command.ExecuteScalar();
+        getSectionIDCommand.Parameters.AddWithValue("@a", section.A);
+        getSectionIDCommand.Parameters.AddWithValue("@i", section.I);
+        object result = getSectionIDCommand.ExecuteScalar();
 
-            if (result != null)
-            {
-                id = Convert.ToInt32(result);
-            }
-            else
-            {
-                command.CommandText = @"
-                    INSERT INTO Sections (A, I) VALUES (@a, @i); SELECT last_inserted_rowid();
-                ";
-                command.Parameters.AddWithValue("@a", section.A);
-                command.Parameters.AddWithValue("@i", section.I);
-                result = command.ExecuteScalar();
-                id = Convert.ToInt32(result);
-            }
-            transaction.Commit();
+        if (result != null)
+        {
+            id = Convert.ToInt32(result);
         }
-        
+        else
+        {
+            SqliteCommand insertSectionCommand = conn.CreateCommand();
+            insertSectionCommand.CommandText = @"
+                INSERT INTO Sections (A, I) VALUES (@a, @i); SELECT last_insert_rowid();
+            ";
+            insertSectionCommand.Parameters.AddWithValue("@a", section.A);
+            insertSectionCommand.Parameters.AddWithValue("@i", section.I);
+            result = insertSectionCommand.ExecuteScalar();
+            id = Convert.ToInt32(result);
+        }
         return id;
     }
     private int GetMaterialID(Material material, SqliteConnection conn)
     {
-        SqliteCommand command = conn.CreateCommand();
+        SqliteCommand getMaterialIDCommand = conn.CreateCommand();
 
         int id = -1;
-        using (SqliteTransaction transaction = conn.BeginTransaction())
-        {
-            command.CommandText = @"
-            SELECT ID FROM Materials WHERE E = @e;
+        
+        getMaterialIDCommand.CommandText = @"
+                SELECT ID FROM Materials WHERE E = @e;
         ";
-            command.Parameters.AddWithValue("@e", material.E);
-            object result = command.ExecuteScalar();
+        getMaterialIDCommand.Parameters.AddWithValue("@e", material.E);
+        object result = getMaterialIDCommand.ExecuteScalar();
 
-            if (result != null)
-            {
-                id = Convert.ToInt32(result);
-            }
-            else
-            {
-                command.CommandText = @"
-                    INSERT INTO Materials (E) VALUES (@e); SELECT last_inserted_rowid();
-                ";
-                command.Parameters.AddWithValue("@e", material.E);
-                result = command.ExecuteScalar();
-                id = Convert.ToInt32(result);
-            }
-            transaction.Commit();
+        if (result != null)
+        {
+            id = Convert.ToInt32(result);
+        }
+        else
+        {
+            SqliteCommand insertMaterialCommand = conn.CreateCommand();
+            insertMaterialCommand.CommandText = @"
+                INSERT INTO Materials (E) VALUES (@e); SELECT last_insert_rowid();
+            ";
+            insertMaterialCommand.Parameters.AddWithValue("@e", material.E);
+            result = insertMaterialCommand.ExecuteScalar();
+            id = Convert.ToInt32(result);
         }
         
         return id; 
@@ -207,8 +206,9 @@ public class DatabaseStructure : IStructure
         return true;
         
     }
-    private bool ValidNode(Vector2 v, SqliteConnection conn)
+    private bool ValidNode(Vector2 v, SqliteConnection conn, out int index)
     {
+        index = -1;
         SqliteCommand checkNodeValidity = conn.CreateCommand();
         checkNodeValidity.CommandText = @"
             SELECT ID FROM Nodes WHERE
@@ -222,8 +222,10 @@ public class DatabaseStructure : IStructure
         
         if (checkNodeResult != null)
         {
+            index = Convert.ToInt32(checkNodeResult);
             return false;
         }
+        //todo potential failure point
         return true;
     }
 
@@ -232,12 +234,12 @@ public class DatabaseStructure : IStructure
         SqliteCommand elementIDCheck = conn.CreateCommand();
 
         elementIDCheck.CommandText = @"
-            SELECT Node1ID FROM Elements WHERE ID = @id''
+            SELECT ID FROM Elements WHERE ID = @id;
         ";
 
         elementIDCheck.Parameters.AddWithValue("@id", elementID);
         object? result = elementIDCheck.ExecuteScalar();
-        if (result != null)
+        if (result == null)
         {
             return false;
         }
@@ -250,12 +252,12 @@ public class DatabaseStructure : IStructure
         SqliteCommand nodeIDCheck = conn.CreateCommand();
 
         nodeIDCheck.CommandText = @"
-            SELECT X FROM Nodes WHERE ID = @id''
+            SELECT X FROM Nodes WHERE ID = @id;
         ";
 
         nodeIDCheck.Parameters.AddWithValue("@id", nodeID);
         object? result = nodeIDCheck.ExecuteScalar();
-        if (result != null)
+        if (result == null)
         {
             return false;
         }
@@ -268,9 +270,10 @@ public class DatabaseStructure : IStructure
         using (SqliteConnection conn = new SqliteConnection(connectionString))
         {
             conn.Open();
-            if (!ValidNode(v, conn))
+            if (!ValidNode(v, conn, out int idx))
             {
                 conn.Close();
+                index = idx;
                 return false;
             }
             using (SqliteTransaction transaction = conn.BeginTransaction())
@@ -278,7 +281,7 @@ public class DatabaseStructure : IStructure
                 SqliteCommand insertCommand = conn.CreateCommand();
                 insertCommand.CommandText = @"
                 INSERT INTO Nodes (X, Y) VALUES (@x, @y);
-                SELECT last_inserted_rowid();
+                SELECT last_insert_rowid();
                 ";
                 
                 insertCommand.Parameters.AddWithValue("@x", v.X);
@@ -299,6 +302,7 @@ public class DatabaseStructure : IStructure
     {
         using (SqliteConnection conn = new SqliteConnection(connectionString))
         {
+            conn.Open();
             if (!ElementExists(elementID, conn))
             {
                 conn.Close();
@@ -326,6 +330,7 @@ public class DatabaseStructure : IStructure
     {
         using (SqliteConnection conn = new SqliteConnection(connectionString))
         {
+            conn.Open();
             if (!NodeExists(nodeID, conn))
             {
                 conn.Close();
@@ -410,7 +415,7 @@ public class DatabaseStructure : IStructure
                 SqliteCommand insertCommand = conn.CreateCommand();
                 insertCommand.CommandText = @"
                 INSERT INTO Elements (MaterialID, SectionID, Node1ID, Node2ID) VALUES (@mid, @sid, @n1, @n2);
-                SELECT last_inserted_rowid();
+                SELECT last_insert_rowid();
                 ";
                 insertCommand.Parameters.AddWithValue("@mid", GetMaterialID(e.Material, conn));
                 insertCommand.Parameters.AddWithValue("@sid", GetSectionID(e.Section, conn));
@@ -573,11 +578,19 @@ public class DatabaseStructure : IStructure
             retrieveCommand.Parameters.AddWithValue("@id", elementID);
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
-                e.Section = new Section(reader.GetFloat(0), reader.GetFloat(1));
-                e.Material = new Material(reader.GetFloat(2));
-                e.Node1ID = reader.GetInt32(3);
-                e.Node2ID = reader.GetInt32(4);
+                if (reader.Read())
+                {
+                    e.Section = new Section(reader.GetFloat(0), reader.GetFloat(1));
+                    e.Material = new Material(reader.GetFloat(2));
+                    e.Node1ID = reader.GetInt32(3);
+                    e.Node2ID = reader.GetInt32(4);
+                }
+                else
+                {
+                    throw new Exception("reader is empty");
+                }
             }
+
             conn.Close();
         }
 
@@ -604,8 +617,15 @@ public class DatabaseStructure : IStructure
             retrieveCommand.Parameters.AddWithValue("@id", nodeID);
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
-                n.Pos.X = reader.GetFloat(0);
-                n.Pos.Y = reader.GetFloat(1);
+                if (reader.Read())
+                {
+                    n.Pos.X = reader.GetFloat(0);
+                    n.Pos.Y = reader.GetFloat(1);
+                }
+                else
+                {
+                    throw new NotSupportedException("reader empty");
+                }
             }
 
             conn.Close();
