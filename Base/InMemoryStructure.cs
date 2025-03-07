@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Microsoft.Data.Sqlite;
 using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
 
@@ -15,6 +16,8 @@ public class InMemoryStructure : IStructure
     public RecyclingList<Element> Elements;
     public RecyclingList<Material> Materials;
     public RecyclingList<Section> Sections;
+    
+    
     private string StructureName;
     private StructureSettings settings;
     // TODO maybe replace null checks with setting to default from the structure creation screen
@@ -26,6 +29,10 @@ public class InMemoryStructure : IStructure
         StructureName = name;
         Nodes = new RecyclingList<Node>();
         Elements = new RecyclingList<Element>();
+        Materials = new RecyclingList<Material>();
+        Sections = new RecyclingList<Section>();
+        Materials.Add(Material.Steel);
+        Sections.Add(Section.UB);
     }
 
     public StructureSettings GetStructureSettings()
@@ -62,23 +69,27 @@ public class InMemoryStructure : IStructure
 
     public bool AddElement(Element element)
     {
-        if (Nodes.ValidIndex(element.Node1ID) && Nodes.ValidIndex(element.Node2ID) && element.Node1ID != element.Node2ID)
+        if (element.Node1ID == element.Node2ID) return false;
+        if (!Nodes.ValidIndex(element.Node1ID)) return false;
+        if (!Nodes.ValidIndex(element.Node2ID)) return false;
+        if (!Materials.ValidIndex(element.MaterialID)) return false;
+        if (!Sections.ValidIndex(element.SectionID)) return false;
+        
+        
+        bool duplicate = false;
+        foreach (Element e in Elements)
         {
-            bool duplicate = false;
-            foreach (Element e in Elements)
+            if ((e.Node1ID == element.Node2ID && e.Node2ID == element.Node1ID) || (e.Node1ID == element.Node1ID && e.Node2ID == element.Node2ID))
             {
-                if ((e.Node1ID == element.Node2ID && e.Node2ID == element.Node1ID) || (e.Node1ID == element.Node1ID && e.Node2ID == element.Node2ID))
-                {
-                    duplicate = true;
-                    break;
-                }
+                duplicate = true;
+                break;
             }
+        }
 
-            if (!duplicate)
-            {
-                Elements.Add(element);
-                return true;
-            }
+        if (!duplicate)
+        {
+            Elements.Add(element);
+            return true;
         }
         return false;
     }
@@ -171,6 +182,15 @@ public class InMemoryStructure : IStructure
         }
     }
 
+    public void AddMaterial(Material mat)
+    {
+        Materials.Add(mat);
+    }
+
+    public void AddSection(Section sect)
+    {
+        Sections.Add(sect);
+    }
     public Element GetElement(int elementID)
     {
         if (Elements.ValidIndex(elementID))
@@ -182,7 +202,34 @@ public class InMemoryStructure : IStructure
             throw new IndexOutOfRangeException("Invalid NodeID");
         }
     }
-    
+
+    public List<int> GetSectionIndexesSorted()
+    {
+        return Sections.GetIndexes();
+    }
+
+    public List<int> GetMaterialIndexesSorted()
+    {
+        return Materials.GetIndexes();
+    }
+    public Section GetSection(int sectionID)
+    {
+        if (Sections.ValidIndex(sectionID))
+        {
+            return Sections[sectionID];
+        }
+
+        throw new IndexOutOfRangeException("Invalid SectionID");
+    } 
+    public Material GetMaterial(int materialID)
+    {
+        if (Materials.ValidIndex(materialID))
+        {
+            return Materials[materialID];
+        }
+
+        throw new IndexOutOfRangeException("Invalid MaterialID");
+    }
     public void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition)
     {
         if (Nodes.ValidIndex(nodeID))
