@@ -1,5 +1,4 @@
-﻿using Raylib_cs;
-using SimpleFEM.Extensions;
+﻿using SimpleFEM.Extensions;
 using Vector2 = System.Numerics.Vector2;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
@@ -202,9 +201,11 @@ public class StructureSolver
 
     public Matrix6x6 GetLocalStiffnessMatrix(Element element)
     {
+        Material mat = structure.GetMaterial(element.MaterialID);
+        Section sect = structure.GetSection(element.SectionID);
         float length = Vector2.Distance(structure.GetNode(element.Node1ID).Pos, structure.GetNode(element.Node2ID).Pos);
-        float axS = (element.Material.E * element.Section.A) / length; //axial stiffness
-        float beS = (element.Material.E * element.Section.I) / length; // bending stiffness
+        float axS = (mat.E * sect.A) / length; //axial stiffness
+        float beS = (mat.E * sect.I) / length; // bending stiffness
         float beSSq = 6f * (beS / length);  // bending stiffness squared
         float beSCb = 2f * (beSSq / length);  // bending stiffness cubed
 

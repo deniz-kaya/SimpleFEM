@@ -5,11 +5,11 @@ public struct Material
     //todo ctor and variable naming conventions
     public Material(string description, float e)
     {
-        Desription = description;
+        Description = description;
         E = e;
     }
     public float E;
-    public string Desription;
+    public string Description;
 
     //from eurocode
     public Material(float e)

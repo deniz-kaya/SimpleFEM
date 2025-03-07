@@ -4,14 +4,14 @@ public struct Element
 {
     public int Node1ID;
     public int Node2ID;
-    public Material Material;
-    public Section Section;
+    public int MaterialID;
+    public int SectionID;
 
-    public Element(int node1Id, int node2Id, Material elementMaterial = default, Section elementSection = default)
+    public Element(int node1Id, int node2Id, int materialID, int sectionID)
     {
         Node1ID = node1Id;
         Node2ID = node2Id;
-        Material = elementMaterial;
-        Section = elementSection;
+        MaterialID = materialID;
+        SectionID = sectionID;
     }
 }

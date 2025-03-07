@@ -287,14 +287,8 @@ public class UserInterface
             }
         }
 
-        if (ImGui.BeginCombo("Material", "material", ImGuiComboFlags.WidthFitPreview))
-        {
-            foreach (int i in )
-            {
-                
-            }
-            ImGui.EndCombo();
-        }
+        structureEditor.MaterialSelectComboBox();
+        structureEditor.SectionSelectComboBox();
     }
     //Input Handling
     public void HandleInputs()

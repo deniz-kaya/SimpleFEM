@@ -26,7 +26,16 @@ public class DatabaseStructure : IStructure
         string filepath = Path.Combine(folderPath, fileName + ".db");
         this.settings = settings;
         StructureName = fileName;
+        connectionString = $"Data Source={filepath}";
         InitialiseDatabase(filepath);
+        Thread.Sleep(1000);
+        InitialiseMaterialsAndSections();
+    }
+
+    private void InitialiseMaterialsAndSections()
+    {
+        AddSection(Section.UB);
+        AddMaterial(Material.Steel);
     }
     private void InitialiseDatabase(string filepath)
      {
@@ -35,8 +44,6 @@ public class DatabaseStructure : IStructure
          {
              newDB = true;
          }
-
-         connectionString = $"Data Source={filepath}";
          
          using (SqliteConnection conn = new SqliteConnection(connectionString))
          {
@@ -82,7 +89,7 @@ public class DatabaseStructure : IStructure
                      );
                      CREATE TABLE IF NOT EXISTS Materials (
                          ID INTEGER PRIMARY KEY,
-                         Description STRING NOT NULL
+                         Description STRING NOT NULL,
                          E REAL NOT NULL
                      );
                     CREATE TABLE IF NOT EXISTS Settings (
@@ -91,30 +98,7 @@ public class DatabaseStructure : IStructure
                     );
              ";
              // todo add the settings table
-             // if (newDB)
-             // {
-             //     command.CommandText += @"
-             //         CREATE TABLE IF NOT EXISTS Settings() (
-             //             ID INTEGER PRIMARY KEY CHECK (ID = 1),
-             //             GridSpacing REAL NOT NULL
-             //         );
-             //         INSERT INTO Settings (ID, GridSpacing) VALUES (1, @value)
-             //     ";
-             //     command.Parameters.AddWithValue("@value", settings.gridSpacing);
-             //     command.ExecuteNonQuery();
-             // }
-             // else
-             // {
-             //     command.ExecuteNonQuery();
-             //     command.CommandText = @"
-             //         SELECT GridSpacing FROM Settings WHERE ID = 1; 
-             //     ";
-             //     using (SqliteDataReader reader = command.ExecuteReader())
-             //     {
-             //         //todo could fail
-             //         settings = new StructureSettings(reader.GetFloat(0));
-             //     }
-             // }
+             command.ExecuteNonQuery();
              conn.Close();
          }
      }
@@ -190,7 +174,7 @@ public class DatabaseStructure : IStructure
     }
     private bool ValidElement(Element e, SqliteConnection conn)
     {
-        if (e.Node1ID == e.Node2ID)
+        if (e.Node1ID == e.Node2ID || !MaterialExists(e.MaterialID, conn) || !SectionExists(e.SectionID, conn))
         {
             return false;
         }
@@ -464,8 +448,8 @@ public class DatabaseStructure : IStructure
                 INSERT INTO Elements (MaterialID, SectionID, Node1ID, Node2ID) VALUES (@mid, @sid, @n1, @n2);
                 SELECT last_insert_rowid();
                 ";
-                insertCommand.Parameters.AddWithValue("@mid", GetMaterialID(e.Material, conn));
-                insertCommand.Parameters.AddWithValue("@sid", GetSectionID(e.Section, conn));
+                insertCommand.Parameters.AddWithValue("@mid", e.MaterialID);
+                insertCommand.Parameters.AddWithValue("@sid", e.SectionID);
 
                 insertCommand.Parameters.AddWithValue("@n1", e.Node1ID);
                 insertCommand.Parameters.AddWithValue("@n2", e.Node2ID);
@@ -476,6 +460,42 @@ public class DatabaseStructure : IStructure
             }
 
             conn.Close();
+        }
+
+        return true;
+    }
+
+    public bool MaterialExists(int materialID, SqliteConnection conn)
+    {
+        SqliteCommand materialIDCheck = conn.CreateCommand();
+
+        materialIDCheck.CommandText = @"
+            SELECT ID FROM Materials WHERE ID = @id;
+        ";
+
+        materialIDCheck.Parameters.AddWithValue("@id", materialID);
+        object? result = materialIDCheck.ExecuteScalar();
+        if (result == null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool SectionExists(int sectionID, SqliteConnection conn)
+    {
+        SqliteCommand sectionDCheck = conn.CreateCommand();
+
+        sectionDCheck.CommandText = @"
+            SELECT ID FROM Sections WHERE ID = @id;
+        ";
+
+        sectionDCheck.Parameters.AddWithValue("@id", sectionID);
+        object? result = sectionDCheck.ExecuteScalar();
+        if (result == null)
+        {
+            return false;
         }
 
         return true;
@@ -616,21 +636,20 @@ public class DatabaseStructure : IStructure
 
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT sect.I, sect.A, mat.E, e.Node1ID, e.Node2ID 
-                FROM Elements e
-                JOIN Sections sect ON e.SectionID = sect.ID
-                JOIN Materials mat ON e.MaterialID = mat.ID
-                WHERE e.ID = @id;
+                SELECT Node1ID, Node2ID, MaterialID, SectionID
+                FROM Elements 
+                WHERE ID = @id;
             ";
             retrieveCommand.Parameters.AddWithValue("@id", elementID);
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
                 if (reader.Read())
                 {
-                    e.Section = new Section(reader.GetFloat(0), reader.GetFloat(1));
-                    e.Material = new Material(reader.GetFloat(2));
-                    e.Node1ID = reader.GetInt32(3);
-                    e.Node2ID = reader.GetInt32(4);
+                    e.Node1ID = reader.GetInt32(0);
+                    e.Node2ID = reader.GetInt32(1);
+                    e.MaterialID = reader.GetInt32(2);
+                    e.SectionID = reader.GetInt32(3);
+
                 }
                 else
                 {
@@ -801,6 +820,7 @@ public class DatabaseStructure : IStructure
         List<int> indexes = new List<int>();
         using (SqliteConnection conn = new SqliteConnection(connectionString))
         {
+            conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
                 SELECT ID From Sections
@@ -896,6 +916,47 @@ public class DatabaseStructure : IStructure
         }
         return mat;
     }
-    
-    
+
+    public void AddMaterial(Material mat)
+    {
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            using (SqliteTransaction transaction = conn.BeginTransaction())
+            {
+                SqliteCommand addCommand = conn.CreateCommand();
+                addCommand.CommandText = @"
+                    INSERT INTO Materials (Description, E) VALUES (@desc, @e);
+                ";
+                addCommand.Parameters.AddWithValue("@desc", mat.Description);
+                addCommand.Parameters.AddWithValue("@e", mat.E);
+                addCommand.ExecuteNonQuery();
+                transaction.Commit();
+            }
+
+            conn.Close();
+        }
+    }
+
+    public void AddSection(Section sect)
+    {
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            using (SqliteTransaction transaction = conn.BeginTransaction())
+            {
+                SqliteCommand addCommand = conn.CreateCommand();
+                addCommand.CommandText = @"
+                    INSERT INTO Sections (Description, A, I) VALUES (@desc, @a, @i);
+                ";
+                addCommand.Parameters.AddWithValue("@desc", sect.Description);
+                addCommand.Parameters.AddWithValue("@a", sect.A);
+                addCommand.Parameters.AddWithValue("@i", sect.I);
+                addCommand.ExecuteNonQuery();
+                transaction.Commit();
+            }
+
+            conn.Close();
+        }
+    }
 }

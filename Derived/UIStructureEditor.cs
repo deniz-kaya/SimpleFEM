@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Numerics;
+using ImGuiNET;
 using Raylib_cs;
 using SimpleFEM.Base;
 using SimpleFEM.Interfaces;
@@ -16,8 +17,8 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
 {
     public Tool CurrentTool { get; private set; }
     
-    private Types.StructureTypes.Material CurrentMaterial = Types.StructureTypes.Material.Steel;
-    private Section CurrentSection = Section.UB;
+    private int CurrentMaterialID = 1;  
+    private int CurrentSectionID = 1;
     
     public bool Dragging { get; private set; }
     private StructureEditorSettings Settings;
@@ -192,8 +193,50 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             throw new Exception("Something went seriously wrong, did you forget to implement AddNode properly?");
         }
         // TODO change element and section behaviour
-        Structure.AddElement(new Element(node1ID, node2ID, CurrentMaterial, CurrentSection));
+        Console.WriteLine($"Mat: {CurrentMaterialID} \nSect: {CurrentSectionID}");
+        Structure.AddElement(new Element(node1ID, node2ID, CurrentMaterialID, CurrentSectionID));
 
+    }
+
+    public void MaterialSelectComboBox()
+    {
+        ImGui.SameLine();
+        if (ImGui.BeginCombo("Material", Structure.GetMaterial(CurrentMaterialID).Description, ImGuiComboFlags.WidthFitPreview))
+        {
+            foreach (int i in Structure.GetMaterialIndexesSorted())
+            {
+                if (ImGui.Selectable(Structure.GetMaterial(i).Description, CurrentMaterialID == i))
+                {
+                    CurrentMaterialID = i;
+                }
+
+                if (CurrentMaterialID == i)
+                {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
+        }
+    }
+    public void SectionSelectComboBox()
+    {
+        ImGui.SameLine();
+        if (ImGui.BeginCombo("Section", Structure.GetSection(CurrentSectionID).Description, ImGuiComboFlags.WidthFitPreview))
+        {
+            foreach (int i in Structure.GetSectionIndexesSorted())
+            {
+                if (ImGui.Selectable(Structure.GetSection(i).Description, CurrentSectionID == i))
+                {
+                    CurrentSectionID = i;
+                }
+
+                if (CurrentSectionID == i)
+                {
+                    ImGui.SetItemDefaultFocus();
+                }
+            }
+            ImGui.EndCombo();
+        }
     }
     private void FinaliseMultiInput()
     {

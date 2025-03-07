@@ -27,7 +27,9 @@ public interface IStructure
     public int GetLoadCount();
     public int GetBoundaryConditionCount();
     public bool ValidNodeID(int nodeID);
-
+    //todo material with this description already exists!
+    public void AddMaterial(Material mat);
+    public void AddSection(Section sect);
     public List<int> GetMaterialIndexesSorted();
     public List<int> GetSectionIndexesSorted();
     public Section GetSection(int sectionID);

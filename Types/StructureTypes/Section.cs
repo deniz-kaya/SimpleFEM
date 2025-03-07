@@ -4,11 +4,11 @@ public struct Section
 {
     public Section(string description, float i, float a)
     {
-        Desription = description;
+        Description = description;
         I = i;
         A = a;
     }
-    public string Desription;
+    public string Description;
     public float I;
     public float A;
     //533 x 312 x 273

@@ -88,16 +88,16 @@ class Program
             structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
 
             //STRUCTURE SETUP
-            Material mat = Material.Steel;
-            Section sect = Section.UB;
-
-            structure.AddNode(new Vector2(0f, 0f));
-            structure.AddNode(new Vector2(0f, 50f));
-            structure.AddNode(new Vector2(100f, 0f));
-            structure.AddElement(new Element(1, 2, mat, sect));
-            structure.AddElement(new Element(1, 3, mat, sect));
-            structure.AddElement(new Element(2, 3, mat, sect));
+            // Material mat = Material.Steel;
+            // Section sect = Section.UB;
             //
+            // structure.AddNode(new Vector2(0f, 0f));
+            // structure.AddNode(new Vector2(0f, 50f));
+            // structure.AddNode(new Vector2(100f, 0f));
+            // structure.AddElement(new Element(1, 2, mat, sect));
+            // structure.AddElement(new Element(1, 3, mat, sect));
+            // structure.AddElement(new Element(2, 3, mat, sect));
+            // //
         }
 
         StructureSolver solver = new StructureSolver(structure); 
