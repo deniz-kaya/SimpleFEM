@@ -2,23 +2,22 @@
 
 public struct Material
 {
-    public Material(float e, float poisson, float density)
+    //todo ctor and variable naming conventions
+    public Material(string description, float e)
     {
+        Desription = description;
         E = e;
-        Poisson = poisson;
-        Density = density;
     }
     public float E;
-    public float Poisson;
-    public float Density;
+    public string Desription;
 
     //from eurocode
     public Material(float e)
     {
         this.E = e;
     }
-    public static Material Steel => new Material(2.1e11f, 0.3f, 7850f);
+    public static Material Steel => new Material("Steel",2.1e11f);
     
-    public static Material Dummy => new Material(1, 1, 1);
+    public static Material Dummy => new Material("Dummy",1f);
     
 }

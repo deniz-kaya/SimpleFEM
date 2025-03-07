@@ -116,11 +116,12 @@ class Program
             
             ui.DrawFooter();
             ui.DrawToolbar();
-            ui.DefineAllPopups();
 
             ui.DrawSolveSystemWindow();
             ui.DrawHoveredNodePropertyViewer();
             ui.DrawSceneWindow();
+            //ui.DefineSettingsEditorWindow();
+            ui.DefineAllPopups();
 
             ui.HandleInputs();
             //DRAW EVERYTHING ABOVE ME

@@ -13,10 +13,11 @@ public class InMemoryStructure : IStructure
     public Dictionary<int, Load> Loads;
     public Dictionary<int, BoundaryCondition> BoundaryConditions;
     public RecyclingList<Element> Elements;
+    public RecyclingList<Material> Materials;
+    public RecyclingList<Section> Sections;
     private string StructureName;
     private StructureSettings settings;
     // TODO maybe replace null checks with setting to default from the structure creation screen
-    // TODO URGENT change GetLoad and getboundarycondition to return said things
     public InMemoryStructure(string name, StructureSettings? settings) 
     {
         this.settings = settings ?? StructureSettings.Default;

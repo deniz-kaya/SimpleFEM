@@ -19,7 +19,6 @@ public interface IStructure
     public void SetLoad(int nodeID, Load load);
     public BoundaryCondition GetBoundaryCondition(int nodeID);
     public Load GetLoad(int nodeID);
-    
     public List<int> GetNodeIndexesSorted();
     public List<int> GetElementIndexesSorted();
     public StructureSettings GetStructureSettings();
@@ -28,6 +27,11 @@ public interface IStructure
     public int GetLoadCount();
     public int GetBoundaryConditionCount();
     public bool ValidNodeID(int nodeID);
+
+    public List<int> GetMaterialIndexesSorted();
+    public List<int> GetSectionIndexesSorted();
+    public Section GetSection(int sectionID);
+    public Material GetMaterial(int materialID);
     public bool ValidElementID(int elementID);
 
 }

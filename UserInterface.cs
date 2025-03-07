@@ -1,12 +1,15 @@
 ﻿using System.Numerics;
 using System.Xml;
 using ImGuiNET;
+using Raylib_cs;
 using SimpleFEM.Derived;
+using SimpleFEM.Extensions;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
+using Material = SimpleFEM.Types.StructureTypes.Material;
 
 namespace SimpleFEM;
 
@@ -15,19 +18,21 @@ public class UserInterface
     private UIStructureEditor structureEditor;
     private UISceneRenderer sceneRenderer;
     private UIStructureSolver structureSolver;
+    private DrawSettings drawSettings;
     private HotkeySettings settings;
     
     public UserInterface(IStructure structure, HotkeySettings settings)
     {
         structureSolver = new UIStructureSolver(structure);
         structureEditor = new UIStructureEditor(structure, StructureEditorSettings.Default);
+        drawSettings = DrawSettings.Default;
         sceneRenderer = new UISceneRenderer();
         this.settings = settings;
     }
 
     public void DrawSceneWindow()
     {
-        sceneRenderer.SetRenderQueue(structureEditor.GetSceneObjects(DrawSettings.Default));
+        sceneRenderer.SetRenderQueue(structureEditor.GetSceneObjects(drawSettings));
         sceneRenderer.ShowSceneWindow();
     }
     public void DrawFooter()
@@ -188,10 +193,7 @@ public class UserInterface
         
         if (ImGui.Button("Solve current system"))
         {
-            Matrix m = structureSolver.GetGlobalStiffnessMatrix();
-            m.DebugPrint();
-            Console.WriteLine(m.Columns);
-            Console.WriteLine(m.Rank);
+            structureSolver.Solve();
             
         }
 
@@ -217,22 +219,22 @@ public class UserInterface
             {
                 if (ImGui.MenuItem("New Project"))
                 {
-                    
+                    //todo new project popup modal
                 }
 
                 if (ImGui.MenuItem("Open Project"))
                 {
-                    
+                    //todo open project popup modal
                 }
 
                 if (ImGui.MenuItem("Save Project"))
                 {
-                    //lock structure until its saved
+                    //todo save structure popup/thing
                 }
 
                 if (ImGui.MenuItem("Save Project As"))
                 {
-                    //lock strucvture until its saved
+                    //todo save structure as popup
                 }
                 
                 ImGui.EndMenu();
@@ -247,7 +249,7 @@ public class UserInterface
 
                 if (ImGui.MenuItem("Add new section"))
                 {
-                    
+                    //todo material handling   
                 }
                 ImGui.EndMenu();
             }
@@ -256,14 +258,17 @@ public class UserInterface
             {
                 if (ImGui.MenuItem("Edit keybinds"))
                 {
-                    
+                    //todo keybind editor 
                 }
 
                 if (ImGui.MenuItem("Edit colours"))
                 {
-                    
+                    // todo draw-colour editor 
                 }
                 if (ImGui.MenuItem("Edit selection settings"))
+                {
+                    //todo selection settings editor
+                }
                 ImGui.EndMenu();
             }
             ImGui.EndMainMenuBar();
@@ -280,6 +285,15 @@ public class UserInterface
             {
                 structureEditor.SwitchTool(t);
             }
+        }
+
+        if (ImGui.BeginCombo("Material", "material", ImGuiComboFlags.WidthFitPreview))
+        {
+            foreach (int i in )
+            {
+                
+            }
+            ImGui.EndCombo();
         }
     }
     //Input Handling
@@ -362,6 +376,7 @@ public class UserInterface
             ImGui.OpenPopup("SelectedNodePopup");
         }
     }
+    
     //Popups
     // TODO rename properties to be better
     // Popup Properties
@@ -415,7 +430,88 @@ public class UserInterface
             ImGui.EndPopup();
         }
     }
-    
+
+
+    private Vector4 sceneElementColor = new();
+    private Vector4 sceneNodeColor = new();
+    private Vector4 sceneSelectedElementColor = new();
+    private Vector4 sceneSelectedNodeColor = new();
+    private Vector4 sceneHoveredElementColor = new();
+    private Vector4 sceneHoveredNodeColor = new();
+    private Vector4 sceneSelectionBoxColor = new();
+    private float sceneElementThickness;
+    private float sceneNodeRadius;
+    private void DefineSceneDrawSettings()
+    {
+        ImGui.ColorEdit4("Element Color", ref sceneElementColor);
+        ImGui.ColorEdit4("Node Color", ref sceneNodeColor);
+        ImGui.ColorEdit4("Selected Element Color", ref sceneSelectedElementColor);
+        ImGui.ColorEdit4("Selected Node Color", ref sceneSelectedNodeColor);
+        ImGui.ColorEdit4("Hovered Element Color", ref sceneHoveredElementColor);
+        ImGui.ColorEdit4("Hovered Node Color", ref sceneHoveredNodeColor);
+        ImGui.ColorEdit4("Selection Box Color", ref sceneSelectionBoxColor);
+        ImGui.DragFloat("Element Thickness", ref sceneElementThickness, 0.1f, 1f, 5f);
+        ImGui.DragFloat("Node Radius", ref sceneNodeRadius, 0.1f, 1f, 5f);
+        //todo saving and loading userdata on program launch
+        if (ImGui.Button("Save Settings"))
+        {
+            drawSettings = new DrawSettings(
+                sceneElementColor,
+                sceneNodeColor,
+                sceneSelectedElementColor,
+                sceneSelectedNodeColor,
+                sceneHoveredElementColor,
+                sceneHoveredNodeColor,
+                sceneSelectionBoxColor,
+                sceneElementThickness,
+                sceneNodeRadius
+            );
+        }
+
+        if (ImGui.Button("Reset to defaults"))
+        {
+            drawSettings = DrawSettings.Default;
+        }
+    }
+    private void DefineToolHotkeysSettings()
+    {
+        ImGui.GetIO();
+
+
+    }
+
+    private void DefineEditorSettings()
+    {
+        
+    }
+    private bool DisplaySettingsEditorWindow = true;
+
+    public void DefineSettingsEditorWindow()
+    {
+        if (!DisplaySettingsEditorWindow) return;
+
+        ImGui.Begin("Settings Editor");
+        if (ImGui.BeginTabBar("SettingsTabBar"))
+        {
+            if (ImGui.BeginTabItem("Scene Draw settings"))
+            {
+                DefineSceneDrawSettings();
+            }
+
+            if (ImGui.BeginTabItem("Tool Hotkeys"))
+            {
+                DefineToolHotkeysSettings();
+            }
+
+            if (ImGui.BeginTabItem("Editor Settings"))
+            {   
+                DefineEditorSettings();
+            }
+            ImGui.EndTabBar();
+        }
+
+        ImGui.End();
+    }
     public void DefineLoadEditorModal()
     {
         if (ImGui.BeginPopupModal("Load Editor", ImGuiWindowFlags.AlwaysAutoResize))
@@ -475,5 +571,4 @@ public class UserInterface
             ImGui.EndPopup();
         }
     }
-
 }

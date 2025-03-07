@@ -49,7 +49,7 @@ public struct Matrix : ILinearAlgebra
         {
             for (int c = 0; c < columns; c++)
             {
-                Console.Write($"{this[r,c]:0.##E+0} ");
+                Console.Write($"{Math.Abs(this[r,c]):0E+00} ");
             }
             
             Console.WriteLine();

@@ -25,7 +25,12 @@ public class StructureSolver
     }
     public void Solve()
     {
+        CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
+        CurrentForceVector = GetForceVector();
+        CurrentStiffnessMatrix.DebugPrint();
+        //Thread.Sleep(100000);
         CurrentSolution = LinAlgMethods.Solve(CurrentStiffnessMatrix, CurrentForceVector);
+        CurrentSolution.DebugPrint();
     }
 
     
@@ -100,7 +105,7 @@ public class StructureSolver
     }
     public Matrix GetGlobalStiffnessMatrix()
     {
-        Dictionary<int, int> idMap = GetMappedNodeIndexes();
+        Dictionary<int, int> nodeIDMap = GetMappedNodeIndexes();
         List<int> elementIndexes = structure.GetElementIndexesSorted();
         Matrix6x6[] elementStiffnessMatrices = new Matrix6x6[elementIndexes.Count];
         (int, int)[] elementNodeIndexes = new (int, int)[elementStiffnessMatrices.Length];
@@ -121,8 +126,8 @@ public class StructureSolver
         {
             Matrix6x6 m = elementStiffnessMatrices[i];
             
-            int firstIdx = idMap[elementNodeIndexes[i].Item1] * DOF;
-            int secondIdx = idMap[elementNodeIndexes[i].Item2] * DOF;
+            int firstIdx = nodeIDMap[elementNodeIndexes[i].Item1] * DOF;
+            int secondIdx = nodeIDMap[elementNodeIndexes[i].Item2] * DOF;
             
             for (int corner = 0; corner < 4; corner++)
             {
@@ -152,9 +157,49 @@ public class StructureSolver
                 }
             }
         }
+
+        //apply BC's 
+        foreach (int nodeID in structure.GetNodeIndexesSorted())
+        {
+            //TODO must be a cleaner way to write this
+            BoundaryCondition bc = structure.GetBoundaryCondition(nodeID);
+            if (bc.FixedX)
+            {
+                int BCindex = DOF * nodeIDMap[nodeID];
+                for (int i = 0; i < K.Columns; i++)
+                {
+                    K[BCindex, i] = 0f;
+                    K[i, BCindex] = 0f;
+                }
+                K[BCindex, BCindex] = 1f;
+            }
+            if (bc.FixedY)
+            {
+                int BCindex = DOF * nodeIDMap[nodeID] + 1;
+                for (int i = 0; i < K.Columns; i++)
+                {
+                    K[BCindex, i] = 0f;
+                    K[i, BCindex] = 0f;
+                }
+                K[BCindex, BCindex] = 1f;
+            }
+            if (bc.FixedRotation)
+            {
+                int BCindex = DOF * nodeIDMap[nodeID] + 2;
+                for (int i = 0; i < K.Columns; i++)
+                {
+                    K[BCindex, i] = 0f;
+                    K[i, BCindex] = 0f;
+                }
+                K[BCindex, BCindex] = 1f;
+            }
+            
+        }
         return K;
         
     }
+
+
     public Matrix6x6 GetLocalStiffnessMatrix(Element element)
     {
         float length = Vector2.Distance(structure.GetNode(element.Node1ID).Pos, structure.GetNode(element.Node2ID).Pos);

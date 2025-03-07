@@ -76,11 +76,13 @@ public class DatabaseStructure : IStructure
                      );
                      CREATE TABLE IF NOT EXISTS Sections (
                          ID INTEGER PRIMARY KEY,
+                         Description STRING NOT NULL,
                          A REAL NOT NULL,
                          I REAL NOT NULL
                      );
                      CREATE TABLE IF NOT EXISTS Materials (
                          ID INTEGER PRIMARY KEY,
+                         Description STRING NOT NULL
                          E REAL NOT NULL
                      );
                     CREATE TABLE IF NOT EXISTS Settings (
@@ -486,14 +488,14 @@ public class DatabaseStructure : IStructure
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT NodeID, ForceX, ForceY, Moment FROM Loads WHERE NodeID = @nodeID;
+                SELECT ForceX, ForceY, Moment FROM Loads WHERE NodeID = @nodeID;
             ";
             retrieveCommand.Parameters.AddWithValue("@nodeID", nodeIndex);
 
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
-                //ensures that the selection exists
                 //todo potential issue with reader.read
+                //there was an issue with this, the load property viewer was giving bogus results, its fine now
                 if (reader.Read())
                 {
                     load = new Load(reader.GetFloat(0), reader.GetFloat(1), reader.GetFloat(2));
@@ -793,4 +795,107 @@ public class DatabaseStructure : IStructure
             throw new NullReferenceException("null value returned by sum command, what went wrong?");
         }
     }
+
+    public List<int> GetSectionIndexesSorted()
+    {
+        List<int> indexes = new List<int>();
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            SqliteCommand retrieveCommand = conn.CreateCommand();
+            retrieveCommand.CommandText = @"
+                SELECT ID From Sections
+            ";
+            using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    indexes.Add(reader.GetInt32(0));
+                }
+            }
+            conn.Close();
+        }
+
+        return indexes;
+        
+    }
+
+    public Section GetSection(int sectionID)
+    {
+        Section sect = Section.Dummy;
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            
+            SqliteCommand retrieveCommand = conn.CreateCommand();
+            retrieveCommand.CommandText = @"
+                SELECT Description, I, A FROM Sections WHERE ID = @id;
+            ";
+            retrieveCommand.Parameters.AddWithValue("@id", sectionID);
+            using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
+            {
+                if (reader.Read())
+                {
+                    sect = new Section(reader.GetString(0), reader.GetFloat(1), reader.GetFloat(2));
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Invalid section ID");
+                }
+            }   
+            conn.Close();
+        }
+        return sect;
+    } 
+    public List<int> GetMaterialIndexesSorted() 
+    {
+        List<int> indexes = new List<int>();
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            SqliteCommand retrieveCommand = conn.CreateCommand();
+            retrieveCommand.CommandText = @"
+                SELECT ID From Materials
+            ";
+            using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    indexes.Add(reader.GetInt32(0));
+                }
+            }
+            conn.Close();
+        }
+
+        return indexes;
+    }
+
+    public Material GetMaterial(int materialID)
+    {
+        Material mat = Material.Dummy;
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            
+            SqliteCommand retrieveCommand = conn.CreateCommand();
+            retrieveCommand.CommandText = @"
+                SELECT Description, E FROM Materials WHERE ID = @id;
+            ";
+            retrieveCommand.Parameters.AddWithValue("@id", materialID);
+            using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
+            {
+                if (reader.Read())
+                {
+                    mat = new Material(reader.GetString(0), reader.GetFloat(1));
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException("Invalid material ID");
+                }
+            }   
+            conn.Close();
+        }
+        return mat;
+    }
+    
+    
 }
