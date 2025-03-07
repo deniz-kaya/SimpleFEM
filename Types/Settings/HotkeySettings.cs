@@ -2,7 +2,7 @@
 
 namespace SimpleFEM.Types.Settings;
 
-public struct UserSettings
+public struct HotkeySettings
 {
     public float FooterHeight;
     public ImGuiKey MoveToolKey;
@@ -10,12 +10,14 @@ public struct UserSettings
     public ImGuiKey AddElementToolKey;
     public ImGuiKey SelectNodesToolKey;
     public ImGuiKey SelectElementsToolKey;
+    public ImGuiKey MouseSelectToolKey;
+    
 
-    public static UserSettings Default
+    public static HotkeySettings Default
     {
         get
         {
-            return new UserSettings()
+            return new HotkeySettings()
             {
                 FooterHeight = 30f,
                 MoveToolKey = ImGuiKey.M,
@@ -23,6 +25,7 @@ public struct UserSettings
                 AddElementToolKey = ImGuiKey.W,
                 SelectNodesToolKey = ImGuiKey.E,
                 SelectElementsToolKey = ImGuiKey.R,
+                MouseSelectToolKey = ImGuiKey.T
             };
         }
     }

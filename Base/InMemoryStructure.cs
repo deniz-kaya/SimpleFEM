@@ -32,7 +32,16 @@ public class InMemoryStructure : IStructure
         return settings;
     }
     public string GetName() => StructureName;
-    
+
+    public bool ValidNodeID(int nodeID)
+    {
+        return Nodes.ValidIndex(nodeID);
+    }
+
+    public bool ValidElementID(int elementID)
+    {
+        return Elements.ValidIndex(elementID);
+    }
     public bool AddNode(Vector2 pos)
     {
         foreach (Node n in Nodes)
@@ -240,5 +249,31 @@ public class InMemoryStructure : IStructure
     public int GetElementCount()
     {
         return Elements.Count;
+    }
+
+    public int GetBoundaryConditionCount()
+    {
+        int count = 0;
+        foreach (BoundaryCondition bc in BoundaryConditions.Values)
+        {
+            if (bc.FixedX){count++;}
+            if (bc.FixedY){count++;}
+            if (bc.FixedRotation){count++;}
+        }
+
+        return count;
+    }
+
+    public int GetLoadCount()
+    {
+        int count = 0;
+        foreach (Load l in Loads.Values)
+        {
+            if (l.ForceX != 0) {count++;}
+            if (l.ForceY != 0) {count++;}
+            if (l.Moment != 0) {count++;}
+        }
+
+        return count;
     }
 }

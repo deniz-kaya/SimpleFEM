@@ -1,14 +1,18 @@
-﻿namespace SimpleFEM.Types.StructureTypes;
+﻿using System.Security.AccessControl;
+
+namespace SimpleFEM.Types.StructureTypes;
 
 public struct BoundaryCondition
 {
-    public BoundaryCondition(bool fixedY, bool fixedX, bool fixedRotation)
+    public BoundaryCondition(bool fixedX, bool fixedY, bool fixedRotation)
     {
-        this.FixedY = fixedY;
         this.FixedX = fixedX;
+        this.FixedY = fixedY;
         this.FixedRotation = fixedRotation;
     }
     public bool FixedY;
     public bool FixedX;
     public bool FixedRotation;
+    public bool IsDefault => !FixedX && !FixedY && !FixedRotation;
+    public static BoundaryCondition Default => new BoundaryCondition(false, false, false);
 }

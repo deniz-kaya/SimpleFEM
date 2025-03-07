@@ -14,7 +14,8 @@ public static class LinAlgMethods
         Vector Y = ForwardSubstitute(L, V);
         return BackwardSubstitute(U, Y);
     }
-
+    
+    //todo error handling
     public static (Matrix L, Matrix U) LUDecompose(Matrix K)
     {
         if (K.Rows != K.Columns)
@@ -61,7 +62,8 @@ public static class LinAlgMethods
 
         return (L, U);
     }
-
+    
+    //todo error handling
     public static Vector ForwardSubstitute(Matrix m, Vector v)
     {
         if (m.Rows != m.Columns)
@@ -91,8 +93,7 @@ public static class LinAlgMethods
         return x;
     }
 
-    
-    //TODO implement backward substitution divide by zero check
+    //todo error handling
     public static Vector BackwardSubstitute(Matrix m, Vector v)
     {
         if (m.Rows != m.Columns)
@@ -110,12 +111,16 @@ public static class LinAlgMethods
         for (int i = size - 1; i >= 0; i--)
         {
             float sum = 0;
-            
+
+            if (m[i, i] == 0)
+            {
+                throw new DivideByZeroException("Zero exists in rank");
+            }
             for (int j = i; j < size; j++)
             {
                 sum += m[i, j] * x[j];
             }
-
+            
             x[i] = (v[i] - sum) / m[i,i];
         }
 

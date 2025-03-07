@@ -41,6 +41,10 @@ public class SceneRenderer
         }
     }
 
+    public void MoveTarget(Vector2 delta)
+    {
+        camera.Target += delta;
+    }
     public void SetRenderQueue(Queue<ISceneObject> queue)
     {
         this.SceneObjects = queue;

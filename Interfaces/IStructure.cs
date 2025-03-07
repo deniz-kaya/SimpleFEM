@@ -25,5 +25,9 @@ public interface IStructure
     public StructureSettings GetStructureSettings();
     public int GetNodeCount();
     public int GetElementCount();
+    public int GetLoadCount();
+    public int GetBoundaryConditionCount();
+    public bool ValidNodeID(int nodeID);
+    public bool ValidElementID(int elementID);
 
 }

@@ -10,12 +10,22 @@ public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
 
     public bool SceneWindowHovered { get; private set; }
     public Vector2 TextureStartPosition;
-    
+    public Vector2 CurrentTarget;
+    public bool MoveStarted;
     public Vector2 GetScenePos(Vector2 screenPos)
     {
         return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera) * new Vector2(1f,-1f);
     }
 
+    public void MoveCameraTarget(Vector2 delta)
+    {
+        camera.Target = CurrentTarget + delta;
+    }
+
+    public void FinaliseMoveCameraTarget()
+    {
+        
+    }
     public UISceneRenderer() : this(new Vector2(100f,100f)) {}
 
     public void ShowSceneWindow()

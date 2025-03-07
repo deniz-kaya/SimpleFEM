@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SimpleFEM")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0113b0c1c01d27d6bb9a857f07401f5d28887b27")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fda5ffd5369bf48b42d2f4fd1c3edbca0cd36dbe")]
 [assembly: System.Reflection.AssemblyProductAttribute("SimpleFEM")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SimpleFEM")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

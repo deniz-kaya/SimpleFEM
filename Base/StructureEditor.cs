@@ -97,7 +97,39 @@ public class StructureEditor
 
         return false;
     }
-    private int CheckForNodesCloseToPos(Vector2 point, float threshold)
+    
+    // todo error handling potential with bool instead of void in calling method
+    public void SelectNode(int nodeID)
+    {
+        if (!SelectedNodes.Contains(nodeID))
+        {
+            SelectedNodes.Add(nodeID);
+        }
+    }
+
+    public void DeselectNode(int nodeID)
+    {
+        if (SelectedNodes.Contains(nodeID))
+        {
+            SelectedNodes.Remove(nodeID);
+        }
+    }
+
+    public void DeselectElement(int elementID)
+    {
+        if (SelectedElements.Contains(elementID))
+        {
+            SelectedElements.Remove(elementID);
+        }
+    }
+    public void SelectElement(int elementID)
+    {
+        if (!SelectedElements.Contains(elementID))
+        {
+            SelectedElements.Add(elementID);
+        }
+    }
+    public int CheckForNodesCloseToPos(Vector2 point, float threshold)
     {
         foreach (int i in Structure.GetNodeIndexesSorted())
         {

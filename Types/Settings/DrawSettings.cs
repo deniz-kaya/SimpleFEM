@@ -8,6 +8,8 @@ public struct DrawSettings
     public Color nodeColor;
     public Color selectedElementColor;
     public Color selectedNodeColor;
+    public Color hoveredElementColor;
+    public Color hoveredNodeColor;
     public Color selectionBoxColor;
     public float elementThickness;
     public float nodeRadius;
@@ -22,6 +24,8 @@ public struct DrawSettings
                 nodeColor = Color.Red,
                 selectedElementColor = Color.Orange,
                 selectedNodeColor = Color.Orange,
+                hoveredElementColor = Color.Blue,
+                hoveredNodeColor = Color.Blue,
                 selectionBoxColor = new Color(199,199,199,40),
                 elementThickness = 3f,
                 nodeRadius = 3f,

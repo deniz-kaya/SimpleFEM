@@ -68,34 +68,41 @@ class Program
     }
     static void Main(string[] args)
     {
-        
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         
         Raylib.InitWindow(1600, 900, "SimpleFEM");
         Raylib.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
+        bool databaseStructure = true;
+        IStructure structure;
+        if (databaseStructure)
+        {
+            structure = new DatabaseStructure(
+                @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
+                "testStructure",
+                new StructureSettings() { gridSpacing = 50f });
+        }
+        else
+        {
+            structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
 
-        IStructure structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
-        // IStructure structure = new DatabaseStructure(
-        //     @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
-        //     "testStructure",
-        //     new StructureSettings() { gridSpacing = 50f });
-        //STRUCTURE SETUP
-        Material mat = Material.Steel;
-        Section sect = Section.UB;
-            
-        structure.AddNode(new Vector2(0f,0f));
-        structure.AddNode(new Vector2(0f,50f));
-        structure.AddNode(new Vector2(100f,0f));
-        structure.AddElement(new Element(1, 2, mat, sect));
-        structure.AddElement(new Element(1, 3, mat, sect));
-        structure.AddElement(new Element(2, 3, mat, sect));
-        //
-        
+            //STRUCTURE SETUP
+            Material mat = Material.Steel;
+            Section sect = Section.UB;
+
+            structure.AddNode(new Vector2(0f, 0f));
+            structure.AddNode(new Vector2(0f, 50f));
+            structure.AddNode(new Vector2(100f, 0f));
+            structure.AddElement(new Element(1, 2, mat, sect));
+            structure.AddElement(new Element(1, 3, mat, sect));
+            structure.AddElement(new Element(2, 3, mat, sect));
+            //
+        }
+
         StructureSolver solver = new StructureSolver(structure); 
         
-        UserInterface ui = new UserInterface(structure, UserSettings.Default);
+        UserInterface ui = new UserInterface(structure, HotkeySettings.Default);
         
         while (!Raylib.WindowShouldClose())
         {
@@ -108,11 +115,11 @@ class Program
             ui.DrawMainMenuBar();
             
             ui.DrawFooter();
-
+            ui.DrawToolbar();
             ui.DefineAllPopups();
 
             ui.DrawSolveSystemWindow();
-            
+            ui.DrawHoveredNodePropertyViewer();
             ui.DrawSceneWindow();
 
             ui.HandleInputs();

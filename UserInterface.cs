@@ -15,9 +15,9 @@ public class UserInterface
     private UIStructureEditor structureEditor;
     private UISceneRenderer sceneRenderer;
     private UIStructureSolver structureSolver;
-    private UserSettings settings;
+    private HotkeySettings settings;
     
-    public UserInterface(IStructure structure, UserSettings settings)
+    public UserInterface(IStructure structure, HotkeySettings settings)
     {
         structureSolver = new UIStructureSolver(structure);
         structureEditor = new UIStructureEditor(structure, StructureEditorSettings.Default);
@@ -52,7 +52,7 @@ public class UserInterface
         float width = ImGui.GetContentRegionAvail().X;
         
         //Left of the footer
-        ImGui.Text($"Current tool: {structureEditor.CurrentTool.ToString()}");
+        ImGui.Text($"Current tool: {structureEditor.CurrentTool.ToString().Replace('_', ' ')}");
         //Right of the footer
 
         if (sceneRenderer.SceneWindowHovered)
@@ -65,6 +65,79 @@ public class UserInterface
         ImGui.End();
         
         ImGui.PopStyleVar(10);
+    }
+
+    public void DrawHoveredNodePropertyViewer()
+    {
+        ImGui.Begin("Node Property Viewer");
+        (Vector2? pos, BoundaryCondition bc, Load l) = structureEditor.GetHoveredNodeProperties();
+        if (pos == null)
+        {
+            ImGui.Text("No node hovered!");
+            return;
+        }
+
+        ImGui.Text($"Pos: {pos.ToString()}");
+        ImGui.NewLine();
+        ImGui.SeparatorText("Boundary Condition");
+        if (!bc.IsDefault)
+        {
+            if (ImGui.BeginTable("Boundary Conditions", 2, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableNextColumn();
+                ImGui.Text("Fixed X");
+                ImGui.TableNextColumn();
+                ImGui.Text(bc.FixedX.ToString());
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Fixed Y");
+                ImGui.TableNextColumn();
+                ImGui.Text(bc.FixedY.ToString());
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Fixed Rotation");
+                ImGui.TableNextColumn();
+                ImGui.Text(bc.FixedRotation.ToString());
+                
+                ImGui.EndTable();
+                
+            }
+        }
+        else
+        {
+            ImGui.Text("Node has no boundary conditions!");
+        }
+
+        ImGui.NewLine();
+        ImGui.SeparatorText("Load");
+        if (!l.IsDefault)
+        {
+            if (ImGui.BeginTable("Load", 2, ImGuiTableFlags.Borders))
+            {
+                //TOdo naming
+                ImGui.TableNextColumn();
+                ImGui.Text("X Load");
+                ImGui.TableNextColumn();
+                ImGui.Text(l.ForceX.ToString());
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Y Load");
+                ImGui.TableNextColumn();
+                ImGui.Text(l.ForceY.ToString());
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Moment");
+                ImGui.TableNextColumn();
+                ImGui.Text(l.Moment.ToString());
+                
+                ImGui.EndTable();
+                
+            }
+        }
+        else 
+        {
+            ImGui.Text("Node has no loads!");    
+        }
     }
     public void DrawMainDockSpace()
     {
@@ -142,29 +215,95 @@ public class UserInterface
         {
             if (ImGui.BeginMenu("File"))
             {
-                ImGui.MenuItem("File");
-                ImGui.SeparatorText("Test");
-                ImGui.Text(DateTime.Now.ToString());
+                if (ImGui.MenuItem("New Project"))
+                {
+                    
+                }
+
+                if (ImGui.MenuItem("Open Project"))
+                {
+                    
+                }
+
+                if (ImGui.MenuItem("Save Project"))
+                {
+                    //lock structure until its saved
+                }
+
+                if (ImGui.MenuItem("Save Project As"))
+                {
+                    //lock strucvture until its saved
+                }
+                
+                ImGui.EndMenu();
+            }
+
+            if (ImGui.BeginMenu("Edit"))
+            {
+                if (ImGui.MenuItem("Add new material"))
+                {
+                    
+                }
+
+                if (ImGui.MenuItem("Add new section"))
+                {
+                    
+                }
+                ImGui.EndMenu();
+            }
+
+            if (ImGui.BeginMenu("Options"))
+            {
+                if (ImGui.MenuItem("Edit keybinds"))
+                {
+                    
+                }
+
+                if (ImGui.MenuItem("Edit colours"))
+                {
+                    
+                }
+                if (ImGui.MenuItem("Edit selection settings"))
                 ImGui.EndMenu();
             }
             ImGui.EndMainMenuBar();
         }
     }
-    
+
+    public void DrawToolbar()
+    {
+        ImGui.Begin("Toolbar");
+        foreach (Tool t in Enum.GetValues(typeof(Tool))) 
+        {
+            ImGui.SameLine();
+            if (ImGui.Button(t.ToString().Replace('_', ' ')))
+            {
+                structureEditor.SwitchTool(t);
+            }
+        }
+    }
     //Input Handling
     public void HandleInputs()
     {
-        
+        Vector2 scenePos = sceneRenderer.GetScenePos(ImGui.GetMousePos());
+        structureEditor.SetLivePos(scenePos);
         if (sceneRenderer.SceneWindowHovered)
         {
+            structureEditor.UpdateHoveredItems();
             HandleToolSwitchInputs();
             if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
             {
                 HandlePopupDisplay();
             }
             
-            Vector2 scenePos = sceneRenderer.GetScenePos(ImGui.GetMousePos());
-            structureEditor.SetLivePos(scenePos);
+            
+            if (structureEditor.CurrentTool == Tool.Move && structureEditor.Dragging)
+            {
+                //todo make this not make me want to kill myself
+                sceneRenderer.MoveCameraTarget(structureEditor.GetMousePositionChange());
+            }
+            
+            
             if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
             {
                 structureEditor.HandleMouseKeyDownEvent();
@@ -173,7 +312,6 @@ public class UserInterface
             {
                 structureEditor.HandleMouseKeyUpEvent();
             }
-            
             if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
             {
                 structureEditor.HandleMouseKeyPressedEvent();
@@ -181,6 +319,7 @@ public class UserInterface
 
             if (ImGui.IsKeyPressed(ImGuiKey.Delete))
             {
+                //todo delete confirmation?
                 structureEditor.DeleteSelectedElements();
                 structureEditor.DeleteSelectedNodes();
             }
@@ -196,19 +335,23 @@ public class UserInterface
         }
         else if (ImGui.IsKeyPressed(settings.AddNodeToolKey))
         {
-            structureEditor.SwitchTool(Tool.AddNode);
+            structureEditor.SwitchTool(Tool.Add_Node);
         }
         else if (ImGui.IsKeyPressed(settings.AddElementToolKey))
         {
-            structureEditor.SwitchTool(Tool.AddElement);
+            structureEditor.SwitchTool(Tool.Add_Element);
         }
         else if (ImGui.IsKeyPressed(settings.SelectNodesToolKey))
         {
-            structureEditor.SwitchTool(Tool.SelectNodes);
+            structureEditor.SwitchTool(Tool.Select_Nodes);
         }
         else if (ImGui.IsKeyPressed(settings.SelectElementsToolKey))
         {
-            structureEditor.SwitchTool(Tool.SelectElements);
+            structureEditor.SwitchTool(Tool.Select_Elements);
+        }
+        else if (ImGui.IsKeyPressed(settings.MouseSelectToolKey))
+        {
+            structureEditor.SwitchTool(Tool.Mouse_Select);
         }
     }
 

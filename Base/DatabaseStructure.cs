@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Net.NetworkInformation;
 using System.Numerics;
 using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
@@ -16,6 +17,7 @@ namespace SimpleFEM.Base;
 
 public class DatabaseStructure : IStructure
 {
+    private const int SQLIndex = 1;
     private string StructureName;
     private StructureSettings settings;
     private string connectionString;
@@ -27,93 +29,94 @@ public class DatabaseStructure : IStructure
         InitialiseDatabase(filepath);
     }
     private void InitialiseDatabase(string filepath)
+     {
+         bool newDB = false;
+         if (!(Path.Exists(filepath) && FileIsSqliteDatabase(filepath)))
          {
-             bool newDB = false;
-             if (!(Path.Exists(filepath) && FileIsSqliteDatabase(filepath)))
-             {
-                 newDB = true;
-             }
-
-             connectionString = $"Data Source={filepath}";
-             
-             using (SqliteConnection conn = new SqliteConnection(connectionString))
-             {
-                 conn.Open();
-                 SqliteCommand command = conn.CreateCommand();
-                 command.CommandText = @"
-                         PRAGMA foreign_keys = ON;
-                         CREATE TABLE IF NOT EXISTS Nodes (
-                             ID INTEGER PRIMARY KEY,
-                             X REAL NOT NULL,
-                             Y REAL NOT NULL
-                         );
-                         CREATE TABLE IF NOT EXISTS Elements (
-                             ID INTEGER PRIMARY KEY, 
-                             MaterialID INTEGER NOT NULL,
-                             SectionID INTEGER NOT NULL,
-                             Node1ID INTEGER NOT NULL,
-                             Node2ID INTEGER NOT NULL,
-                             FOREIGN KEY (MaterialID) REFERENCES Materials(ID) ON DELETE CASCADE,
-                             FOREIGN KEY (SectionID) REFERENCES Sections(ID) ON DELETE CASCADE,
-                             FOREIGN KEY (Node1ID) REFERENCES Nodes(ID) ON DELETE CASCADE,
-                             FOREIGN KEY (Node2ID) REFERENCES Nodes(ID) ON DELETE CASCADE
-                         );
-                         CREATE TABLE IF NOT EXISTS Loads (
-                             NodeID INTEGER PRIMARY KEY,
-                             ForceX REAL NOT NULL,
-                             ForceY REAL NOT NULL,
-                             Moment REAL NOT NULL, 
-                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID) ON DELETE CASCADE
-                         );
-                         CREATE TABLE IF NOT EXISTS BoundaryConditions (
-                             NodeID INTEGER PRIMARY KEY,
-                             FixedX BOOLEAN NOT NULL,
-                             FixedY BOOLEAN NOT NULL,
-                             FixedRotation BOOLEAN NOT NULL,
-                             FOREIGN KEY (NodeID) REFERENCES Nodes(ID) ON DELETE CASCADE
-                         );
-                         CREATE TABLE IF NOT EXISTS Sections (
-                             ID INTEGER PRIMARY KEY,
-                             A REAL NOT NULL,
-                             I REAL NOT NULL
-                         );
-                         CREATE TABLE IF NOT EXISTS Materials (
-                             ID INTEGER PRIMARY KEY,
-                             E REAL NOT NULL
-                         );
-                        CREATE TABLE IF NOT EXISTS Settings (
-                            ID INTEGER PRIMARY KEY CHECK (ID = 1),
-                            GridSpacing REAL NOT NULL
-                        );
-                 ";
-                 // todo add the settings table
-                 // if (newDB)
-                 // {
-                 //     command.CommandText += @"
-                 //         CREATE TABLE IF NOT EXISTS Settings() (
-                 //             ID INTEGER PRIMARY KEY CHECK (ID = 1),
-                 //             GridSpacing REAL NOT NULL
-                 //         );
-                 //         INSERT INTO Settings (ID, GridSpacing) VALUES (1, @value)
-                 //     ";
-                 //     command.Parameters.AddWithValue("@value", settings.gridSpacing);
-                 //     command.ExecuteNonQuery();
-                 // }
-                 // else
-                 // {
-                 //     command.ExecuteNonQuery();
-                 //     command.CommandText = @"
-                 //         SELECT GridSpacing FROM Settings WHERE ID = 1; 
-                 //     ";
-                 //     using (SqliteDataReader reader = command.ExecuteReader())
-                 //     {
-                 //         //todo could fail
-                 //         settings = new StructureSettings(reader.GetFloat(0));
-                 //     }
-                 // }
-                 conn.Close();
-             }
+             newDB = true;
          }
+
+         connectionString = $"Data Source={filepath}";
+         
+         using (SqliteConnection conn = new SqliteConnection(connectionString))
+         {
+             conn.Open();
+             SqliteCommand command = conn.CreateCommand();
+             command.CommandText = @"
+                     PRAGMA foreign_keys = ON;
+                     CREATE TABLE IF NOT EXISTS Nodes (
+                         ID INTEGER PRIMARY KEY,
+                         X REAL NOT NULL,
+                         Y REAL NOT NULL
+                     );
+                     CREATE TABLE IF NOT EXISTS Elements (
+                         ID INTEGER PRIMARY KEY, 
+                         MaterialID INTEGER NOT NULL,
+                         SectionID INTEGER NOT NULL,
+                         Node1ID INTEGER NOT NULL,
+                         Node2ID INTEGER NOT NULL,
+                         FOREIGN KEY (MaterialID) REFERENCES Materials(ID) ON DELETE CASCADE,
+                         FOREIGN KEY (SectionID) REFERENCES Sections(ID) ON DELETE CASCADE,
+                         FOREIGN KEY (Node1ID) REFERENCES Nodes(ID) ON DELETE CASCADE,
+                         FOREIGN KEY (Node2ID) REFERENCES Nodes(ID) ON DELETE CASCADE
+                     );
+                     CREATE TABLE IF NOT EXISTS Loads (
+                         NodeID INTEGER PRIMARY KEY,
+                         ForceX REAL NOT NULL,
+                         ForceY REAL NOT NULL,
+                         Moment REAL NOT NULL, 
+                         FOREIGN KEY (NodeID) REFERENCES Nodes(ID) ON DELETE CASCADE
+                     );
+                     CREATE TABLE IF NOT EXISTS BoundaryConditions (
+                         NodeID INTEGER PRIMARY KEY,
+                         FixedX BOOLEAN NOT NULL,
+                         FixedY BOOLEAN NOT NULL,
+                         FixedRotation BOOLEAN NOT NULL,
+                         FOREIGN KEY (NodeID) REFERENCES Nodes(ID) ON DELETE CASCADE
+                     );
+                     CREATE TABLE IF NOT EXISTS Sections (
+                         ID INTEGER PRIMARY KEY,
+                         A REAL NOT NULL,
+                         I REAL NOT NULL
+                     );
+                     CREATE TABLE IF NOT EXISTS Materials (
+                         ID INTEGER PRIMARY KEY,
+                         E REAL NOT NULL
+                     );
+                    CREATE TABLE IF NOT EXISTS Settings (
+                        ID INTEGER PRIMARY KEY CHECK (ID = 1),
+                        GridSpacing REAL NOT NULL
+                    );
+             ";
+             // todo add the settings table
+             // if (newDB)
+             // {
+             //     command.CommandText += @"
+             //         CREATE TABLE IF NOT EXISTS Settings() (
+             //             ID INTEGER PRIMARY KEY CHECK (ID = 1),
+             //             GridSpacing REAL NOT NULL
+             //         );
+             //         INSERT INTO Settings (ID, GridSpacing) VALUES (1, @value)
+             //     ";
+             //     command.Parameters.AddWithValue("@value", settings.gridSpacing);
+             //     command.ExecuteNonQuery();
+             // }
+             // else
+             // {
+             //     command.ExecuteNonQuery();
+             //     command.CommandText = @"
+             //         SELECT GridSpacing FROM Settings WHERE ID = 1; 
+             //     ";
+             //     using (SqliteDataReader reader = command.ExecuteReader())
+             //     {
+             //         //todo could fail
+             //         settings = new StructureSettings(reader.GetFloat(0));
+             //     }
+             // }
+             conn.Close();
+         }
+     }
+    
     private bool FileIsSqliteDatabase(string filepath)
     {
         const int sqliteHeaderSize = 16;
@@ -207,6 +210,32 @@ public class DatabaseStructure : IStructure
         return true;
         
     }
+
+    public bool ValidNodeID(int nodeID)
+    {
+        bool valid = false;
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            valid = NodeExists(nodeID, conn);
+            conn.Close();
+        }
+
+        return valid;
+    }
+
+    public bool ValidElementID(int elementID)
+    {
+        bool valid = false;
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            valid = ElementExists(elementID, conn);
+            conn.Close();
+        }
+
+        return valid;
+    } 
     private bool ValidNode(Vector2 v, SqliteConnection conn, out int index)
     {
         index = -1;
@@ -717,5 +746,51 @@ public class DatabaseStructure : IStructure
         }
 
         return count;
+    }
+    //todo error handling
+    public int GetBoundaryConditionCount()
+    {
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            SqliteCommand countCommand = conn.CreateCommand();
+            countCommand.CommandText = @"
+                SELECT SUM(
+                    CASE WHEN FixedX <> FALSE THEN 1 ELSE 0 END +
+                    CASE WHEN FixedY <> FALSE THEN 1 ELSE 0 END +
+                    CASE WHEN FixedRotation <> FALSE THEN 1 ELSE 0 END +                       
+                )
+                FROM BoundaryConditions
+            ";
+            object? result = countCommand.ExecuteScalar();
+            conn.Close();
+            if (result != null)
+            {
+                return Convert.ToInt32(result);
+            }
+            throw new NullReferenceException("null value returned by sum command, what went wrong?");
+        }
+    }
+
+    public int GetLoadCount()
+    {
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            SqliteCommand countCommand = conn.CreateCommand();
+            countCommand.CommandText = @"
+                SELECT SUM(
+                    CASE WHEN ForceX <> 0 THEN 1 ELSE 0 END +
+                    CASE WHEN ForceY <> 0 THEN 1 ELSE 0 END +
+                    CASE WHEN Moment <> 0 THEN 1 ELSE 0 END +                       
+                )
+                FROM Loads
+            ";
+            object? result = countCommand.ExecuteScalar();
+            conn.Close();
+            if (result != null)
+            {
+                return Convert.ToInt32(result);
+            }
+            throw new NullReferenceException("null value returned by sum command, what went wrong?");
+        }
     }
 }
