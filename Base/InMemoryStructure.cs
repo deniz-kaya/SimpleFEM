@@ -31,10 +31,19 @@ public class InMemoryStructure : IStructure
         Elements = new RecyclingList<Element>();
         Materials = new RecyclingList<Material>();
         Sections = new RecyclingList<Section>();
-        Materials.Add(Material.Steel);
-        Sections.Add(Section.UB);
+        
+        AddInitialElementProperties();
     }
 
+    private void AddInitialElementProperties()
+    {
+        AddMaterial(Material.Steel235);   
+        AddMaterial(Material.Steel275);   
+        AddMaterial(Material.Steel355);   
+        AddSection(Section.UB533x312x273);
+        AddSection(Section.UC254x254x132);
+        AddSection(Section.SHS100x100x5); 
+    }
     public StructureSettings GetStructureSettings()
     {
         return settings;
@@ -132,6 +141,8 @@ public class InMemoryStructure : IStructure
         
         Nodes.Add(new Node(pos));
         index = Nodes.LastAddedIndex;
+        Loads[index] = default;
+        BoundaryConditions[index] = default;
         return true;
     }
 
@@ -184,11 +195,25 @@ public class InMemoryStructure : IStructure
 
     public void AddMaterial(Material mat)
     {
+        foreach (Material m in Materials)
+        {
+            if (m.E == mat.E && m.Yield == mat.Yield)
+            {
+                return;
+            }
+        }
         Materials.Add(mat);
     }
 
     public void AddSection(Section sect)
     {
+        foreach (Section s in Sections)
+        {
+            if (s.I == sect.I && s.A == sect.A)
+            {
+                return;
+            }
+        }
         Sections.Add(sect);
     }
     public Element GetElement(int elementID)

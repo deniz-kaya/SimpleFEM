@@ -34,8 +34,12 @@ public class DatabaseStructure : IStructure
 
     private void InitialiseMaterialsAndSections()
     {
-        AddSection(Section.UB);
-        AddMaterial(Material.Steel);
+        AddMaterial(Material.Steel235);
+        AddMaterial(Material.Steel275);
+        AddMaterial(Material.Steel355);
+        AddSection(Section.UB533x312x273);
+        AddSection(Section.UC254x254x132);
+        AddSection(Section.SHS100x100x5);
     }
     private void InitialiseDatabase(string filepath)
      {
@@ -90,7 +94,8 @@ public class DatabaseStructure : IStructure
                      CREATE TABLE IF NOT EXISTS Materials (
                          ID INTEGER PRIMARY KEY,
                          Description STRING NOT NULL,
-                         E REAL NOT NULL
+                         E REAL NOT NULL,
+                         Yield REAL NOT NULL
                      );
                     CREATE TABLE IF NOT EXISTS Settings (
                         ID INTEGER PRIMARY KEY CHECK (ID = 1),
@@ -163,9 +168,11 @@ public class DatabaseStructure : IStructure
         {
             SqliteCommand insertMaterialCommand = conn.CreateCommand();
             insertMaterialCommand.CommandText = @"
-                INSERT INTO Materials (E) VALUES (@e); SELECT last_insert_rowid();
+                INSERT INTO Materials (E, Yield) VALUES (@e, @yield); SELECT last_insert_rowid();
             ";
             insertMaterialCommand.Parameters.AddWithValue("@e", material.E);
+            insertMaterialCommand.Parameters.AddWithValue("@yield", material.Yield);
+
             result = insertMaterialCommand.ExecuteScalar();
             id = Convert.ToInt32(result);
         }
@@ -823,7 +830,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT ID From Sections
+                SELECT ID From Sections;
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
@@ -858,7 +865,7 @@ public class DatabaseStructure : IStructure
                     sect = new Section(reader.GetString(0), reader.GetFloat(1), reader.GetFloat(2));
                 }
                 else
-                {
+                {                              
                     throw new IndexOutOfRangeException("Invalid section ID");
                 }
             }   
@@ -874,7 +881,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT ID From Materials
+                SELECT ID From Materials;
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
@@ -898,14 +905,14 @@ public class DatabaseStructure : IStructure
             
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
-                SELECT Description, E FROM Materials WHERE ID = @id;
+                SELECT Description, E, Yield FROM Materials WHERE ID = @id;
             ";
             retrieveCommand.Parameters.AddWithValue("@id", materialID);
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
                 if (reader.Read())
                 {
-                    mat = new Material(reader.GetString(0), reader.GetFloat(1));
+                    mat = new Material(reader.GetString(0), reader.GetFloat(1), reader.GetFloat(2));
                 }
                 else
                 {
@@ -917,19 +924,53 @@ public class DatabaseStructure : IStructure
         return mat;
     }
 
+    private bool SectionExists(Section sect, SqliteConnection conn)
+    {
+        SqliteCommand checkCommand = conn.CreateCommand();
+
+        checkCommand.CommandText = @"                                                 
+        SELECT ID FROM Sections WHERE A = @a AND I = @i LIMIT 1;                 
+    ";
+        checkCommand.Parameters.AddWithValue("@a", sect.A);
+        checkCommand.Parameters.AddWithValue("@i", sect.I);
+        
+        object? result = checkCommand.ExecuteScalar();    
+        return result == null ? false : true;             
+    }
+
+    private bool MaterialExists(Material mat, SqliteConnection conn)
+    {
+        SqliteCommand checkCommand = conn.CreateCommand();
+
+        checkCommand.CommandText = @"
+            SELECT ID FROM Materials WHERE E = @e AND Yield = @yield LIMIT 1;
+        ";
+        checkCommand.Parameters.AddWithValue("@e", mat.E);
+        checkCommand.Parameters.AddWithValue("@yield", mat.Yield);
+        
+        object? result = checkCommand.ExecuteScalar();
+        return result == null ? false : true;
+    } 
     public void AddMaterial(Material mat)
     {
         using (SqliteConnection conn = new SqliteConnection(connectionString))
         {
             conn.Open();
+            if (MaterialExists(mat, conn))
+            {
+                conn.Close();
+                return;
+            }
             using (SqliteTransaction transaction = conn.BeginTransaction())
             {
                 SqliteCommand addCommand = conn.CreateCommand();
                 addCommand.CommandText = @"
-                    INSERT INTO Materials (Description, E) VALUES (@desc, @e);
+                    INSERT INTO Materials (Description, E, Yield) VALUES (@desc, @e, @yield);
                 ";
                 addCommand.Parameters.AddWithValue("@desc", mat.Description);
                 addCommand.Parameters.AddWithValue("@e", mat.E);
+                addCommand.Parameters.AddWithValue("@yield", mat.Yield);
+                
                 addCommand.ExecuteNonQuery();
                 transaction.Commit();
             }
@@ -943,6 +984,11 @@ public class DatabaseStructure : IStructure
         using (SqliteConnection conn = new SqliteConnection(connectionString))
         {
             conn.Open();
+            if (SectionExists(sect, conn))
+            {
+                conn.Close();
+                return;
+            }
             using (SqliteTransaction transaction = conn.BeginTransaction())
             {
                 SqliteCommand addCommand = conn.CreateCommand();

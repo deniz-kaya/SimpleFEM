@@ -24,6 +24,15 @@ public class StructureSolver
     }
     public void Solve()
     {
+        //stability checks
+        CurrentStructureGraph = ConstructStructureGraph();
+        if (!CurrentStructureGraph.IsConnected())
+        {
+            return;
+        }
+        
+        
+        //construct shit
         CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
         CurrentForceVector = GetForceVector();
         CurrentStiffnessMatrix.DebugPrint();

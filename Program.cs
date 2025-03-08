@@ -17,16 +17,6 @@ namespace SimpleFEM;
 
 class Program
 {
-    static void bMain(string[] args)
-    {
-        string connectionString = $"Data Source=C:\\Users\\blind\\RiderProjects\\SimpleFEM\\SimpleFEM\\DBs\\test.db";
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
-        {
-            conn.Open();
-            Console.WriteLine("opened connection");
-            
-        }
-    }
     static void aMain(string[] args)
     {
         Matrix m = new Matrix(5, 5);
@@ -91,12 +81,12 @@ class Program
             // Material mat = Material.Steel;
             // Section sect = Section.UB;
             //
-            // structure.AddNode(new Vector2(0f, 0f));
-            // structure.AddNode(new Vector2(0f, 50f));
-            // structure.AddNode(new Vector2(100f, 0f));
-            // structure.AddElement(new Element(1, 2, mat, sect));
-            // structure.AddElement(new Element(1, 3, mat, sect));
-            // structure.AddElement(new Element(2, 3, mat, sect));
+            structure.AddNode(new Vector2(0f, 0f));
+            structure.AddNode(new Vector2(0f, 50f));
+            structure.AddNode(new Vector2(100f, 0f));
+            structure.AddElement(new Element(1, 2, 0, 0));
+            structure.AddElement(new Element(1, 3, 0, 0));
+            structure.AddElement(new Element(2, 3, 0, 0));
             // //
         }
 
@@ -118,12 +108,12 @@ class Program
             ui.DrawToolbar();
 
             ui.DrawSolveSystemWindow();
-            ui.DrawHoveredNodePropertyViewer();
             ui.DrawSceneWindow();
             //ui.DefineSettingsEditorWindow();
             ui.DefineAllPopups();
 
             ui.HandleInputs();
+            ui.DrawHoveredPropertyViewer();
             //DRAW EVERYTHING ABOVE ME
             
             rlImGui.End();

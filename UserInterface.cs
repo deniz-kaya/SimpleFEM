@@ -72,77 +72,9 @@ public class UserInterface
         ImGui.PopStyleVar(10);
     }
 
-    public void DrawHoveredNodePropertyViewer()
+    public void DrawHoveredPropertyViewer()
     {
-        ImGui.Begin("Node Property Viewer");
-        (Vector2? pos, BoundaryCondition bc, Load l) = structureEditor.GetHoveredNodeProperties();
-        if (pos == null)
-        {
-            ImGui.Text("No node hovered!");
-            return;
-        }
-
-        ImGui.Text($"Pos: {pos.ToString()}");
-        ImGui.NewLine();
-        ImGui.SeparatorText("Boundary Condition");
-        if (!bc.IsDefault)
-        {
-            if (ImGui.BeginTable("Boundary Conditions", 2, ImGuiTableFlags.Borders))
-            {
-                ImGui.TableNextColumn();
-                ImGui.Text("Fixed X");
-                ImGui.TableNextColumn();
-                ImGui.Text(bc.FixedX.ToString());
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text("Fixed Y");
-                ImGui.TableNextColumn();
-                ImGui.Text(bc.FixedY.ToString());
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text("Fixed Rotation");
-                ImGui.TableNextColumn();
-                ImGui.Text(bc.FixedRotation.ToString());
-                
-                ImGui.EndTable();
-                
-            }
-        }
-        else
-        {
-            ImGui.Text("Node has no boundary conditions!");
-        }
-
-        ImGui.NewLine();
-        ImGui.SeparatorText("Load");
-        if (!l.IsDefault)
-        {
-            if (ImGui.BeginTable("Load", 2, ImGuiTableFlags.Borders))
-            {
-                //TOdo naming
-                ImGui.TableNextColumn();
-                ImGui.Text("X Load");
-                ImGui.TableNextColumn();
-                ImGui.Text(l.ForceX.ToString());
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text("Y Load");
-                ImGui.TableNextColumn();
-                ImGui.Text(l.ForceY.ToString());
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text("Moment");
-                ImGui.TableNextColumn();
-                ImGui.Text(l.Moment.ToString());
-                
-                ImGui.EndTable();
-                
-            }
-        }
-        else 
-        {
-            ImGui.Text("Node has no loads!");    
-        }
+        structureEditor.DrawHoveredPropertiesViewer();
     }
     public void DrawMainDockSpace()
     {
@@ -196,7 +128,7 @@ public class UserInterface
             structureSolver.Solve();
             
         }
-
+        //todo fix?
         if (ImGui.Button("test element intersection"))
         {
             if (structureSolver.CheckElementIntersections())
@@ -335,6 +267,11 @@ public class UserInterface
             
         }
     }
+
+    public void DefineAllPopups()
+    {
+        structureEditor.DefinePopups();
+    }
     public void HandleToolSwitchInputs()
     {
         if (ImGui.IsKeyPressed(settings.MoveToolKey))
@@ -375,57 +312,6 @@ public class UserInterface
     // TODO rename properties to be better
     // Popup Properties
     //---------
-    //Load Editor
-    private float loadX, loadY, moment;
-    //Boundary Condition Editor
-    private bool fixedX, fixedY, fixedMoment;
-    //---------
-    //Flags
-    private bool openBCEditor, openLoadEditor;
-    public void DefineAllPopups()
-    {
-        DefineLoadEditorModal();
-        DefineBoundaryConditionEditorModal();
-        DefineSelectedNodePopup();
-        if (openBCEditor)
-        {
-            ImGui.OpenPopup("Boundary Condition Editor");
-            openBCEditor = false;
-        }
-
-        if (openLoadEditor)
-        {
-            ImGui.OpenPopup("Load Editor");
-            openLoadEditor = false;
-        }
-    }
-
-    public void DefineSelectedNodePopup()
-    {
-        if (ImGui.BeginPopup("SelectedNodePopup"))
-        {
-            if (ImGui.Selectable("Delete node(s)"))
-            {
-                structureEditor.DeleteSelectedNodes();
-                ImGui.CloseCurrentPopup();
-            }
-
-            if (ImGui.Selectable("Edit node load(s)"))
-            {
-                ImGui.CloseCurrentPopup();
-                openLoadEditor = true;
-            }
-
-            if (ImGui.Selectable("Edit node boundary condition(s)"))
-            {
-                ImGui.CloseCurrentPopup();
-                openBCEditor = true;
-            }
-            ImGui.EndPopup();
-        }
-    }
-
-
     private Vector4 sceneElementColor = new();
     private Vector4 sceneNodeColor = new();
     private Vector4 sceneSelectedElementColor = new();
@@ -435,6 +321,7 @@ public class UserInterface
     private Vector4 sceneSelectionBoxColor = new();
     private float sceneElementThickness;
     private float sceneNodeRadius;
+
     private void DefineSceneDrawSettings()
     {
         ImGui.ColorEdit4("Element Color", ref sceneElementColor);
@@ -467,6 +354,7 @@ public class UserInterface
             drawSettings = DrawSettings.Default;
         }
     }
+    
     private void DefineToolHotkeysSettings()
     {
         ImGui.GetIO();
@@ -505,64 +393,5 @@ public class UserInterface
         }
 
         ImGui.End();
-    }
-    public void DefineLoadEditorModal()
-    {
-        if (ImGui.BeginPopupModal("Load Editor", ImGuiWindowFlags.AlwaysAutoResize))
-        {
-            ImGui.Text($"Editing load for {structureEditor.SelectedNodeCount} node(s)");
-            ImGui.InputFloat("Load in X", ref loadX);
-            ImGui.InputFloat("Load in Y", ref loadY);
-            ImGui.InputFloat("Moment", ref moment);
-            if (ImGui.Button("Reset to default"))
-            {
-                loadX = 0;
-                loadY = 0;
-                moment = 0;
-            }
-            ImGui.Separator();
-            if (ImGui.Button("Add Load(s)"))
-            {
-                structureEditor.AddLoadToSelectedNodes(new Load(loadX, loadY, moment));
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.SameLine();
-            if (ImGui.Button("Cancel"))
-            {
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
-        }
-        
-    }
-
-    public void DefineBoundaryConditionEditorModal()
-    {
-        if (ImGui.BeginPopupModal("Boundary Condition Editor"))
-        {
-            ImGui.Text($"Editing boundary condition for {structureEditor.SelectedNodeCount} node(s)");
-            ImGui.Checkbox("Fixed X", ref fixedX);
-            ImGui.Checkbox("Fixed Y", ref fixedY);
-            ImGui.Checkbox("Fixed Moment", ref fixedMoment);
-
-            if (ImGui.Button("Reset to default"))
-            {
-                fixedX = false;
-                fixedY = false;
-                fixedMoment = false;
-            }
-            ImGui.Separator();
-            if (ImGui.Button("Add BC(s)"))
-            {
-                structureEditor.AddBoundaryConditionToSelectedNodes(new BoundaryCondition(fixedX, fixedY, fixedMoment));
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.SameLine();
-            if (ImGui.Button("Cancel"))
-            {
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
-        }
     }
 }

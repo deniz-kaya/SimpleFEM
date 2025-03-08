@@ -8,6 +8,7 @@ using SimpleFEM.SceneObjects;
 using SimpleFEM.Types.StructureTypes;
 using SimpleFEM.Extensions;
 using SimpleFEM.Types.Settings;
+using Material = SimpleFEM.Types.StructureTypes.Material;
 
 namespace SimpleFEM.Derived;
 
@@ -16,9 +17,9 @@ namespace SimpleFEM.Derived;
 public class UIStructureEditor : StructureEditor, IUIStructureHelper
 {
     public Tool CurrentTool { get; private set; }
-    
-    private int CurrentMaterialID = 1;  
-    private int CurrentSectionID = 1;
+
+    private int CurrentMaterialID;
+    private int CurrentSectionID;
     
     public bool Dragging { get; private set; }
     private StructureEditorSettings Settings;
@@ -30,174 +31,136 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     {   
         ResetHovered();
         ResetSelection();
+
+        //todo maybe find a better way to do this rather than getting the whole list of elements
+        CurrentMaterialID = structure.GetMaterialIndexesSorted().First();
+        CurrentSectionID = structure.GetSectionIndexesSorted().First();
         Settings = settings ?? StructureEditorSettings.Default;
         CurrentTool = Tool.Mouse_Select;
     }
-    public void ResetHovered()
+
+    //imgui windows
+    public void DrawHoveredPropertiesViewer()
     {
-        HoveredNode = -1;
-        HoveredElement = -1;
-    }
-    public bool UpdateHoveredItems()
-    {
-        ResetHovered();
-        HoveredNode = CheckForNodesCloseToPos(LivePos, Settings.IdleSelectionFeather);
-        if (HoveredNode == -1)
+        ImGui.Begin("Property Viewer");
+        if (HoveredElement == -1 && HoveredNode == -1)
         {
-            HoveredElement = CheckForElementsCloseToPos(LivePos, Settings.IdleSelectionFeather);
-            if (HoveredElement == -1)
-            {
-                return false;
-            }
+            ImGui.Text("Nothing hovered!");
+            ImGui.End();
+            return;
         }
 
-        return true;
-    }
-
-    public Vector2 GetMousePositionChange()
-    {
-        return LivePos - LastMousePosition;
-    }
-    public void SetLivePos(Vector2 position)
-    {
-        LastMousePosition = LivePos;
-        LivePos = position;
-    }
-    public void HandleMouseKeyDownEvent()
-    {
-        switch (CurrentTool)
-        {
-            case Tool.Select_Elements:
-                HandleMultiInput();
-                SelectElementsWithinArea();
-                break;
-            case Tool.Select_Nodes:
-                HandleMultiInput();
-                SelectNodesWithinArea();
-                break;
-            case Tool.Add_Element:
-                HandleMultiInput();
-                break;
-            case Tool.Move:
-                Dragging = true;
-                break;
-        }
-    }
-
-    public (Vector2? pos,BoundaryCondition bc, Load l) GetHoveredNodeProperties()
-    {
         if (HoveredNode != -1)
         {
             Vector2 pos = Structure.GetNode(HoveredNode).Pos;
-            return (pos, Structure.GetBoundaryCondition(HoveredNode),
-                Structure.GetLoad(HoveredNode));
-        }
-
-        return (null, BoundaryCondition.Default, Load.Default);
-    }
-    public void HandleMouseKeyPressedEvent()
-    {
-        switch (CurrentTool)
-        {
-            case Tool.Add_Node:
-                Vector2 pos = LivePos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
-                Structure.AddNode(pos);
-                break;
-            case Tool.Mouse_Select:
-                AddHoveredToSelected();
-                break;
-        }
-    }
-
-    public void AddHoveredToSelected()
-    {
-        if (HoveredNode != -1)
-        {
-            if (SelectedNodes.Contains(HoveredNode))
+            BoundaryCondition bc = Structure.GetBoundaryCondition(HoveredNode);
+            Load l = Structure.GetLoad(HoveredNode);
+            ImGui.Text($"Pos: {pos.ToString()}");
+            ImGui.NewLine();
+            ImGui.SeparatorText("Boundary Condition");
+            if (!bc.IsDefault)
             {
-                DeselectNode(HoveredNode);
+                if (ImGui.BeginTable("Boundary Conditions", 2, ImGuiTableFlags.Borders))
+                {
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Fixed X");
+                    ImGui.TableNextColumn();
+                    ImGui.Text(bc.FixedX.ToString());
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Fixed Y");
+                    ImGui.TableNextColumn();
+                    ImGui.Text(bc.FixedY.ToString());
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Fixed Rotation");
+                    ImGui.TableNextColumn();
+                    ImGui.Text(bc.FixedRotation.ToString());
+
+                    ImGui.EndTable();
+
+                }
             }
             else
             {
-                SelectNode(HoveredNode);
+                ImGui.Text("Node has no boundary conditions!");
             }
-        }
 
-        if (HoveredElement != -1)
-        {
-            if (SelectedElements.Contains(HoveredElement))
+            ImGui.NewLine();
+            ImGui.SeparatorText("Load");
+            if (!l.IsDefault)
             {
-                DeselectElement(HoveredElement);
+                if (ImGui.BeginTable("Load", 2, ImGuiTableFlags.Borders))
+                {
+                    //TOdo naming
+                    ImGui.TableNextColumn();
+                    ImGui.Text("X Load");
+                    ImGui.TableNextColumn();
+                    ImGui.Text(l.ForceX.ToString());
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Y Load");
+                    ImGui.TableNextColumn();
+                    ImGui.Text(l.ForceY.ToString());
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text("Moment");
+                    ImGui.TableNextColumn();
+                    ImGui.Text(l.Moment.ToString());
+
+                    ImGui.EndTable();
+
+                }
             }
             else
             {
-                SelectElement(HoveredElement);
+                ImGui.Text("Node has no loads!");
             }
         }
-    }
-
-    public void SwitchTool(Tool newTool)
-    {
-        switch (newTool)
+        else if (HoveredElement != -1)
         {
-            //TODO clean up
-            case Tool.Add_Node:
-                ResetSelection();
-                break;
-            case Tool.Add_Element:
-                ResetSelection();
-                break;
-            case Tool.Select_Elements:
-                break;
-            case Tool.Select_Nodes:
-                break;
-            case Tool.Move:
-                break;
-            case Tool.Mouse_Select:
-                break;
+            Element e = Structure.GetElement(HoveredElement);
+            Material mat = Structure.GetMaterial(e.MaterialID);
+            Section sect = Structure.GetSection(e.SectionID);
+            
+            ImGui.SeparatorText("Material");
+            ImGui.Text(mat.Description);
+            if (ImGui.BeginTable("Material Properties", 2, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableNextColumn();
+                ImGui.Text("E");
+                ImGui.TableNextColumn();
+                ImGui.Text(mat.E.ToString());
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("Yield");
+                ImGui.TableNextColumn();
+                ImGui.Text(mat.Yield.ToString());
+                
+                ImGui.EndTable();
+
+            }
+            ImGui.NewLine();
+            ImGui.SeparatorText("Section");
+            ImGui.Text(sect.Description);
+            if (ImGui.BeginTable("Section Properties", 2, ImGuiTableFlags.Borders))
+            {
+                ImGui.TableNextColumn();
+                ImGui.Text("A");
+                ImGui.TableNextColumn();
+                ImGui.Text(sect.A.ToString());
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text("I");
+                ImGui.TableNextColumn();
+                ImGui.Text(sect.I.ToString());
+                
+                ImGui.EndTable();
+
+            }
         }
-
-        CurrentTool = newTool;
+        ImGui.End();
     }
-    public void HandleMouseKeyUpEvent()
-    {
-        switch (CurrentTool)
-        {
-            case Tool.Select_Elements:
-                FinaliseMultiInput();
-                break;
-            case Tool.Select_Nodes:
-                FinaliseMultiInput();
-                break;
-            case Tool.Add_Element:
-                FinaliseMultiInput();
-                AddElementBetweenPositions();
-                break;
-            case Tool.Move:
-                Dragging = false;
-                break;
-        }
-    }
-    
-    private void AddElementBetweenPositions()
-    {
-        Vector2 position1 = MultiSelectLockedPos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
-        Vector2 position2 = LivePos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
-        
-        //adds node, otherwise returns node index of node at position
-        Structure.AddNode(position1, out int node1ID);
-        Structure.AddNode(position2, out int node2ID);
-
-        if (node1ID == -1 || node2ID == -1)
-        {
-            throw new Exception("Something went seriously wrong, did you forget to implement AddNode properly?");
-        }
-        // TODO change element and section behaviour
-        Console.WriteLine($"Mat: {CurrentMaterialID} \nSect: {CurrentSectionID}");
-        Structure.AddElement(new Element(node1ID, node2ID, CurrentMaterialID, CurrentSectionID));
-
-    }
-
     public void MaterialSelectComboBox()
     {
         ImGui.SameLine();
@@ -238,6 +201,275 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             ImGui.EndCombo();
         }
     }
+    
+    //imgui popups
+    //Load Editor
+    private float loadX, loadY, moment;
+    //Boundary Condition Editor
+    private bool fixedX, fixedY, fixedMoment;
+    //---------
+    //Flags
+    private bool openBCEditor, openLoadEditor;
+    public void DefinePopups()
+    {
+        DefineLoadEditorModal();
+        DefineBoundaryConditionEditorModal();
+        DefineSelectedNodePopup();
+        
+        if (openBCEditor)
+        {
+            ImGui.OpenPopup("Boundary Condition Editor");
+            openBCEditor = false;
+        }
+
+        if (openLoadEditor)
+        {
+            ImGui.OpenPopup("Load Editor");
+            openLoadEditor = false;
+        }
+    }
+
+    public void DefineSelectedNodePopup()
+    {
+        if (ImGui.BeginPopup("SelectedNodePopup"))
+        {
+            if (ImGui.Selectable("Delete node(s)"))
+            {
+                DeleteSelectedNodes();
+                ImGui.CloseCurrentPopup();
+            }
+
+            if (ImGui.Selectable("Edit node load(s)"))
+            {
+                ImGui.CloseCurrentPopup();
+                openLoadEditor = true;
+            }
+
+            if (ImGui.Selectable("Edit node boundary condition(s)"))
+            {
+                ImGui.CloseCurrentPopup();
+                openBCEditor = true;
+            }
+            ImGui.EndPopup();
+        }
+    }
+    
+    public void DefineLoadEditorModal()
+    {
+        if (ImGui.BeginPopupModal("Load Editor", ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            ImGui.Text($"Editing load for {SelectedNodeCount} node(s)");
+            ImGui.InputFloat("Load in X", ref loadX);
+            ImGui.InputFloat("Load in Y", ref loadY);
+            ImGui.InputFloat("Moment", ref moment);
+            if (ImGui.Button("Reset values to default"))
+            {
+                loadX = 0;
+                loadY = 0;
+                moment = 0;
+            }
+            ImGui.Separator();
+            if (ImGui.Button("Add Load(s)"))
+            {
+                AddLoadToSelectedNodes(new Load(loadX, loadY, moment));
+                loadX = 0;
+                loadY = 0;
+                moment = 0;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel"))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+        
+    }
+
+    public void DefineBoundaryConditionEditorModal()
+    {
+        
+        if (ImGui.BeginPopupModal("Boundary Condition Editor"))
+        {
+            ImGui.Text($"Editing boundary condition for {SelectedNodeCount} node(s)");
+            ImGui.Checkbox("Fixed X", ref fixedX);
+            ImGui.Checkbox("Fixed Y", ref fixedY);
+            ImGui.Checkbox("Fixed Moment", ref fixedMoment);
+
+            if (ImGui.Button("Reset to default"))
+            {
+                fixedX = false;
+                fixedY = false;
+                fixedMoment = false;
+            }
+            ImGui.Separator();
+            if (ImGui.Button("Add BC(s)"))
+            {
+                AddBoundaryConditionToSelectedNodes(new BoundaryCondition(fixedX, fixedY, fixedMoment));
+                fixedX = false;
+                fixedY = false;
+                fixedMoment = false;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Cancel"))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+    }
+    
+    //scene editor helpers
+    private void ResetHovered()
+    {
+        HoveredNode = -1;
+        HoveredElement = -1;
+    }
+    public bool UpdateHoveredItems()
+    {
+        ResetHovered();
+        HoveredNode = CheckForNodesCloseToPos(LivePos, Settings.IdleSelectionFeather);
+        if (HoveredNode == -1)
+        {
+            HoveredElement = CheckForElementsCloseToPos(LivePos, Settings.IdleSelectionFeather);
+            if (HoveredElement == -1)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    public Vector2 GetMousePositionChange()
+    {
+        return LivePos - LastMousePosition;
+    }
+    public void SetLivePos(Vector2 position)
+    {
+        LastMousePosition = LivePos;
+        LivePos = position;
+    }
+    private void AddHoveredToSelected()
+    {
+        if (HoveredNode != -1)
+        {
+            if (SelectedNodes.Contains(HoveredNode))
+            {
+                DeselectNode(HoveredNode);
+            }
+            else
+            {
+                SelectNode(HoveredNode);
+            }
+        }
+
+        if (HoveredElement != -1)
+        {
+            if (SelectedElements.Contains(HoveredElement))
+            {
+                DeselectElement(HoveredElement);
+            }
+            else
+            {
+                SelectElement(HoveredElement);
+            }
+        }
+    }
+    public void SwitchTool(Tool newTool)
+    {
+        switch (newTool)
+        {
+            //TODO clean up
+            case Tool.Add_Node:
+                ResetSelection();
+                break;
+            case Tool.Add_Element:
+                ResetSelection();
+                break;
+            case Tool.Select_Elements:
+                break;
+            case Tool.Select_Nodes:
+                break;
+            case Tool.Move:
+                break;
+            case Tool.Mouse_Select:
+                break;
+        }
+
+        CurrentTool = newTool;
+    }
+    private void AddElementBetweenPositions()
+    {
+        Vector2 position1 = MultiSelectLockedPos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
+        Vector2 position2 = LivePos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
+        
+        //adds node, otherwise returns node index of node at position
+        Structure.AddNode(position1, out int node1ID);
+        Structure.AddNode(position2, out int node2ID);
+
+        if (node1ID == -1 || node2ID == -1)
+        {
+            throw new Exception("Something went seriously wrong, did you forget to implement AddNode properly?");
+        }
+        Structure.AddElement(new Element(node1ID, node2ID, CurrentMaterialID, CurrentSectionID));
+
+    }
+    
+    //input handling
+    public void HandleMouseKeyDownEvent()
+    {
+        switch (CurrentTool)
+        {
+            case Tool.Select_Elements:
+                HandleMultiInput();
+                SelectElementsWithinArea();
+                break;
+            case Tool.Select_Nodes:
+                HandleMultiInput();
+                SelectNodesWithinArea();
+                break;
+            case Tool.Add_Element:
+                HandleMultiInput();
+                break;
+            case Tool.Move:
+                Dragging = true;
+                break;
+        }
+    }
+    public void HandleMouseKeyPressedEvent()
+    {
+        switch (CurrentTool)
+        {
+            case Tool.Add_Node:
+                Vector2 pos = LivePos.RoundToNearest(Structure.GetStructureSettings().gridSpacing);
+                Structure.AddNode(pos);
+                break;
+            case Tool.Mouse_Select:
+                AddHoveredToSelected();
+                break;
+        }
+    }
+    public void HandleMouseKeyUpEvent()
+    {
+        switch (CurrentTool)
+        {
+            case Tool.Select_Elements:
+                FinaliseMultiInput();
+                break;
+            case Tool.Select_Nodes:
+                FinaliseMultiInput();
+                break;
+            case Tool.Add_Element:
+                FinaliseMultiInput();
+                AddElementBetweenPositions();
+                break;
+            case Tool.Move:
+                Dragging = false;
+                break;
+        }
+    }
     private void FinaliseMultiInput()
     {
         MultiInputStarted = false;
@@ -252,9 +484,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         }
     }
     
-    
     //Rendering logic stuff
-    //todo hovered logic
     public Queue<ISceneObject> GetSceneObjects(DrawSettings drawSettings)
     {
         Queue<ISceneObject> renderQueue = new Queue<ISceneObject>();
