@@ -210,11 +210,15 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     //---------
     //Flags
     private bool openBCEditor, openLoadEditor;
+    public bool OpenAddMaterialModal, OpenAddSectionModal;
     public void DefinePopups()
     {
+        DefineAddSectionlModal();
+        DefineAddMaterialModal();
         DefineLoadEditorModal();
         DefineBoundaryConditionEditorModal();
         DefineSelectedNodePopup();
+
         
         if (openBCEditor)
         {
@@ -226,6 +230,18 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         {
             ImGui.OpenPopup("Load Editor");
             openLoadEditor = false;
+        }
+
+        if (OpenAddSectionModal)
+        {
+            ImGui.OpenPopup("AddSectionModal");
+            OpenAddSectionModal = false;
+        }
+
+        if (OpenAddMaterialModal)
+        {
+            ImGui.OpenPopup("AddMaterialModal");
+            OpenAddMaterialModal = false;
         }
     }
 
@@ -320,7 +336,72 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             ImGui.EndPopup();
         }
     }
+
+    private const int DescriptionMaxLength = 160;
+    private string addMaterialDescription = String.Empty;
+    private float addMaterialE = 0;
+    private float addMaterialYield = 0;
+    //todo duplicate code
+    public void DefineAddMaterialModal()
+    {
+        if (ImGui.BeginPopupModal("AddMaterialModal"))
+        {
+            ImGui.InputText("Description", ref addMaterialDescription, DescriptionMaxLength);
+            ImGui.InputFloat("E", ref addMaterialE);
+            ImGui.InputFloat("Yield", ref addMaterialYield);
+            ImGui.Separator();
+            if (ImGui.Button("Add material"))
+            {
+                Structure.AddMaterial(new Material(addMaterialDescription, addMaterialE, addMaterialYield));
+                addMaterialDescription = String.Empty;
+                addMaterialE = 0;
+                addMaterialYield = 0;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Close"))
+            {
+                addMaterialDescription = String.Empty;
+                addMaterialE = 0;
+                addMaterialYield = 0;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+    }
+
+    private string addSectionDescription = "";
+    private float addSectionI = 0;
+    private float addSectionA = 0;
     
+    //todo duplicate code
+    public void DefineAddSectionlModal()
+    {
+        if (ImGui.BeginPopupModal("AddSectionModal"))
+        {
+            ImGui.InputText("Description", ref addSectionDescription, DescriptionMaxLength);
+            ImGui.InputFloat("I", ref addSectionI);
+            ImGui.InputFloat("A", ref addSectionA);
+            ImGui.Separator();
+            if (ImGui.Button("Add section"))
+            {
+                Structure.AddSection(new Section(addSectionDescription, addSectionI, addSectionA));
+                addSectionDescription = String.Empty;
+                addSectionI = 0;
+                addSectionA = 0;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Close"))
+            {
+                addSectionDescription = String.Empty;
+                addSectionI = 0;
+                addSectionA = 0;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+    }
     //scene editor helpers
     private void ResetHovered()
     {

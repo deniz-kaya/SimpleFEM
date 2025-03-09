@@ -2,6 +2,10 @@
 
 public struct StructureSettings
 {
+    /// <summary>
+    /// Constructor for the StructureSettings struct.
+    /// </summary>
+    /// <param name="gridSpacing">Length of one side of grid, in metres</param>
     public StructureSettings(float gridSpacing)
     {
         this.gridSpacing = gridSpacing;
@@ -12,7 +16,7 @@ public struct StructureSettings
     {
         get
         {
-            return new StructureSettings() {gridSpacing = 50f};
+            return new StructureSettings() {gridSpacing = 0.5f};
         }
     }
 }

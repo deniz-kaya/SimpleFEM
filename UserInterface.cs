@@ -176,12 +176,12 @@ public class UserInterface
             {
                 if (ImGui.MenuItem("Add new material"))
                 {
-                    
+                    structureEditor.OpenAddMaterialModal = true;
                 }
 
                 if (ImGui.MenuItem("Add new section"))
                 {
-                    //todo material handling   
+                    structureEditor.OpenAddSectionModal = true;
                 }
                 ImGui.EndMenu();
             }

@@ -64,7 +64,7 @@ class Program
         Raylib.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
-        bool databaseStructure = true;
+        bool databaseStructure = false;
         IStructure structure;
         if (databaseStructure)
         {
@@ -106,11 +106,11 @@ class Program
             
             ui.DrawFooter();
             ui.DrawToolbar();
+            ui.DefineAllPopups();
 
             ui.DrawSolveSystemWindow();
             ui.DrawSceneWindow();
             //ui.DefineSettingsEditorWindow();
-            ui.DefineAllPopups();
 
             ui.HandleInputs();
             ui.DrawHoveredPropertyViewer();

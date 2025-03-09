@@ -8,9 +8,9 @@ namespace SimpleFEM.Base;
 
 public class StructureSolver
 {
-    private const int DOF = 3;
+    protected const int DOF = 3;
     
-    private IStructure structure;
+    protected IStructure structure;
     protected Matrix CurrentStiffnessMatrix;
     protected Graph CurrentStructureGraph;
     protected Vector CurrentForceVector;
@@ -31,11 +31,12 @@ public class StructureSolver
             return;
         }
         
-        
+        //todo user error handling with this part of the program
         //construct shit
         CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
         CurrentForceVector = GetForceVector();
         CurrentStiffnessMatrix.DebugPrint();
+        
         //Thread.Sleep(100000);
         CurrentSolution = LinAlgMethods.Solve(CurrentStiffnessMatrix, CurrentForceVector);
         CurrentSolution.DebugPrint();
