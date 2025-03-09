@@ -1,22 +1,47 @@
-﻿using System.Numerics;
+﻿using System.Data;
+using System.Numerics;
+using ImGuiNET;
 using Raylib_cs;
 using SimpleFEM.Base;
 using SimpleFEM.Interfaces;
 using SimpleFEM.SceneObjects;
-using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
+using SQLitePCL;
 
 namespace SimpleFEM.Derived;
 
 public class UIStructureSolver : StructureSolver, IUIStructureHelper
 {
     public float ExaggerationFactor;
+    
     public UIStructureSolver(IStructure structure, StructureSolverSettings settings = default) : base(structure)
     {
-        
+        ExaggerationFactor = 10f;
     }
 
+    private bool displayLoads = false;
+    private bool displayBoundaryConditions = false;
+    private bool shouldDisplaySolution = false;
+    public void DrawOperationWindow()   
+    {
+        ImGui.Checkbox("View loads", ref displayLoads);
+        ImGui.Checkbox("View boundary conditions", ref displayBoundaryConditions);
+        
+        ImGui.InputFloat("Exaggeration Factor", ref ExaggerationFactor);
+        ImGui.Separator();
+        if (ImGui.Button("Solve System"))
+        {
+            if (Solve())
+            {
+                shouldDisplaySolution = true;
+            }
+            else
+            {
+                shouldDisplaySolution = false;
+            }
+        }
+    }
     private Dictionary<int, Vector2> GetDisplacedNodePositions()
     {
         Dictionary<int, Vector2> positions = new Dictionary<int, Vector2>();
@@ -43,7 +68,44 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
 
         //grid
         // TODO variables
-        renderQueue.Enqueue(new GridObject(200, 50f));
+        renderQueue.Enqueue(new GridObject(SceneRenderer.SceneGridSlices, SceneRenderer.ScenePixelGridSpacing));
+
+        if (StructureHasBeenChanged)
+        {
+            shouldDisplaySolution = false;
+        }
+            
+        if (shouldDisplaySolution)
+        {
+            QueueCurrentSolutionSceneObjects(ref renderQueue, settings);
+            return renderQueue;
+        }
+        
+        QueueNodesAndElementsSceneObject(ref renderQueue, settings);
+
+        if (displayBoundaryConditions)
+        {
+            
+        }
+
+        if (displayLoads)
+        {
+            
+        }
+        return renderQueue;
+    }
+
+
+    public void QueueCurrentSolutionBCObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
+    {
+        throw new NotImplementedException();
+    }
+    public void QueueCurrentSolutionLoadObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
+    {
+        throw new NotImplementedException();
+    }
+    public void QueueCurrentSolutionSceneObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
+    {
         Dictionary<int, Vector2> displacedNodes = GetDisplacedNodePositions();
 
         SpheresObject nodes = new SpheresObject(settings.nodeColor, settings.nodeRadius);
@@ -62,7 +124,27 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
 
         //draw nodes last so that it overlaps the elements
         renderQueue.Enqueue(elements);
+        renderQueue.Enqueue(nodes);  
+    }
+
+    public void QueueNodesAndElementsSceneObject(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
+    {
+        SpheresObject nodes = new SpheresObject(settings.nodeColor, settings.nodeRadius);
+        foreach (int nodeID in structure.GetNodeIndexesSorted())
+        {
+            nodes.AddSphere(structure.GetNode(nodeID).Pos);
+        }
+
+        LinesObject elements = new LinesObject(settings.elementColor, settings.elementThickness);
+
+        foreach (int elementID in structure.GetElementIndexesSorted())
+        {
+            Element e = structure.GetElement(elementID);
+            Vector2 pos1 = structure.GetNode(e.Node1ID).Pos;
+            Vector2 pos2 = structure.GetNode(e.Node2ID).Pos;
+            elements.AddLine(pos1, pos2);
+        }
+        renderQueue.Enqueue(elements);
         renderQueue.Enqueue(nodes);
-        return renderQueue;
     }
 }
