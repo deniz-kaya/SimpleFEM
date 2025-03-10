@@ -57,7 +57,6 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     }
     public void DrawHoveredPropertiesViewer()
     {
-        
         if (HoveredElement == -1 && HoveredNode == -1)
         {
             ImGui.Text("Nothing hovered!");
@@ -245,13 +244,13 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
 
         if (OpenAddSectionModal)
         {
-            ImGui.OpenPopup("AddSectionModal");
+            ImGui.OpenPopup("Add Section");
             OpenAddSectionModal = false;
         }
 
         if (OpenAddMaterialModal)
         {
-            ImGui.OpenPopup("AddMaterialModal");
+            ImGui.OpenPopup("Add Material");
             OpenAddMaterialModal = false;
         }
     }
@@ -354,7 +353,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     private float addMaterialYield = 0;
     public void DefineAddMaterialModal()
     {
-        if (ImGui.BeginPopupModal("AddMaterialModal", ImGuiWindowFlags.AlwaysAutoResize))
+        if (ImGui.BeginPopupModal("Add Material", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.InputText("Description", ref addMaterialDescription, DescriptionMaxLength);
             ImGui.InputFloat("E", ref addMaterialE);
@@ -386,7 +385,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     
     public void DefineAddSectionlModal()
     {
-        if (ImGui.BeginPopupModal("AddSectionModal", ImGuiWindowFlags.AlwaysAutoResize))
+        if (ImGui.BeginPopupModal("Add Section", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.InputText("Description", ref addSectionDescription, DescriptionMaxLength);
             ImGui.InputFloat("I", ref addSectionI);

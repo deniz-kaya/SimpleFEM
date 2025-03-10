@@ -3,6 +3,7 @@ using SimpleFEM.Extensions;
 using Vector2 = System.Numerics.Vector2;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
+using SimpleFEM.Types;
 using SimpleFEM.Types.StructureTypes;
 
 namespace SimpleFEM.Base;
@@ -36,12 +37,24 @@ public class StructureSolver
         try
         {
             //stability checks
-            //todo implement load exists check
-            //todo implement boundary condition exists check
+            //todo something funky with constrained nodes and forces
+            if (structure.GetElementCount() == 0)
+            {
+                throw new EmptyStructure();
+            }
+            if (structure.GetLoadCount() == 0)
+            {
+                throw new NoLoads();
+            }
+
+            if (structure.GetBoundaryConditionCount() == 0)
+            {
+                throw new NoBoundaryConditions();
+            }
             CurrentStructureGraph = ConstructStructureGraph();
             if (!CurrentStructureGraph.IsConnected())
             {
-                throw new Exception("The structure graph is not connected. Have you checked for floating nodes?");
+                throw new StructureDisconnected();
             }
 
             //construct shit
@@ -56,11 +69,6 @@ public class StructureSolver
             ErrorDuringSolution = true;
             return false;
         }
-        finally
-        {
-            
-        }
-
 
         return true;
     }

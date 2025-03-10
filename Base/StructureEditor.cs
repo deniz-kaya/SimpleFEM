@@ -12,7 +12,6 @@ public class StructureEditor
     public int SelectedNodeCount => SelectedNodes.Count;
     public int SelectedElementCount => SelectedElements.Count;
     protected bool MultiInputStarted;
-    public bool DoIdleSelection { get; protected set; }
     public bool EmptySelection => SelectedElements.Count == 0 && SelectedNodes.Count == 0;
 
     protected Vector2 MultiSelectLockedPos;
@@ -37,24 +36,6 @@ public class StructureEditor
         SelectedNodes.Clear();
     }
 
-    /// <summary>
-    /// Tries selecting an element nearby the position.
-    /// </summary>
-    /// <param name="position">the position to select around</param>
-    /// <param name="threshold">acceptable threshold distance from position</param>
-    /// <returns>True if an element was selected.</returns>
-    public bool SelectNearbyElement(Vector2 position, float threshold)
-    {
-        ResetSelection();
-        int candidateElement = CheckForElementsCloseToPos(position, threshold);
-        if (candidateElement != -1)
-        {
-            SelectedElements.Add(candidateElement);
-            return true;
-        }
-
-        return false;
-    }
     
     /// <summary>
     /// Checks for elements that are within the threshold distance to the position.
@@ -79,24 +60,7 @@ public class StructureEditor
         return -1;
     }
 
-    /// <summary>
-    /// Tries selecting a node that is nearby the position.
-    /// </summary>
-    /// <param name="position">the position to select around</param>
-    /// <param name="threshold">acceptable threshold distance from position</param>
-    /// <returns>True if a node was selected, false otherwise.</returns>
-    public bool SelectNearbyNode(Vector2 position, float threshold)
-    {
-        ResetSelection();
-        int candidateNode = CheckForNodesCloseToPos(position, threshold);
-        if (candidateNode != -1) 
-        {
-            SelectedNodes.Add(candidateNode);
-            return true;
-        }
 
-        return false;
-    }
     
     // todo error handling potential with bool instead of void in calling method
     public void SelectNode(int nodeID)

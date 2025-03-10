@@ -20,7 +20,7 @@ public class UserInterface
     private UIStructureSolver structureSolver;
     private UISceneRenderer sceneRenderer;
     public bool StructureLoaded { get; private set; }
-    
+    public bool VolatileStructure { get; private set; }
     private StructureEditorSettings structureEditorSettings;
     
     private DrawSettings drawSettings;
@@ -196,7 +196,7 @@ public class UserInterface
                     ShouldShowOpenProjectModal = true;
                 }
 
-                if (StructureLoaded && ImGui.MenuItem("Save Project As"))
+                if (StructureLoaded && !VolatileStructure && ImGui.MenuItem("Save Project As"))
                 {
                     //todo save structure as popup
                 }
@@ -222,7 +222,7 @@ public class UserInterface
             {
                 if (ImGui.MenuItem("Preferences"))
                 {
-                    openSettingsEditorModal = true;
+                    ShouldShowPreferencesModal = true;
                 }
 
                 ImGui.EndMenu();
@@ -240,62 +240,115 @@ public class UserInterface
     {
         if (ImGui.BeginPopupModal("New Project", ImGuiWindowFlags.AlwaysAutoResize))
         {
-            ImGui.SeparatorText("Filepath");
-            ImGui.TextWrapped("The filepath of the project");
-            ImGui.InputText("Path", ref NewProjectModalFilepath, MaxStringInputLength);
-            ImGui.SeparatorText("Project name");
-            ImGui.TextWrapped("The name of the project. The project will be saved as a .structure file with this name on the given path.");
-            ImGui.InputText("Name", ref NewProjectModalProjectName, MaxStringInputLength);
-            ImGui.SeparatorText("Grid spacing distance");
-            ImGui.TextWrapped("What distance one grid step will be equal to, in metres");
-            ImGui.InputFloat("Grid Spacing", ref NewProjectModalGridSpacingSize);
+            if (ImGui.BeginTabBar("Structure Type Tab Bar"))
+            {
+                if (ImGui.BeginTabItem("In-Memory"))
+                {
+                    ImGui.TextWrapped("Perfect for quick mockups and testing of structures.");
+                    ImGui.Separator();
+                    ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Warning! Structure cannot be saved!");
+                    ImGui.SeparatorText("Grid spacing distance");
+                    ImGui.TextWrapped("What distance one grid step will be equal to, in metres");
+                    ImGui.InputFloat("Grid Spacing", ref NewProjectModalGridSpacingSize);
+                    if (ImGui.Button("Create"))
+                    {
+                        if (NewProjectModalGridSpacingSize == 0f)
+                        {
+                            NewProjectModalErrorMessage = "The grid spacing size cannot be zero!";
+                        }
+                        else
+                        {
+                            IStructure newStructure = new InMemoryStructure(
+                                "In Memory Structure",
+                                new StructureSettings(NewProjectModalGridSpacingSize));
+                            VolatileStructure = true;
+                            NewProjectModalErrorMessage = String.Empty;
+                            NewProjectModalProjectName = String.Empty;
+                            SwitchStructure(newStructure);
+                            ImGui.CloseCurrentPopup();
+                        }
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Cancel"))
+                    {
+                        NewProjectModalErrorMessage = String.Empty;
+                        NewProjectModalProjectName = String.Empty;
+                        ImGui.CloseCurrentPopup();
+                    }
 
-            if (ImGui.Button("Create"))
-            {
-                if (!Path.Exists(NewProjectModalFilepath))
-                {
-                    NewProjectModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
+                    ImGui.TextWrapped(NewProjectModalErrorMessage);
+                    ImGui.EndTabItem();
                 }
-                else if (NewProjectModalProjectName == String.Empty)
+                if (ImGui.BeginTabItem("Database"))
                 {
-                    NewProjectModalErrorMessage = "The project name cannot be blank!";
+                    ImGui.SeparatorText("Filepath");
+                    ImGui.TextWrapped("The filepath of the project");
+                    ImGui.InputText("Path", ref NewProjectModalFilepath, MaxStringInputLength);
+                    ImGui.SeparatorText("Project name");
+                    ImGui.TextWrapped(
+                        "The name of the project. The project will be saved as a .structure file with this name on the given path.");
+                    ImGui.InputText("Name", ref NewProjectModalProjectName, MaxStringInputLength);
+                    ImGui.SeparatorText("Grid spacing distance");
+                    ImGui.TextWrapped("What distance one grid step will be equal to, in metres");
+                    ImGui.InputFloat("Grid Spacing", ref NewProjectModalGridSpacingSize);
+
+                    if (ImGui.Button("Create"))
+                    {
+                        if (!Path.Exists(NewProjectModalFilepath))
+                        {
+                            NewProjectModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
+                        }
+                        else if (NewProjectModalProjectName == String.Empty)
+                        {
+                            NewProjectModalErrorMessage = "The project name cannot be blank!";
+                        }
+                        else if (Path.GetInvalidFileNameChars().Any(NewProjectModalProjectName.Contains))
+                        {
+                            NewProjectModalErrorMessage =
+                                "The project name has invalid characters! Use characters that are valid for a filename.";
+                        }
+                        else if (File.Exists(NewProjectModalFilepath))
+                        {
+                            NewProjectModalErrorMessage =
+                                "Filepath points to a file! Check and correct filepath to remove extension.";
+                        }
+                        else if (Path.Exists(Path.Combine(NewProjectModalFilepath,
+                                     NewProjectModalProjectName + ".structure")))
+                        {
+                            NewProjectModalErrorMessage = "This file already exists! Try opening the project instead.";
+                        }
+                        else if (NewProjectModalGridSpacingSize == 0f)
+                        {
+                            NewProjectModalErrorMessage = "The grid spacing size cannot be zero!";
+                        }
+                        else
+                        {
+                            IStructure newStructure = new DatabaseStructure(
+                                NewProjectModalFilepath,
+                                NewProjectModalProjectName,
+                                new StructureSettings(NewProjectModalGridSpacingSize));
+                            VolatileStructure = false;
+                            NewProjectModalErrorMessage = String.Empty;
+                            NewProjectModalProjectName = String.Empty;
+                            SwitchStructure(newStructure);
+                            ImGui.CloseCurrentPopup();
+                        }
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Cancel"))
+                    {
+                        NewProjectModalErrorMessage = String.Empty;
+                        NewProjectModalProjectName = String.Empty;
+                        ImGui.CloseCurrentPopup();
+                    }
+
+                    ImGui.TextWrapped(NewProjectModalErrorMessage);
+                   
+                    ImGui.EndTabItem();
                 }
-                else if (Path.GetInvalidFileNameChars().Any(NewProjectModalProjectName.Contains))
-                {
-                    NewProjectModalErrorMessage = "The project name has invalid characters! Use characters that are valid for a filename.";
-                }
-                else if (File.Exists(NewProjectModalFilepath))
-                {
-                    NewProjectModalErrorMessage = "Filepath points to a file! Check and correct filepath to remove extension.";
-                }
-                else if (Path.Exists(Path.Combine(NewProjectModalFilepath, NewProjectModalProjectName + ".structure")))
-                {
-                    NewProjectModalErrorMessage = "This file already exists! Try opening the project instead.";
-                }
-                else if (NewProjectModalGridSpacingSize == 0f)
-                {
-                    NewProjectModalErrorMessage = "The grid spacing size cannot be zero!";
-                }
-                else
-                {
-                    IStructure newStructure = new DatabaseStructure(
-                        NewProjectModalFilepath, 
-                        NewProjectModalProjectName, 
-                        new StructureSettings(NewProjectModalGridSpacingSize));
-                    NewProjectModalErrorMessage = String.Empty;
-                    NewProjectModalProjectName = String.Empty;
-                    SwitchStructure(newStructure);
-                    ImGui.CloseCurrentPopup();
-                }
+                ImGui.EndTabBar();
             }
-            ImGui.SameLine();
-            if (ImGui.Button("Cancel"))
-            {
-                NewProjectModalErrorMessage = String.Empty;
-                NewProjectModalProjectName = String.Empty;
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.TextWrapped(NewProjectModalErrorMessage);
+                
             ImGui.EndPopup();
         }
     }
@@ -432,15 +485,15 @@ public class UserInterface
             structureSolver.HandlePopups();
         }
 
-        DefineSettingsEditorModal();
+        DefinePreferencesModal();
         DefineNewProjectModal();
         DefineOpenProjectModal();
         
         //todo popup flag names
-        if (openSettingsEditorModal)
+        if (ShouldShowPreferencesModal)
         {
-            ImGui.OpenPopup("SettingsEditorModal");
-            openSettingsEditorModal = false;
+            ImGui.OpenPopup("Preferences");
+            ShouldShowPreferencesModal = false;
         }
 
         if (ShouldShowNewProjectModal)
@@ -545,13 +598,13 @@ public class UserInterface
         
     }
 
-    private bool openSettingsEditorModal;
-    public void DefineSettingsEditorModal()
+    private bool ShouldShowPreferencesModal;
+    public void DefinePreferencesModal()
     {
 
-        if (ImGui.BeginPopupModal("SettingsEditorModal"))
+        if (ImGui.BeginPopupModal("Preferences"))
         {
-            if (ImGui.BeginTabBar("SettingsTabBar"))
+            if (ImGui.BeginTabBar("PreferencesTabBar"))
             {
                 if (ImGui.BeginTabItem("Scene Draw settings"))
                 {

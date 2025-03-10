@@ -47,19 +47,19 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         DefineSolverErrorModal();
         if (ErrorDuringSolution)
         {
-            ImGui.OpenPopup("SolverErrorModal");
+            ImGui.OpenPopup("Solver Error");
             ErrorDuringSolution = false;
         }
     }
     public void DefineSolverErrorModal()
     {
-        if (ImGui.BeginPopupModal("SolverErrorModal", ImGuiWindowFlags.AlwaysAutoResize))
+        if (ImGui.BeginPopupModal("Solver Error", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.Text("An error occured while solving system!");
             ImGui.SeparatorText("Error type:");
             ImGui.Text(lastError.GetType().Name);
             ImGui.SeparatorText("Error message:");
-            ImGui.Text(lastError.Message);
+            ImGui.TextWrapped(lastError.Message);
             
             if (ImGui.Button("Close"))
             {
