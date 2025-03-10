@@ -27,7 +27,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     
     private int HoveredNode;
     private int HoveredElement;
-    public UIStructureEditor(IStructure structure, StructureEditorSettings? settings) : base(structure)
+    public UIStructureEditor(IStructure structure, StructureEditorSettings settings) : base(structure)
     {   
         ResetHovered();
         ResetSelection();
@@ -35,7 +35,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         //todo maybe find a better way to do this rather than getting the whole list of elements
         CurrentMaterialID = structure.GetMaterialIndexesSorted().First();
         CurrentSectionID = structure.GetSectionIndexesSorted().First();
-        Settings = settings ?? StructureEditorSettings.Default;
+        Settings = settings;
         CurrentTool = Tool.Mouse_Select;
     }
 
@@ -568,7 +568,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         renderQueue.Enqueue(new BackgroundObject(Color.White));
         
         //grid
-        // TODO variables
+        //todo base this off of somethign else? it feels uncomfortable for it to be based on scenepixelgridspacing
         renderQueue.Enqueue(new GridObject(SceneRenderer.SceneGridSlices, SceneRenderer.ScenePixelGridSpacing));
         
         //Elements
@@ -577,7 +577,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         //Nodes
         QueueNodeSceneObjects(ref renderQueue, drawSettings);
         
-        //Tool based
+        //Tool based extra rendering
         switch (CurrentTool)
         {
             case Tool.Add_Node:

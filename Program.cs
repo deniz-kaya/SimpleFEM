@@ -64,35 +64,35 @@ class Program
         Raylib.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
-        bool databaseStructure = true;
-        IStructure structure;
-        if (databaseStructure)
-        {
-            structure = new DatabaseStructure(
-                @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
-                "testStructure",
-                new StructureSettings() { gridSpacing = 0.50f });
-        }
-        else
-        {
-            structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  0.50f});
-
-            //STRUCTURE SETUP
-            // Material mat = Material.Steel;
-            // Section sect = Section.UB;
-            //
-            structure.AddNode(new Vector2(0f, 0f));
-            structure.AddNode(new Vector2(0f, 50f));
-            structure.AddNode(new Vector2(100f, 0f));
-            structure.AddElement(new Element(1, 2, 0, 0));
-            structure.AddElement(new Element(1, 3, 0, 0));
-            structure.AddElement(new Element(2, 3, 0, 0));
-            // //
-        }
-
-        StructureSolver solver = new StructureSolver(structure); 
-        
-        UserInterface ui = new UserInterface(structure, HotkeySettings.Default);
+        // bool databaseStructure = true;
+        // IStructure structure;
+        // if (databaseStructure)
+        // {
+        //     structure = new DatabaseStructure(
+        //         @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
+        //         "testStructure",
+        //         new StructureSettings() { gridSpacing = 0.50f });
+        // }
+        // else
+        // {
+        //     structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  0.50f});
+        //
+        //     //STRUCTURE SETUP
+        //     // Material mat = Material.Steel;
+        //     // Section sect = Section.UB;
+        //     //
+        //     structure.AddNode(new Vector2(0f, 0f));
+        //     structure.AddNode(new Vector2(0f, 0.50f));
+        //     structure.AddNode(new Vector2(1f, 0f));
+        //     structure.AddElement(new Element(1, 2, 0, 0));
+        //     structure.AddElement(new Element(1, 3, 0, 0));
+        //     structure.AddElement(new Element(2, 3, 0, 0));
+        //     // //
+        // }
+        //
+        // StructureSolver solver = new StructureSolver(structure); 
+        //
+        UserInterface ui = new UserInterface();
         
         while (!Raylib.WindowShouldClose())
         {
@@ -100,22 +100,24 @@ class Program
             rlImGui.Begin();
             Raylib.ClearBackground(Color.Black);
             //DRAW EVERYTHING BELOW ME
+            
             ui.DrawMainDockSpace();
-            
             ui.DrawMainMenuBar();
-            
-            ui.DrawFooter();
-            ui.DrawToolbar();
+
+            if (ui.StructureLoaded)
+            {
+                ui.DrawFooter();
+                ui.DrawToolbar();
+                ui.DrawStructureOperationWindow();
+                ui.DrawSceneWindow();
+
+                ui.HandleInputs();
+                ui.DrawHoveredPropertyViewer();
+            }
+
             ui.HandlePopups();
 
-            ui.DrawStructureOperationWindow();
-            ui.DrawSceneWindow();
-            //ui.DefineSettingsEditorWindow();
-
-            ui.HandleInputs();
-            ui.DrawHoveredPropertyViewer();
             //DRAW EVERYTHING ABOVE ME
-            
             rlImGui.End();
             Raylib.EndDrawing();
         }

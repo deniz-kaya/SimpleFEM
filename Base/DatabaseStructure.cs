@@ -17,21 +17,27 @@ namespace SimpleFEM.Base;
 
 public class DatabaseStructure : IStructure
 {
-    private const int SQLIndex = 1;
+    private const string FileExtension = ".structure";
     private string StructureName;
-    private StructureSettings settings;
     private string connectionString;
     public DatabaseStructure(string folderPath, string fileName, StructureSettings settings)
     {
-        string filepath = Path.Combine(folderPath, fileName + ".db");
-        this.settings = settings;
+        string filepath = Path.Combine(folderPath, fileName + FileExtension);
         StructureName = fileName;
         connectionString = $"Data Source={filepath}";
         InitialiseDatabase(filepath);
-        Thread.Sleep(1000);
+        InitialiseStructureSettings(settings);
         InitialiseMaterialsAndSections();
     }
 
+    public DatabaseStructure(string fullFilepath)
+    {
+        StructureName = Path.GetFileNameWithoutExtension(fullFilepath);
+        connectionString = $"Data Source={fullFilepath}";
+
+        InitialiseDatabase(fullFilepath);
+        InitialiseMaterialsAndSections();
+    }
     private void InitialiseMaterialsAndSections()
     {
         AddMaterial(Material.Steel235);
@@ -41,14 +47,10 @@ public class DatabaseStructure : IStructure
         AddSection(Section.UC254x254x132);
         AddSection(Section.SHS100x100x5);
     }
+    
     private void InitialiseDatabase(string filepath)
-     {
-         bool newDB = false;
-         if (!(Path.Exists(filepath) && FileIsSqliteDatabase(filepath)))
-         {
-             newDB = true;
-         }
-         
+    {
+
          using (SqliteConnection conn = new SqliteConnection(connectionString))
          {
              conn.Open();
@@ -107,8 +109,27 @@ public class DatabaseStructure : IStructure
              conn.Close();
          }
      }
-    
-    private bool FileIsSqliteDatabase(string filepath)
+
+    private void InitialiseStructureSettings(StructureSettings settings)
+    {
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            using (SqliteTransaction transaction = conn.BeginTransaction())
+            {
+                SqliteCommand setSettingsCommand = conn.CreateCommand();
+                setSettingsCommand.CommandText = @"
+                    INSERT INTO Settings (ID, GridSpacing) VALUES (1, @gridSpacing);
+                ";
+                setSettingsCommand.Parameters.AddWithValue("@gridSpacing", settings.gridSpacing);
+                
+                setSettingsCommand.ExecuteNonQuery();
+                transaction.Commit();
+            }
+            conn.Close();
+        }
+    }
+    public static bool FileIsSqliteDatabase(string filepath)
     {
         const int sqliteHeaderSize = 16;
         byte[] bytes = new byte[sqliteHeaderSize];
@@ -433,8 +454,21 @@ public class DatabaseStructure : IStructure
 
     public StructureSettings GetStructureSettings()
     {
-        //todo remove dependency on local variable
-        return settings;
+        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            SqliteCommand getCommand = conn.CreateCommand();
+            getCommand.CommandText = @"
+                SELECT GridSpacing FROM Settings WHERE ID = 1;
+            ";
+            object? result = getCommand.ExecuteScalar();
+            if (result == null)
+            {
+                throw new Exception("Something went seriously wrong, please make sure that this doesnt happen again.");
+            }
+            conn.Close();
+            return new StructureSettings(Convert.ToSingle(result));
+        } 
     }
     public bool AddElement(Element e, out int index)
     {
