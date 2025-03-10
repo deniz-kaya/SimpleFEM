@@ -95,7 +95,6 @@ public class DatabaseStructure : IStructure
                         GridSpacing REAL NOT NULL
                     );
              ";
-             // todo add the settings table
              command.ExecuteNonQuery();
              conn.Close();
          }
@@ -200,7 +199,6 @@ public class DatabaseStructure : IStructure
             index = Convert.ToInt32(checkNodeResult);
             return false;
         }
-        //todo potential failure point
         return true;
     }
 
@@ -486,8 +484,6 @@ public class DatabaseStructure : IStructure
 
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
-                //todo potential issue with reader.read
-                //there was an issue with this, the load property viewer was giving bogus results, its fine now
                 if (reader.Read())
                 {
                     load = new Load(reader.GetFloat(0), reader.GetFloat(1), reader.GetFloat(2));

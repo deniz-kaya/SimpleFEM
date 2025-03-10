@@ -40,17 +40,18 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     //imgui windows
     public Vector2 GetSceneCoordinates(Vector2 realPosition)
     {
-        return (realPosition * SceneRenderer.ScenePixelGridSpacing) / Structure.GetStructureSettings().GridSpacing;
+        return (realPosition * UISceneRenderer.ScenePixelGridSpacing) / Structure.GetStructureSettings().GridSpacing;
     }
     public Vector2 GetRealCoordinates(Vector2 screenPosition)
     {
-        return (screenPosition / SceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
+        return (screenPosition / UISceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
     }
 
     public void DrawOperationWindow()
     {
         MaterialSelectComboBox();
         
+        SectionSelectComboBox();
         SectionSelectComboBox();
     }
     public void DrawHoveredPropertiesViewer()
@@ -253,13 +254,14 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             OpenAddMaterialModal = false;
         }
     }
-
+    
     private void DefineSelectedNodePopup()
     {
         if (ImGui.BeginPopup("SelectedNodePopup"))
         {
             if (ImGui.Selectable("Delete node(s)"))
             {
+                ResetHovered();
                 DeleteSelectedNodes();
                 ImGui.CloseCurrentPopup();
             }
@@ -421,7 +423,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     public bool UpdateHoveredItems()
     {
         ResetHovered();
-        float treshold = (_settings.HoveringDistanceTreshold / SceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
+        float treshold = (_settings.HoveringDistanceTreshold / UISceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
         _hoveredNode = CheckForNodesCloseToPos(LivePos, treshold);
         if (_hoveredNode == -1)
         {
@@ -478,6 +480,13 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         }
 
         CurrentTool = newTool;
+    }
+    
+    public void DeleteSelected()
+    {
+        ResetHovered();
+        DeleteSelectedElements();
+        DeleteSelectedNodes();
     }
     private void AddElementBetweenPositions()
     {
@@ -564,7 +573,7 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         
         //grid
         //todo base this off of somethign else? it feels uncomfortable for it to be based on scenepixelgridspacing
-        renderQueue.Enqueue(new GridObject(SceneRenderer.SceneGridSlices, SceneRenderer.ScenePixelGridSpacing));
+        renderQueue.Enqueue(new GridObject(UISceneRenderer.SceneGridSlices, UISceneRenderer.ScenePixelGridSpacing));
         
         //Elements
         QueueElementSceneObjects(ref renderQueue, drawSettings);

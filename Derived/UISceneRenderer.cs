@@ -8,7 +8,8 @@ using SimpleFEM.Types.Settings;
 namespace SimpleFEM.Derived;
 public class UISceneRenderer : SceneRenderer
 {
-
+    public const int ScenePixelGridSpacing = 50;
+    public const int SceneGridSlices = 200;
     public UISceneRenderer(SceneRendererSettings settings) : base(settings)
     {
         

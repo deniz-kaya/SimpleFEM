@@ -36,6 +36,10 @@ class Program
                 ui.DrawFooter();
 
             }
+            else
+            {
+                ui.DrawWelcomeWindow();
+            }
 
             ui.HandlePopups();
 

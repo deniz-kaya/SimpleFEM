@@ -18,14 +18,10 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         _exaggerationFactor = 10f;
     }
 
-    private bool _displayLoads;
-    private bool _displayBoundaryConditions;
     private bool _shouldDisplaySolution;
     public void DrawOperationWindow()   
     {
-        ImGui.Checkbox("View loads", ref _displayLoads);
-        ImGui.Checkbox("View boundary conditions", ref _displayBoundaryConditions);
-        
+        ImGui.SeparatorText("Exaggeration");
         ImGui.InputFloat("Exaggeration Factor", ref _exaggerationFactor);
         ImGui.Separator();
         if (ImGui.Button("Solve System"))
@@ -58,6 +54,7 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
             }
         }
     }
+
     private Dictionary<int, Vector2> GetDisplacedNodePositions()
     {
         Dictionary<int, Vector2> positions = new Dictionary<int, Vector2>();
@@ -77,11 +74,11 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
     }
     public Vector2 GetSceneCoordinates(Vector2 realPosition)
     {
-        return (realPosition * SceneRenderer.ScenePixelGridSpacing) / Structure.GetStructureSettings().GridSpacing;
+        return (realPosition * UISceneRenderer.ScenePixelGridSpacing) / Structure.GetStructureSettings().GridSpacing;
     }
     public Vector2 GetRealCoordinates(Vector2 screenPosition)
     {
-        return (screenPosition / SceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
+        return (screenPosition / UISceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
     }
     public Queue<ISceneObject> GetSceneObjects(DrawSettings settings)
     {
@@ -91,7 +88,7 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
 
         //grid
         // TODO variables
-        renderQueue.Enqueue(new GridObject(SceneRenderer.SceneGridSlices, SceneRenderer.ScenePixelGridSpacing));
+        renderQueue.Enqueue(new GridObject(UISceneRenderer.SceneGridSlices, UISceneRenderer.ScenePixelGridSpacing));
 
         if (StructureHasBeenChanged)
         {
@@ -106,26 +103,7 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         
         QueueNodesAndElementsSceneObject(ref renderQueue, settings);
 
-        if (_displayBoundaryConditions)
-        {
-            
-        }
-
-        if (_displayLoads)
-        {
-            
-        }
         return renderQueue;
-    }
-
-
-    public void QueueCurrentSolutionBCObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
-    {
-        throw new NotImplementedException();
-    }
-    public void QueueCurrentSolutionLoadObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
-    {
-        throw new NotImplementedException();
     }
     private void QueueCurrentSolutionSceneObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
     {

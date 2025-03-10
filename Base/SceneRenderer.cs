@@ -9,8 +9,7 @@ namespace SimpleFEM.Base;
 
 public class SceneRenderer
 {
-    public const int ScenePixelGridSpacing = 50;
-    public const int SceneGridSlices = 200;
+
     private Queue<ISceneObject> _sceneObjects;
     protected Vector2 CurrentTextureSize;
     protected Camera2D Camera;

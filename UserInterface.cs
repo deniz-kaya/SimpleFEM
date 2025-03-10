@@ -14,7 +14,6 @@ public class UserInterface
     private UIStructureEditor _structureEditor;
     private UIStructureSolver _structureSolver;
     private UISceneRenderer _sceneRenderer;
-    
     public bool StructureLoaded { get; private set; }
     private bool _volatileStructure;
     
@@ -39,6 +38,7 @@ public class UserInterface
         _drawSettings = DrawSettings.Default;
         _settings = UserInterfaceSettings.Default;
         _sceneRenderer = new UISceneRenderer(SceneRendererSettings.Default);
+        InitialiseWindowPositionsAndDocking();
     }
 
     private void SwitchStructure(IStructure structure)
@@ -190,7 +190,11 @@ public class UserInterface
                 {
                     _shouldShowSaveProjectAsModal = true;
                 }
-                
+
+                if (StructureLoaded && ImGui.MenuItem("Close Project"))
+                {
+                    StructureLoaded = false;
+                }
                 ImGui.EndMenu();
             }
 
@@ -271,8 +275,10 @@ public class UserInterface
             HandleCameraMovement();
 
             if (_currentOperation != OperationMode.Editor) return;
+            
             _structureEditor.UpdateHoveredItems();
             HandleToolSwitchInputs();
+            
             if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
             {
                 HandleRightClickPopupDisplay();
@@ -293,14 +299,40 @@ public class UserInterface
 
             if (ImGui.IsKeyPressed(ImGuiKey.Delete))
             {
-                //todo delete confirmation?
-                _structureEditor.DeleteSelectedElements();
-                _structureEditor.DeleteSelectedNodes();
+                _structureEditor.DeleteSelected();
             }
+        }
+    }
 
-            
+    public void InitialiseWindowPositionsAndDocking()
+    {
+        //I got this by removing my .ini file, docking the windows to my desired default location, and then movoing 
+        string defaultImguiIni = "[Window][Dockspace]\nPos=0,19\nSize=1600,851\nCollapsed=0\n\n[Window][SimpleFEM Start Window]\nPos=0,19\nSize=1600,851\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][New Project]\nPos=637,12\nSize=312,221\nCollapsed=0\n\n[Window][Toolbar]\nPos=0,19\nSize=1177,34\nCollapsed=0\nDockId=0x00000005,0\n\n[Window][Structure Operations]\nPos=1179,19\nSize=421,407\nCollapsed=0\nDockId=0x00000003,0\n\n[Window][Scene Window]\nPos=0,55\nSize=1177,815\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][Footer]\nPos=0,870\nSize=1600,32\nCollapsed=0\n\n[Window][Property Viewer]\nPos=1179,428\nSize=421,442\nCollapsed=0\nDockId=0x00000004,0\n\n[Docking][Data]\nDockSpace     ID=0x0ACA1264 Window=0x5B816B74 Pos=0,19 Size=1600,851 Split=X Selected=0xB575ABF8\n  DockNode    ID=0x00000001 Parent=0x0ACA1264 SizeRef=1177,851 Split=Y\n    DockNode  ID=0x00000005 Parent=0x00000001 SizeRef=1177,34 HiddenTabBar=1 Selected=0x738351EE\n    DockNode  ID=0x00000006 Parent=0x00000001 SizeRef=1177,815 CentralNode=1 HiddenTabBar=1 Selected=0x9F2D9299\n  DockNode    ID=0x00000002 Parent=0x0ACA1264 SizeRef=421,851 Split=Y Selected=0x9BD2ECEC\n    DockNode  ID=0x00000003 Parent=0x00000002 SizeRef=128,407 Selected=0x3D655616\n    DockNode  ID=0x00000004 Parent=0x00000002 SizeRef=128,442 Selected=0x9BD2ECEC\n\n";
+        string defaultFilepath = "imgui.ini";
+
+        File.WriteAllText(defaultFilepath, defaultImguiIni);
+
+    }
+
+    public void DrawWelcomeWindow()
+    {
+        ImGui.Begin("SimpleFEM Start Window");
+        ImGui.Text("Welcome!");
+        ImGui.Separator();
+        ImGui.TextWrapped("Begin by going to the top left\n'File'\nand choosing either New Project or Open Project!");
+        ImGui.NewLine();
+        ImGui.TextWrapped("...or, click the buttons below:");
+        if (ImGui.Button("New Project"))
+        {
+           _shouldShowNewProjectModal = true; 
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Open Project"))
+        {
+            _shouldShowOpenProjectModal = true; 
         }
 
+        ImGui.End();
     }
     public void HandlePopups()
     {
@@ -313,14 +345,6 @@ public class UserInterface
         DefineNewProjectModal();
         DefineOpenProjectModal();
         DefineSaveProjectAsModal();
-        //DefinePreferencesModal();
-
-        //todo popup flag names
-        // if (ShouldShowPreferencesModal)
-        // {
-        //     ImGui.OpenPopup("Preferences");
-        //     ShouldShowPreferencesModal = false;
-        // }
 
         if (_shouldShowNewProjectModal)
         {
@@ -599,93 +623,4 @@ public class UserInterface
             ImGui.EndPopup();
         }
     }
-    
-    // TO.DO rename properties to be better
-    // Popup Properties
-    //---------
-    // private Vector4 sceneElementColor = new();
-    // private Vector4 sceneNodeColor = new();
-    // private Vector4 sceneSelectedElementColor = new();
-    // private Vector4 sceneSelectedNodeColor = new();
-    // private Vector4 sceneHoveredElementColor = new();
-    // private Vector4 sceneHoveredNodeColor = new();
-    // private Vector4 sceneSelectionBoxColor = new();
-    // private float sceneElementThickness;
-    // private float sceneNodeRadius;
-    //
-    // //to.do finish scenedrawsettings, add note saying please put something for all
-    // private void DefineSceneDrawSettings()
-    // {
-    //     ImGui.ColorEdit4("Element Color", ref sceneElementColor);
-    //     ImGui.ColorEdit4("Node Color", ref sceneNodeColor);
-    //     ImGui.ColorEdit4("Selected Element Color", ref sceneSelectedElementColor);
-    //     ImGui.ColorEdit4("Selected Node Color", ref sceneSelectedNodeColor);
-    //     ImGui.ColorEdit4("Hovered Element Color", ref sceneHoveredElementColor);
-    //     ImGui.ColorEdit4("Hovered Node Color", ref sceneHoveredNodeColor);
-    //     ImGui.ColorEdit4("Selection Box Color", ref sceneSelectionBoxColor);
-    //     ImGui.DragFloat("Element Thickness", ref sceneElementThickness, 0.1f, 1f, 5f);
-    //     ImGui.DragFloat("Node Radius", ref sceneNodeRadius, 0.1f, 1f, 5f);
-    //     //todo saving and loading userdata on program launch
-    //     if (ImGui.Button("Save Settings"))
-    //     {
-    //         drawSettings = new DrawSettings(
-    //             sceneElementColor,
-    //             sceneNodeColor,
-    //             sceneSelectedElementColor,
-    //             sceneSelectedNodeColor,
-    //             sceneHoveredElementColor,
-    //             sceneHoveredNodeColor,
-    //             sceneSelectionBoxColor,
-    //             sceneElementThickness,
-    //             sceneNodeRadius
-    //         );
-    //     }
-    //
-    //     if (ImGui.Button("Reset to defaults"))
-    //     {
-    //         drawSettings = DrawSettings.Default;
-    //     }
-    // }
-    //
-    // private void DefineToolHotkeysSettings()
-    // {
-    //
-    // }
-    //
-    // private void DefineEditorSettings()
-    // {
-    //     
-    // }
-    //
-    // private bool ShouldShowPreferencesModal;
-    // public void DefinePreferencesModal()
-    // {
-    //
-    //     if (ImGui.BeginPopupModal("Preferences"))
-    //     {
-    //         if (ImGui.BeginTabBar("PreferencesTabBar"))
-    //         {
-    //             if (ImGui.BeginTabItem("Scene Draw settings"))
-    //             {
-    //                 DefineSceneDrawSettings();
-    //             }
-    //             if (ImGui.BeginTabItem("Tool Hotkeys"))
-    //             {
-    //                 DefineToolHotkeysSettings();
-    //             }
-    //
-    //             if (ImGui.BeginTabItem("Editor Settings"))
-    //             {
-    //                 DefineEditorSettings();
-    //             }
-    //             ImGui.EndTabBar();
-    //         }
-    //         ImGui.Separator();
-    //         if (ImGui.Button("Close"))
-    //         {
-    //             ImGui.CloseCurrentPopup();
-    //         }
-    //         ImGui.EndPopup();
-    //     }
-    // }
 }
