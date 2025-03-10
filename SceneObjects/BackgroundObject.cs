@@ -5,14 +5,14 @@ namespace SimpleFEM.SceneObjects;
 
 public class BackgroundObject : ISceneObject
 {
-    private Color backgroundColor;
+    private readonly Color _backgroundColor;
     public BackgroundObject(Color backgroundColor)
     {
-        this.backgroundColor = backgroundColor;
+        _backgroundColor = backgroundColor;
     }
 
     public void Render()
     {
-        Raylib.ClearBackground(backgroundColor);
+        Raylib.ClearBackground(_backgroundColor);
     }
 }

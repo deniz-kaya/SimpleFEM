@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Numerics;
+﻿using System.Numerics;
 using ImGuiNET;
 using Raylib_cs;
 using SimpleFEM.Base;
@@ -7,39 +6,31 @@ using SimpleFEM.Interfaces;
 using SimpleFEM.SceneObjects;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
-using SQLitePCL;
 
 namespace SimpleFEM.Derived;
 
 public class UIStructureSolver : StructureSolver, IUIStructureHelper
 {
-    public float ExaggerationFactor;
+    private float _exaggerationFactor;
     
     public UIStructureSolver(IStructure structure, StructureSolverSettings settings = default) : base(structure)
     {
-        ExaggerationFactor = 10f;
+        _exaggerationFactor = 10f;
     }
 
-    private bool displayLoads = false;
-    private bool displayBoundaryConditions = false;
-    private bool shouldDisplaySolution = false;
+    private bool _displayLoads;
+    private bool _displayBoundaryConditions;
+    private bool _shouldDisplaySolution;
     public void DrawOperationWindow()   
     {
-        ImGui.Checkbox("View loads", ref displayLoads);
-        ImGui.Checkbox("View boundary conditions", ref displayBoundaryConditions);
+        ImGui.Checkbox("View loads", ref _displayLoads);
+        ImGui.Checkbox("View boundary conditions", ref _displayBoundaryConditions);
         
-        ImGui.InputFloat("Exaggeration Factor", ref ExaggerationFactor);
+        ImGui.InputFloat("Exaggeration Factor", ref _exaggerationFactor);
         ImGui.Separator();
         if (ImGui.Button("Solve System"))
         {
-            if (Solve())
-            {
-                shouldDisplaySolution = true;
-            }
-            else
-            {
-                shouldDisplaySolution = false;
-            }
+            _shouldDisplaySolution = Solve();
         }
     }
     public void HandlePopups()
@@ -51,15 +42,15 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
             ErrorDuringSolution = false;
         }
     }
-    public void DefineSolverErrorModal()
+    private void DefineSolverErrorModal()
     {
         if (ImGui.BeginPopupModal("Solver Error", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.Text("An error occured while solving system!");
             ImGui.SeparatorText("Error type:");
-            ImGui.Text(lastError.GetType().Name);
+            ImGui.Text(LastError.GetType().Name);
             ImGui.SeparatorText("Error message:");
-            ImGui.TextWrapped(lastError.Message);
+            ImGui.TextWrapped(LastError.Message);
             
             if (ImGui.Button("Close"))
             {
@@ -70,15 +61,15 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
     private Dictionary<int, Vector2> GetDisplacedNodePositions()
     {
         Dictionary<int, Vector2> positions = new Dictionary<int, Vector2>();
-        List<int> nodeIDs = structure.GetNodeIndexesSorted();
+        List<int> nodeIDs = Structure.GetNodeIndexesSorted();
 
         for (int i = 0; i < nodeIDs.Count; i++)
         {
             int nodeID = nodeIDs[i];
-            Vector2 currentPos = structure.GetNode(nodeID).Pos;
+            Vector2 currentPos = Structure.GetNode(nodeID).Pos;
             int solutionVectorIndex = i * DOF;
             Vector2 displacement = new Vector2(CurrentSolution[solutionVectorIndex], CurrentSolution[solutionVectorIndex + 1]);
-            Vector2 newPos = currentPos + (displacement * ExaggerationFactor);
+            Vector2 newPos = currentPos + (displacement * _exaggerationFactor);
             positions.Add(nodeID, newPos);
         }
 
@@ -86,11 +77,11 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
     }
     public Vector2 GetSceneCoordinates(Vector2 realPosition)
     {
-        return (realPosition * SceneRenderer.ScenePixelGridSpacing) / structure.GetStructureSettings().gridSpacing;
+        return (realPosition * SceneRenderer.ScenePixelGridSpacing) / Structure.GetStructureSettings().GridSpacing;
     }
     public Vector2 GetRealCoordinates(Vector2 screenPosition)
     {
-        return (screenPosition / SceneRenderer.ScenePixelGridSpacing) * structure.GetStructureSettings().gridSpacing;
+        return (screenPosition / SceneRenderer.ScenePixelGridSpacing) * Structure.GetStructureSettings().GridSpacing;
     }
     public Queue<ISceneObject> GetSceneObjects(DrawSettings settings)
     {
@@ -104,10 +95,10 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
 
         if (StructureHasBeenChanged)
         {
-            shouldDisplaySolution = false;
+            _shouldDisplaySolution = false;
         }
             
-        if (shouldDisplaySolution)
+        if (_shouldDisplaySolution)
         {
             QueueCurrentSolutionSceneObjects(ref renderQueue, settings);
             return renderQueue;
@@ -115,12 +106,12 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         
         QueueNodesAndElementsSceneObject(ref renderQueue, settings);
 
-        if (displayBoundaryConditions)
+        if (_displayBoundaryConditions)
         {
             
         }
 
-        if (displayLoads)
+        if (_displayLoads)
         {
             
         }
@@ -136,21 +127,21 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
     {
         throw new NotImplementedException();
     }
-    public void QueueCurrentSolutionSceneObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
+    private void QueueCurrentSolutionSceneObjects(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
     {
         Dictionary<int, Vector2> displacedNodes = GetDisplacedNodePositions();
 
-        SpheresObject nodes = new SpheresObject(settings.nodeColor, settings.nodeRadius);
+        SpheresObject nodes = new SpheresObject(settings.NodeColor, settings.NodeRadius);
         foreach (Vector2 v in displacedNodes.Values)
         {
             nodes.AddSphere(GetSceneCoordinates(v));
         }
 
-        LinesObject elements = new LinesObject(settings.elementColor, settings.elementThickness);
+        LinesObject elements = new LinesObject(settings.ElementColor, settings.ElementThickness);
 
-        foreach (int i in structure.GetElementIndexesSorted())
+        foreach (int i in Structure.GetElementIndexesSorted())
         {
-            Element e = structure.GetElement(i);
+            Element e = Structure.GetElement(i);
             elements.AddLine(GetSceneCoordinates(displacedNodes[e.Node1ID]), GetSceneCoordinates(displacedNodes[e.Node2ID]));
         }
 
@@ -159,21 +150,21 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         renderQueue.Enqueue(nodes);  
     }
 
-    public void QueueNodesAndElementsSceneObject(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
+    private void QueueNodesAndElementsSceneObject(ref Queue<ISceneObject> renderQueue, DrawSettings settings)
     {
-        SpheresObject nodes = new SpheresObject(settings.nodeColor, settings.nodeRadius);
-        foreach (int nodeID in structure.GetNodeIndexesSorted())
+        SpheresObject nodes = new SpheresObject(settings.NodeColor, settings.NodeRadius);
+        foreach (int nodeID in Structure.GetNodeIndexesSorted())
         {
-            nodes.AddSphere(GetSceneCoordinates(structure.GetNode(nodeID).Pos));
+            nodes.AddSphere(GetSceneCoordinates(Structure.GetNode(nodeID).Pos));
         }
 
-        LinesObject elements = new LinesObject(settings.elementColor, settings.elementThickness);
+        LinesObject elements = new LinesObject(settings.ElementColor, settings.ElementThickness);
 
-        foreach (int elementID in structure.GetElementIndexesSorted())
+        foreach (int elementID in Structure.GetElementIndexesSorted())
         {
-            Element e = structure.GetElement(elementID);
-            Vector2 pos1 = GetSceneCoordinates(structure.GetNode(e.Node1ID).Pos);
-            Vector2 pos2 = GetSceneCoordinates(structure.GetNode(e.Node2ID).Pos);
+            Element e = Structure.GetElement(elementID);
+            Vector2 pos1 = GetSceneCoordinates(Structure.GetNode(e.Node1ID).Pos);
+            Vector2 pos2 = GetSceneCoordinates(Structure.GetNode(e.Node2ID).Pos);
             elements.AddLine(pos1, pos2);
         }
         renderQueue.Enqueue(elements);

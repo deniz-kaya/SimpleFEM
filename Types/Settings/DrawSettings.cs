@@ -6,15 +6,15 @@ namespace SimpleFEM.Types.Settings;
 
 public struct DrawSettings
 {
-    public Color elementColor;
-    public Color nodeColor;
-    public Color selectedElementColor;
-    public Color selectedNodeColor;
-    public Color hoveredElementColor;
-    public Color hoveredNodeColor;
-    public Color selectionBoxColor;
-    public float elementThickness;
-    public float nodeRadius;
+    public Color ElementColor;
+    public Color NodeColor;
+    public Color SelectedElementColor;
+    public Color SelectedNodeColor;
+    public Color HoveredElementColor;
+    public Color HoveredNodeColor;
+    public Color SelectionBoxColor;
+    public float ElementThickness;
+    public float NodeRadius;
     
     public DrawSettings(
         Vector4 elementColor,
@@ -28,32 +28,27 @@ public struct DrawSettings
         float nodeRadius
         )
     {
-        this.elementColor = RaylibExtensions.Vector4ToColor(elementColor);
-        this.nodeColor = RaylibExtensions.Vector4ToColor(nodeColor);
-        this.selectedElementColor = RaylibExtensions.Vector4ToColor(selectedElementColor);
-        this.selectedNodeColor = RaylibExtensions.Vector4ToColor(selectedNodeColor);
-        this.hoveredElementColor = RaylibExtensions.Vector4ToColor(hoveredElementColor);
-        this.hoveredNodeColor = RaylibExtensions.Vector4ToColor(hoveredNodeColor);
-        this.selectionBoxColor = RaylibExtensions.Vector4ToColor(selectionBoxColor);
-        this.elementThickness = elementThickness;
-        this.nodeRadius = nodeRadius;
+        ElementColor = elementColor.Vector4ToColor();
+        NodeColor = nodeColor.Vector4ToColor();
+        SelectedElementColor = selectedElementColor.Vector4ToColor();
+        SelectedNodeColor = selectedNodeColor.Vector4ToColor();
+        HoveredElementColor = hoveredElementColor.Vector4ToColor();
+        HoveredNodeColor = hoveredNodeColor.Vector4ToColor();
+        SelectionBoxColor = selectionBoxColor.Vector4ToColor();
+        ElementThickness = elementThickness;
+        NodeRadius = nodeRadius;
     }
-    public static DrawSettings Default
-    {
-        get
+    public static DrawSettings Default =>
+        new DrawSettings()
         {
-            return new DrawSettings()
-            {
-                elementColor = Color.Green,
-                nodeColor = Color.Red,
-                selectedElementColor = Color.Orange,
-                selectedNodeColor = Color.Orange,
-                hoveredElementColor = Color.Blue,
-                hoveredNodeColor = Color.Blue,
-                selectionBoxColor = new Color(199,199,199,40),
-                elementThickness = 3f,
-                nodeRadius = 3f,
-            };
-        }
-    }
+            ElementColor = Color.Green,
+            NodeColor = Color.Red,
+            SelectedElementColor = Color.Orange,
+            SelectedNodeColor = Color.Orange,
+            HoveredElementColor = Color.Blue,
+            HoveredNodeColor = Color.Blue,
+            SelectionBoxColor = new Color(199,199,199,40),
+            ElementThickness = 3f,
+            NodeRadius = 3f,
+        };
 }

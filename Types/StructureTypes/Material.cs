@@ -2,7 +2,6 @@
 
 public struct Material
 {
-    //todo ctor and variable naming conventions
     public Material(string description, float e, float yield)
     {
         Description = description;

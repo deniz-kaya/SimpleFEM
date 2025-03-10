@@ -17,7 +17,6 @@ public class StructureEditor
     protected Vector2 MultiSelectLockedPos;
     protected Vector2 LivePos;
     protected IStructure Structure;
-    
     public StructureEditor(IStructure structure)
     {
         

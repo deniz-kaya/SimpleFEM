@@ -6,9 +6,9 @@ public struct BoundaryCondition
 {
     public BoundaryCondition(bool fixedX, bool fixedY, bool fixedRotation)
     {
-        this.FixedX = fixedX;
-        this.FixedY = fixedY;
-        this.FixedRotation = fixedRotation;
+        FixedX = fixedX;
+        FixedY = fixedY;
+        FixedRotation = fixedRotation;
     }
     public bool FixedY;
     public bool FixedX;

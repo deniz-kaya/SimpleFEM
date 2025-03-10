@@ -1,9 +1,8 @@
 ﻿using System.Numerics;
-using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
+using SimpleFEM.Types.StructureTypes;
 
 namespace SimpleFEM.Interfaces;
-using SimpleFEM.Types.StructureTypes;
 public interface IStructure
 {
     public string GetName();
@@ -13,8 +12,8 @@ public interface IStructure
     public bool AddNode(Vector2 pos, out int index);
     public void RemoveElement(int elementID);
     public void RemoveNode(int nodeID);
-    public Element GetElement(int ElementID);
-    public Node GetNode(int NodeID);
+    public Element GetElement(int elementID);
+    public Node GetNode(int nodeID);
     public void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition);
     public void SetLoad(int nodeID, Load load);
     public BoundaryCondition GetBoundaryCondition(int nodeID);

@@ -4,15 +4,15 @@ namespace SimpleFEM.LinearAlgebra;
 
 public static class LinAlgMethods
 {
-    public static Vector Solve(Matrix M, Vector V)
+    public static Vector Solve(Matrix m, Vector v)
     {
-        (Matrix L, Matrix U) = LUDecompose(M);
+        (Matrix l, Matrix u) = LUDecompose(m);
         // V = ME
         // V = LUE
         // Y = UE
         // V = LY
-        Vector Y = ForwardSubstitute(L, V);
-        return BackwardSubstitute(U, Y);
+        Vector y = ForwardSubstitute(l, v);
+        return BackwardSubstitute(u, y);
     }
     
     public static (Matrix L, Matrix U) LUDecompose(Matrix K)

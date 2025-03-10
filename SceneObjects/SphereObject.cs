@@ -5,18 +5,18 @@ using SimpleFEM.Interfaces;
 namespace SimpleFEM.SceneObjects;
 public class SphereObject : ISceneObject
 {
-    private Vector2 pos;
-    private float radius;
-    private Color color;
+    private readonly Vector2 _pos;
+    private readonly float _radius;
+    private readonly Color _color;
     public SphereObject(Vector2 pos, Color color, float radius)
     {
-        this.pos = pos;
-        this.color = color;
-        this.radius = radius;
+        _pos = pos;
+        _color = color;
+        _radius = radius;
     }
 
     public void Render()
     {
-        Raylib.DrawCircleV(pos, radius, color);
+        Raylib.DrawCircleV(_pos, _radius, _color);
     }
 }

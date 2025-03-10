@@ -2,9 +2,9 @@
 
 public enum Tool
 {
-    Add_Node = 1,
-    Add_Element = 2,
-    Select_Nodes = 3,
-    Select_Elements = 4,
-    Mouse_Select = 5,
+    AddNode = 1,
+    AddElement = 2,
+    SelectNodes = 3,
+    SelectElements = 4,
+    MouseSelect = 5,
 }

@@ -4,14 +4,10 @@ namespace SimpleFEM.Types.StructureTypes;
 
 public struct Node
 {
-    public Node(Vector2 position, BoundaryCondition boundary = default, Load load = default)
+    public Node(Vector2 position)
     {
-        this.Pos = position;
+        Pos = position;
     }
     public Vector2 Pos;
-
-   // public BoundaryCondition BoundaryCondition;
-   // public Load Load;
-
 
 }

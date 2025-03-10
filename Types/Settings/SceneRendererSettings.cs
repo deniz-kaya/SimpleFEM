@@ -8,12 +8,12 @@ public struct SceneRendererSettings
     public float ZoomIncrement;
 
 
-    public SceneRendererSettings(float CameraSpeed, float MaxZoom, float MinZoom, float ZoomIncrement)
+    public SceneRendererSettings(float cameraSpeed, float maxZoom, float minZoom, float zoomIncrement)
     {
-        this.CameraSpeed = CameraSpeed;
-        this.MaxZoom = MaxZoom;
-        this.MinZoom = MinZoom;
-        this.ZoomIncrement = ZoomIncrement;
+        CameraSpeed = cameraSpeed;
+        MaxZoom = maxZoom;
+        MinZoom = minZoom;
+        ZoomIncrement = zoomIncrement;
     }
     public static SceneRendererSettings Default => new SceneRendererSettings(10f, 20f,0.25f, 0.25f);
 }

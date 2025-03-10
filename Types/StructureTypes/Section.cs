@@ -11,7 +11,6 @@ public struct Section
     public string Description;
     public float I;
     public float A;
-    //533 x 312 x 273
     
     public static Section UB533x312x273 => new Section("UB 533 x 312x 273", 0.00199f, 0.0348f);
     public static Section UC254x254x132 => new Section("UC 254 x 254x 132", 0.000225f, 0.0168f);

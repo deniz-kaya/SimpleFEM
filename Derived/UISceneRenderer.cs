@@ -17,7 +17,7 @@ public class UISceneRenderer : SceneRenderer
     public Vector2 TextureStartPosition;
     public Vector2 GetScenePos(Vector2 screenPos)
     {
-        return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera) * new Vector2(1f,-1f);
+        return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), Camera) * new Vector2(1f,-1f);
     }
     
     public void ShowSceneWindow()

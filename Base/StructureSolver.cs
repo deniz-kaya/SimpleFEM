@@ -1,5 +1,4 @@
-﻿using ImGuiNET;
-using SimpleFEM.Extensions;
+﻿using SimpleFEM.Extensions;
 using Vector2 = System.Numerics.Vector2;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
@@ -12,25 +11,25 @@ public class StructureSolver
 {
     protected const int DOF = 3;
     
-    protected IStructure structure;
-    protected Matrix CurrentStiffnessMatrix;
-    protected Graph CurrentStructureGraph;
-    protected Vector CurrentForceVector;
+    protected IStructure Structure;
+    private Matrix _currentStiffnessMatrix;
+    private Graph _currentStructureGraph;
+    private Vector _currentForceVector;
     protected Vector CurrentSolution;
-    protected Exception lastError;
+    protected Exception LastError;
     protected bool ErrorDuringSolution;
     
-    public bool StructureHasBeenChanged => structure.GetNodeCount() != CurrentStructureGraph.NodeCount; 
+    public bool StructureHasBeenChanged => Structure.GetNodeCount() != _currentStructureGraph.NodeCount; 
     public StructureSolver(IStructure structure)
     {
-        this.structure = structure;
-        CurrentStructureGraph = ConstructStructureGraph();
-        CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
-        CurrentForceVector = GetForceVector();
+        Structure = structure;
+        _currentStructureGraph = ConstructStructureGraph();
+        _currentStiffnessMatrix = GetGlobalStiffnessMatrix();
+        _currentForceVector = GetForceVector();
     }
 
     
-    public bool Solve()
+    protected bool Solve()
     {
         
         //todo switch to using own exceptions?
@@ -38,34 +37,34 @@ public class StructureSolver
         {
             //stability checks
             //todo something funky with constrained nodes and forces
-            if (structure.GetElementCount() == 0)
+            if (Structure.GetElementCount() == 0)
             {
                 throw new EmptyStructure();
             }
-            if (structure.GetLoadCount() == 0)
+            if (Structure.GetLoadCount() == 0)
             {
                 throw new NoLoads();
             }
 
-            if (structure.GetBoundaryConditionCount() == 0)
+            if (Structure.GetBoundaryConditionCount() == 0)
             {
                 throw new NoBoundaryConditions();
             }
-            CurrentStructureGraph = ConstructStructureGraph();
-            if (!CurrentStructureGraph.IsConnected())
+            _currentStructureGraph = ConstructStructureGraph();
+            if (!_currentStructureGraph.IsConnected())
             {
                 throw new StructureDisconnected();
             }
 
             //construct shit
-            CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
-            CurrentForceVector = GetForceVector();
+            _currentStiffnessMatrix = GetGlobalStiffnessMatrix();
+            _currentForceVector = GetForceVector();
 
-            CurrentSolution = LinAlgMethods.Solve(CurrentStiffnessMatrix, CurrentForceVector);
+            CurrentSolution = LinAlgMethods.Solve(_currentStiffnessMatrix, _currentForceVector);
         }
         catch (Exception e)
         {
-            lastError = e;
+            LastError = e;
             ErrorDuringSolution = true;
             return false;
         }
@@ -75,25 +74,25 @@ public class StructureSolver
     public Graph ConstructStructureGraph()
     {
         Graph graph = new Graph();
-        foreach (int i in structure.GetNodeIndexesSorted())
+        foreach (int i in Structure.GetNodeIndexesSorted())
         {
             graph.AddVertex(i);
         }
-        foreach (int i in structure.GetElementIndexesSorted())
+        foreach (int i in Structure.GetElementIndexesSorted())
         {
-            Element e = structure.GetElement(i);
+            Element e = Structure.GetElement(i);
             graph.AddEdge(e.Node1ID, e.Node2ID);
         }
 
         return graph;
     }
-    public Matrix6x6 TransformLocalMatrixIntoGlobal(Matrix6x6 matrix, Element element)
+    private Matrix6 TransformLocalMatrixIntoGlobal(Matrix6 matrix, Element element)
     {
         float angle = GetElementAngle(element);
         float cosAngle = MathF.Cos(angle);
         float sinAngle = MathF.Sin(angle);
         
-        Matrix6x6 transformation = new Matrix6x6();
+        Matrix6 transformation = new Matrix6();
 
         for (int i = 0; i < 4; i+= 3)
         {
@@ -104,7 +103,7 @@ public class StructureSolver
             transformation[i + 1, i] = -sinAngle;
         }
 
-        Matrix6x6 transpose = transformation;
+        Matrix6 transpose = transformation;
 
         for (int i = 0; i < 4; i += 3)
         {
@@ -114,13 +113,14 @@ public class StructureSolver
         
         return (transpose * matrix) * transformation;
     }
-    public Vector GetForceVector()
+
+    private Vector GetForceVector()
     {
         Dictionary<int, int> idMap = GetMappedNodeIndexes();
         Vector forceVector = new Vector(idMap.Count * DOF);
         foreach (int i in idMap.Keys)
         {
-            Load l = structure.GetLoad(i);
+            Load l = Structure.GetLoad(i);
             int currentNode = idMap[i];
             forceVector[currentNode * DOF] = l.ForceX;
             forceVector[currentNode * DOF + 1] = l.ForceY;
@@ -129,9 +129,10 @@ public class StructureSolver
 
         return forceVector;
     }
-    public Dictionary<int, int> GetMappedNodeIndexes()
+
+    private Dictionary<int, int> GetMappedNodeIndexes()
     {
-        List<int> nodeIndexes = structure.GetNodeIndexesSorted();
+        List<int> nodeIndexes = Structure.GetNodeIndexesSorted();
         Dictionary<int, int> nodeIDToIndex = new Dictionary<int, int>();
         for (int i = 0; i < nodeIndexes.Count; i++)
         {
@@ -140,28 +141,29 @@ public class StructureSolver
 
         return nodeIDToIndex;
     }
-    public Matrix GetGlobalStiffnessMatrix()
+
+    private Matrix GetGlobalStiffnessMatrix()
     {
         Dictionary<int, int> nodeIDMap = GetMappedNodeIndexes();
-        List<int> elementIndexes = structure.GetElementIndexesSorted();
-        Matrix6x6[] elementStiffnessMatrices = new Matrix6x6[elementIndexes.Count];
+        List<int> elementIndexes = Structure.GetElementIndexesSorted();
+        Matrix6[] elementStiffnessMatrices = new Matrix6[elementIndexes.Count];
         (int, int)[] elementNodeIndexes = new (int, int)[elementStiffnessMatrices.Length];
 
         for (int i = 0; i < elementStiffnessMatrices.Length; i++)
         {
             int index = elementIndexes[i];
-            Element e = structure.GetElement(index);
+            Element e = Structure.GetElement(index);
             elementNodeIndexes[i] = (e.Node1ID, e.Node2ID);
             elementStiffnessMatrices[i] = TransformLocalMatrixIntoGlobal(GetLocalStiffnessMatrix(e), e);
         }
         
-        int nodeCount = structure.GetNodeCount();
+        int nodeCount = Structure.GetNodeCount();
         
-        Matrix K = new Matrix(nodeCount * DOF, nodeCount * DOF);
+        Matrix k = new Matrix(nodeCount * DOF, nodeCount * DOF);
 
         for (int i = 0; i < elementStiffnessMatrices.Length; i++)
         {
-            Matrix6x6 m = elementStiffnessMatrices[i];
+            Matrix6 m = elementStiffnessMatrices[i];
             
             int firstIdx = nodeIDMap[elementNodeIndexes[i].Item1] * DOF;
             int secondIdx = nodeIDMap[elementNodeIndexes[i].Item2] * DOF;
@@ -189,64 +191,64 @@ public class StructureSolver
                 {
                     for (int col = 0; col < DOF; col++)
                     {
-                        K[row + rowStart, col + colStart] += m[row + elementMatrixCornerRow, col + elementMatrixCornerCol];
+                        k[row + rowStart, col + colStart] += m[row + elementMatrixCornerRow, col + elementMatrixCornerCol];
                     }
                 }
             }
         }
 
         //apply BC's 
-        foreach (int nodeID in structure.GetNodeIndexesSorted())
+        foreach (int nodeID in Structure.GetNodeIndexesSorted())
         {
-            BoundaryCondition bc = structure.GetBoundaryCondition(nodeID);
+            BoundaryCondition bc = Structure.GetBoundaryCondition(nodeID);
             if (bc.FixedX)
             {
-                int BCindex = DOF * nodeIDMap[nodeID];
-                for (int i = 0; i < K.Columns; i++)
+                int bcIndex = DOF * nodeIDMap[nodeID];
+                for (int i = 0; i < k.Columns; i++)
                 {
-                    K[BCindex, i] = 0f;
-                    K[i, BCindex] = 0f;
+                    k[bcIndex, i] = 0f;
+                    k[i, bcIndex] = 0f;
                 }
-                K[BCindex, BCindex] = 1f;
+                k[bcIndex, bcIndex] = 1f;
             }
             if (bc.FixedY)
             {
-                int BCindex = DOF * nodeIDMap[nodeID] + 1;
-                for (int i = 0; i < K.Columns; i++)
+                int bcIndex = DOF * nodeIDMap[nodeID] + 1;
+                for (int i = 0; i < k.Columns; i++)
                 {
-                    K[BCindex, i] = 0f;
-                    K[i, BCindex] = 0f;
+                    k[bcIndex, i] = 0f;
+                    k[i, bcIndex] = 0f;
                 }
-                K[BCindex, BCindex] = 1f;
+                k[bcIndex, bcIndex] = 1f;
             }
             if (bc.FixedRotation)
             {
-                int BCindex = DOF * nodeIDMap[nodeID] + 2;
-                for (int i = 0; i < K.Columns; i++)
+                int bcIndex = DOF * nodeIDMap[nodeID] + 2;
+                for (int i = 0; i < k.Columns; i++)
                 {
-                    K[BCindex, i] = 0f;
-                    K[i, BCindex] = 0f;
+                    k[bcIndex, i] = 0f;
+                    k[i, bcIndex] = 0f;
                 }
-                K[BCindex, BCindex] = 1f;
+                k[bcIndex, bcIndex] = 1f;
             }
             
         }
-        return K;
+        return k;
         
     }
 
 
-    public Matrix6x6 GetLocalStiffnessMatrix(Element element)
+    private Matrix6 GetLocalStiffnessMatrix(Element element)
     {
-        Material mat = structure.GetMaterial(element.MaterialID);
-        Section sect = structure.GetSection(element.SectionID);
-        float length = Vector2.Distance(structure.GetNode(element.Node1ID).Pos, structure.GetNode(element.Node2ID).Pos);
+        Material mat = Structure.GetMaterial(element.MaterialID);
+        Section sect = Structure.GetSection(element.SectionID);
+        float length = Vector2.Distance(Structure.GetNode(element.Node1ID).Pos, Structure.GetNode(element.Node2ID).Pos);
         float axS = (mat.E * sect.A) / length; //axial stiffness
         float beS = (mat.E * sect.I) / length; // bending stiffness
         float beSSq = 6f * (beS / length);  // bending stiffness squared
         float beSCb = 2f * (beSSq / length);  // bending stiffness cubed
 
-        Matrix6x6 m = new();
+        Matrix6 m = new();
         
         for (int corner = 0; corner < 4; corner++)
         {
@@ -270,10 +272,10 @@ public class StructureSolver
         return m;
 
     }
-    public float GetElementAngle(Element e)
+    private float GetElementAngle(Element e)
     {
-        Vector2 node1Pos = structure.GetNode(e.Node1ID).Pos;
-        Vector2 node2Pos = structure.GetNode(e.Node2ID).Pos;
+        Vector2 node1Pos = Structure.GetNode(e.Node1ID).Pos;
+        Vector2 node2Pos = Structure.GetNode(e.Node2ID).Pos;
         
         float angle = MathF.Atan((node1Pos.Y- node2Pos.Y)/(node1Pos.X - node2Pos.X));
         return angle < 0 ? angle + MathF.PI : angle;
@@ -282,19 +284,19 @@ public class StructureSolver
     //stability checking
     public bool CheckElementIntersections()
     {
-        List<int> elementIndexes = structure.GetElementIndexesSorted();
+        List<int> elementIndexes = Structure.GetElementIndexesSorted();
         int currentIndex = 0;
-        foreach (int idx in structure.GetElementIndexesSorted())
+        foreach (int idx in Structure.GetElementIndexesSorted())
         {
-            Element e = structure.GetElement(idx);
-            Vector2 pos1 = structure.GetNode(e.Node1ID).Pos;
-            Vector2 pos2 = structure.GetNode(e.Node2ID).Pos;
+            Element e = Structure.GetElement(idx);
+            Vector2 pos1 = Structure.GetNode(e.Node1ID).Pos;
+            Vector2 pos2 = Structure.GetNode(e.Node2ID).Pos;
             currentIndex++;
             for (int i = currentIndex; i < elementIndexes.Count; i++)
             {
-                Element testE = structure.GetElement(elementIndexes[i]);
-                Vector2 testPos1 = structure.GetNode(testE.Node1ID).Pos;
-                Vector2 testPos2 = structure.GetNode(testE.Node2ID).Pos;
+                Element testE = Structure.GetElement(elementIndexes[i]);
+                Vector2 testPos1 = Structure.GetNode(testE.Node1ID).Pos;
+                Vector2 testPos2 = Structure.GetNode(testE.Node2ID).Pos;
                 if (Vector2Extensions.CheckSegmentIntersections(testPos1, pos1, testPos2, pos2))
                 {
                     return false;
@@ -307,6 +309,6 @@ public class StructureSolver
     } 
     public bool CheckStructureConnected()
     {
-        return CurrentStructureGraph.IsConnected();
+        return _currentStructureGraph.IsConnected();
     }
 }

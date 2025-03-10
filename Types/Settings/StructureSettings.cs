@@ -8,15 +8,9 @@ public struct StructureSettings
     /// <param name="gridSpacing">Length of one side of grid, in metres</param>
     public StructureSettings(float gridSpacing)
     {
-        this.gridSpacing = gridSpacing;
+        this.GridSpacing = gridSpacing;
     }
-    public float gridSpacing;
+    public float GridSpacing;
 
-    public static StructureSettings Default
-    {
-        get
-        {
-            return new StructureSettings() {gridSpacing = 0.5f};
-        }
-    }
+    public static StructureSettings Default => new StructureSettings() {GridSpacing = 0.5f};
 }

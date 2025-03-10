@@ -1,19 +1,18 @@
-﻿namespace SimpleFEM;
+﻿namespace SimpleFEM.Types;
 
 public class Graph
 {
-    private Dictionary<int, List<int>> adjacencyList;
+    private Dictionary<int, List<int>> _adjacencyList;
     public Graph()
     {
-        adjacencyList = new Dictionary<int, List<int>>();
-        
+        _adjacencyList = new Dictionary<int, List<int>>();
     }
-    public int NodeCount => adjacencyList.Count;
+    public int NodeCount => _adjacencyList.Count;
     public void AddVertex(int vertexID)
     {
-        if (!adjacencyList.ContainsKey(vertexID))
+        if (!_adjacencyList.ContainsKey(vertexID))
         {
-            adjacencyList[vertexID] = new List<int>();
+            _adjacencyList[vertexID] = new List<int>();
         }
     }
 
@@ -22,8 +21,8 @@ public class Graph
         AddVertex(vertex1ID);
         AddVertex(vertex2ID);
         
-        adjacencyList[vertex1ID].Add(vertex2ID);
-        adjacencyList[vertex2ID].Add(vertex1ID);
+        _adjacencyList[vertex1ID].Add(vertex2ID);
+        _adjacencyList[vertex2ID].Add(vertex1ID);
     }
 
     public bool IsConnected()
@@ -31,9 +30,9 @@ public class Graph
         //implement graph traversal and keep track of visited vertices, if all aren't visited, something wrong
         HashSet<int> visitedNodes = new HashSet<int>();
 
-        DFS(adjacencyList.Keys.First(), visitedNodes);
+        DepthFirstSearch(_adjacencyList.Keys.First(), visitedNodes);
         
-        if (visitedNodes.Count == adjacencyList.Count)
+        if (visitedNodes.Count == _adjacencyList.Count)
         {
             return true;
         }
@@ -41,7 +40,7 @@ public class Graph
         return false;
     }
 
-    public void DFS(int currentNode, HashSet<int> visitedNodes)
+    private void DepthFirstSearch(int currentNode, HashSet<int> visitedNodes)
     {
         //visitedNodes hashset is passed by reference as it is a reference type, unlike e.g. arrays
         //this means that it can be changed within this subroutine
@@ -52,9 +51,9 @@ public class Graph
             return;
         }
 
-        foreach (int connectedNode in adjacencyList[currentNode])
+        foreach (int connectedNode in _adjacencyList[currentNode])
         {
-            DFS(connectedNode, visitedNodes);
+            DepthFirstSearch(connectedNode, visitedNodes);
         }
     }
 }

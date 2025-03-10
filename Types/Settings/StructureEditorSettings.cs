@@ -2,13 +2,7 @@
 
 public struct StructureEditorSettings
 {
-    public float IdleSelectionFeather;
+    public float HoveringDistanceTreshold;
 
-    public static StructureEditorSettings Default
-    {
-        get
-        {
-            return new StructureEditorSettings() { IdleSelectionFeather = 0.05f };
-        }
-    } 
+    public static StructureEditorSettings Default => new StructureEditorSettings() { HoveringDistanceTreshold = 10f };
 }

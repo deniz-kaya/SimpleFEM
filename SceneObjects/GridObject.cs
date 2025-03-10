@@ -5,21 +5,21 @@ namespace SimpleFEM.SceneObjects;
 
 public class GridObject : ISceneObject
 {
-    private int gridSlices;
-    private float gridSpacing;
+    private readonly int _gridSlices;
+    private readonly float _gridSpacing;
     public GridObject(int gridSlices, float gridSpacing)
     {
-        this.gridSlices = gridSlices;
-        this.gridSpacing = gridSpacing;
+        _gridSlices = gridSlices;
+        _gridSpacing = gridSpacing;
     }
 
     public void Render()
     {
         Rlgl.PushMatrix();
         Rlgl.Rotatef(90, 1, 0, 0);
-        Raylib.DrawGrid(gridSlices,gridSpacing);
+        Raylib.DrawGrid(_gridSlices,_gridSpacing);
         Rlgl.Rotatef(-180,1,0,0);            
-        Raylib.DrawGrid(gridSlices,gridSpacing);
+        Raylib.DrawGrid(_gridSlices,_gridSpacing);
         Rlgl.PopMatrix();
     }
 }

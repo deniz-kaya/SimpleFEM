@@ -7,17 +7,17 @@ namespace SimpleFEM.SceneObjects;
 
 public class SelectionBoxObject : ISceneObject
 {
-    private Vector2 position1;
-    private Vector2 position2;
-    private Color color;
+    private readonly Vector2 _position1;
+    private readonly Vector2 _position2;
+    private readonly Color _color;
     public SelectionBoxObject(Vector2 position1, Vector2 position2, Color color)
     {
-        this.position1 = position1;
-        this.position2 = position2;
-        this.color = color;
+        _position1 = position1;
+        _position2 = position2;
+        _color = color;
     }
     public void Render()
     {
-        Raylib.DrawRectangleRec(RectangleExtensions.GetRectangleFromPoints(position1, position2), color);
+        Raylib.DrawRectangleRec(RectangleExtensions.GetRectangleFromPoints(_position1, _position2), _color);
     }
 }

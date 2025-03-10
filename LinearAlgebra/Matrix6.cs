@@ -2,23 +2,23 @@
 
 namespace SimpleFEM.LinearAlgebra;
 
-public struct Matrix6x6 : ILinearAlgebra
+public struct Matrix6 : ILinearAlgebra
 {
-    private float[] mat;
+    private float[] _mat;
     
     public int Rows => 6;
     public int Columns => 6;
-    public Matrix6x6()
+    public Matrix6()
     {
-        mat = new float[36];
+        _mat = new float[36];
     }
     public ref float this[int row, int col] {
-        get => ref mat[row * 6 + col];
+        get => ref _mat[row * 6 + col];
     }
 
-    public static Matrix6x6 operator * (Matrix6x6 left, Matrix6x6 right)
+    public static Matrix6 operator * (Matrix6 left, Matrix6 right)
     {
-        Matrix6x6 final = new Matrix6x6();
+        Matrix6 final = new Matrix6();
         for (int row = 0; row < 6; row++)
         {
             for (int col = 0; col < 6; col++)
@@ -32,9 +32,9 @@ public struct Matrix6x6 : ILinearAlgebra
         return final;
     }
 
-    public static Matrix6x6 Transpose(Matrix6x6 m)
+    public static Matrix6 Transpose(Matrix6 m)
     {
-        Matrix6x6 t = new Matrix6x6();
+        Matrix6 t = new Matrix6();
         for (int row = 0; row < 6; row++)
         {
             for (int col = 0; col < 6; col++)
@@ -45,9 +45,9 @@ public struct Matrix6x6 : ILinearAlgebra
 
         return t;
     }
-    public static Matrix6x6 operator *(float constant, Matrix6x6 matrix)
+    public static Matrix6 operator *(float constant, Matrix6 matrix)
     {
-        Matrix6x6 final = new Matrix6x6();
+        Matrix6 final = new Matrix6();
         for (int rows = 0; rows < 6; rows++)
         {
             for (int cols = 0; cols < 6; cols++)
@@ -59,11 +59,11 @@ public struct Matrix6x6 : ILinearAlgebra
         return final;
     }
 
-    public static Matrix6x6 Identity
+    public static Matrix6 Identity
     {
         get
         {
-            Matrix6x6 identity = new Matrix6x6();
+            Matrix6 identity = new Matrix6();
             for (int i = 0; i < 6; i++)
             {
                 identity[i, i] = 1f;
@@ -72,7 +72,7 @@ public struct Matrix6x6 : ILinearAlgebra
             return identity;
         }
     }
-    public static void DebugPrint(Matrix6x6 matrix)
+    public static void DebugPrint(Matrix6 matrix)
     {
         for (int row = 0; row < 6; row++)
         {

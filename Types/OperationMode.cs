@@ -1,4 +1,4 @@
-﻿namespace SimpleFEM;
+﻿namespace SimpleFEM.Types;
 
 public enum OperationMode
 {

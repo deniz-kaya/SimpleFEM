@@ -4,12 +4,12 @@ namespace SimpleFEM.Extensions;
 
 public class RecyclingList<T> : IEnumerable<T>
     {
-        private T[] elements;
-        private Stack<int> freeSpots;
+        private T[] _elements;
+        private Stack<int> _freeSpots;
 
-        private bool[] occupied;
+        private bool[] _occupied;
 
-        private int elementCount;
+        private int _elementCount;
         
         public int LastAddedIndex { get; private set; }
 
@@ -18,7 +18,7 @@ public class RecyclingList<T> : IEnumerable<T>
             index = -1;
             foreach (int i in GetIndexes())
             {
-                if (EqualityComparer<T>.Default.Equals(elements[i], item))
+                if (EqualityComparer<T>.Default.Equals(_elements[i], item))
                 {
                     index = i;
                     return true;
@@ -31,7 +31,7 @@ public class RecyclingList<T> : IEnumerable<T>
         {
             foreach (int i in GetIndexes())
             {
-                if (EqualityComparer<T>.Default.Equals(elements[i], item))
+                if (EqualityComparer<T>.Default.Equals(_elements[i], item))
                 {
                     return true;
                 }
@@ -40,23 +40,19 @@ public class RecyclingList<T> : IEnumerable<T>
         }
         
         public int Count {
-            get { return elementCount; }
-            private set
-            {
-                elementCount = value;
-            }
+            get { return _elementCount; }
         }
 
         public bool ExistsAt(int index)
         {
-            return occupied[index];
+            return _occupied[index];
         }
         public RecyclingList(int initialCapacity = 100)
         {
-            elements = new T[initialCapacity];
-            occupied = new bool[initialCapacity];
-            elementCount = 0;
-            freeSpots = new Stack<int>();
+            _elements = new T[initialCapacity];
+            _occupied = new bool[initialCapacity];
+            _elementCount = 0;
+            _freeSpots = new Stack<int>();
         }
 
         public T this[int index]
@@ -69,7 +65,7 @@ public class RecyclingList<T> : IEnumerable<T>
                 }
                 else
                 {
-                    return elements[index];
+                    return _elements[index];
                 }
             }
             set
@@ -80,7 +76,7 @@ public class RecyclingList<T> : IEnumerable<T>
                 }
                 else
                 {
-                    elements[index] = value;
+                    _elements[index] = value;
                 }
             }
         }
@@ -88,16 +84,16 @@ public class RecyclingList<T> : IEnumerable<T>
         public bool ValidIndex(int index)
         {
             bool indexTooSmall = index < 0;
-            bool isntOccupied = !occupied[index];
+            bool isntOccupied = !_occupied[index];
             return !(indexTooSmall || isntOccupied);
         }
         public bool RemoveAt(int index)
         {
             if (ValidIndex(index))
             {
-                occupied[index] = false;
-                elementCount--;
-                freeSpots.Push(index);
+                _occupied[index] = false;
+                _elementCount--;
+                _freeSpots.Push(index);
                 return true;
             }
 
@@ -106,11 +102,11 @@ public class RecyclingList<T> : IEnumerable<T>
         
         public bool Remove(T item)
         {
-            for (int i = 0; i < elements.Length; i++)
+            for (int i = 0; i < _elements.Length; i++)
             {
-                if (occupied[i])
+                if (_occupied[i])
                 {
-                    if (EqualityComparer<T>.Default.Equals(elements[i], item))
+                    if (EqualityComparer<T>.Default.Equals(_elements[i], item))
                     {
                         RemoveAt(i);
                         return true;
@@ -123,27 +119,19 @@ public class RecyclingList<T> : IEnumerable<T>
         
         public void Add(T item)
         {
-            int index;
-            if (freeSpots.Count != 0)
-            {
-                index = freeSpots.Pop();
-            }
-            else
-            {
-                index = elementCount;
-            }
-            elements[index] = item;
-            occupied[index] = true;
+            int index = _freeSpots.Count != 0 ? _freeSpots.Pop() : _elementCount;
+            _elements[index] = item;
+            _occupied[index] = true;
             LastAddedIndex = index;
-            elementCount++;
+            _elementCount++;
         }
 
         public List<int> GetIndexes()
         {
             List<int> indexes = new List<int>();
-            for (int i = 0; i < elements.Length; i++)
+            for (int i = 0; i < _elements.Length; i++)
             {
-                if (occupied[i])
+                if (_occupied[i])
                 {
                     indexes.Add(i);
                 }
@@ -152,11 +140,11 @@ public class RecyclingList<T> : IEnumerable<T>
         }
         public IEnumerator<T> GetEnumerator()
         {
-            for (int i = 0; i < elements.Length; i++)
+            for (int i = 0; i < _elements.Length; i++)
             {
-                if (occupied[i])
+                if (_occupied[i])
                 {
-                    yield return elements[i];
+                    yield return _elements[i];
                 }
             }
         }

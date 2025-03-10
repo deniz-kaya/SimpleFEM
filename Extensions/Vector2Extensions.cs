@@ -60,6 +60,7 @@ public static class Vector2Extensions
         //cross product
         return left.X * right.Y + left.Y * right.X;
     }
+    //todo remove or fix onsegment
     public static bool OnSegment(this Vector2 a, Vector2 b, Vector2 c)
     {
         //if cross product of these vectors is 0, the point a is on the segment bc

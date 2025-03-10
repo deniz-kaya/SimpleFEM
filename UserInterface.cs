@@ -1,64 +1,66 @@
 ﻿using System.Numerics;
-using System.Xml;
+using System.Text.RegularExpressions;
 using ImGuiNET;
-using Raylib_cs;
 using SimpleFEM.Base;
 using SimpleFEM.Derived;
-using SimpleFEM.Extensions;
 using SimpleFEM.Interfaces;
-using SimpleFEM.LinearAlgebra;
 using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
-using SimpleFEM.Types.StructureTypes;
-using Material = SimpleFEM.Types.StructureTypes.Material;
 
 namespace SimpleFEM;
 
 public class UserInterface
 {
-    private UIStructureEditor structureEditor;
-    private UIStructureSolver structureSolver;
-    private UISceneRenderer sceneRenderer;
+    private UIStructureEditor _structureEditor;
+    private UIStructureSolver _structureSolver;
+    private UISceneRenderer _sceneRenderer;
+    
     public bool StructureLoaded { get; private set; }
-    public bool VolatileStructure { get; private set; }
-    private StructureEditorSettings structureEditorSettings;
+    private bool _volatileStructure;
     
-    private DrawSettings drawSettings;
-    private HotkeySettings settings;
+    private const string SaveFileExtension = ".structure";
+    private string _currentStructureFilepath;
+    
+    private StructureEditorSettings _structureEditorSettings;
+    private DrawSettings _drawSettings;
+    private UserInterfaceSettings _settings;
 
-    private bool ShouldShowNewProjectModal;
-    private bool ShouldShowOpenProjectModal;
+    private bool _shouldShowNewProjectModal;
+    private bool _shouldShowOpenProjectModal;
+    private bool _shouldShowSaveProjectAsModal;
 
     
-    private OperationMode CurrentOperation;
+    private OperationMode _currentOperation;
     public UserInterface()
     {
         StructureLoaded = false;
-        structureEditorSettings = StructureEditorSettings.Default;
-        CurrentOperation = OperationMode.Editor;
-        drawSettings = DrawSettings.Default;
-        settings = HotkeySettings.Default;
-        sceneRenderer = new UISceneRenderer(SceneRendererSettings.Default);
+        _currentOperation = OperationMode.Editor;
+        _structureEditorSettings = StructureEditorSettings.Default;
+        _drawSettings = DrawSettings.Default;
+        _settings = UserInterfaceSettings.Default;
+        _sceneRenderer = new UISceneRenderer(SceneRendererSettings.Default);
     }
 
-    public void SwitchStructure(IStructure structure)
+    private void SwitchStructure(IStructure structure)
     {
-        CurrentOperation = OperationMode.Editor;
+        _currentOperation = OperationMode.Editor;
         StructureLoaded = true;
-        structureEditor = new UIStructureEditor(structure, structureEditorSettings);
-        structureSolver = new UIStructureSolver(structure);
+        _structureEditor = new UIStructureEditor(structure, _structureEditorSettings);
+        _structureSolver = new UIStructureSolver(structure);
     }
+    
+    //imgui windows
     public void DrawSceneWindow()
     {
-        if (CurrentOperation == OperationMode.Editor)
+        if (_currentOperation == OperationMode.Editor)
         {
-            sceneRenderer.SetRenderQueue(structureEditor.GetSceneObjects(drawSettings));
+            _sceneRenderer.SetRenderQueue(_structureEditor.GetSceneObjects(_drawSettings));
         }
-        else if (CurrentOperation == OperationMode.Solver)
+        else if (_currentOperation == OperationMode.Solver)
         {
-            sceneRenderer.SetRenderQueue(structureSolver.GetSceneObjects(drawSettings));
+            _sceneRenderer.SetRenderQueue(_structureSolver.GetSceneObjects(_drawSettings));
         }
-        sceneRenderer.ShowSceneWindow();
+        _sceneRenderer.ShowSceneWindow();
     }
     public void DrawFooter()
     {
@@ -69,25 +71,24 @@ public class UserInterface
                                        | ImGuiWindowFlags.NoScrollbar
                                        | ImGuiWindowFlags.NoNav;
         
-        // TODO variables
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(5,3));
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
         
         Vector2 size = ImGui.GetMainViewport().Size;
-        ImGui.SetNextWindowSize(new Vector2(size.X, settings.FooterHeight));
-        ImGui.SetNextWindowPos(new Vector2(0, size.Y-settings.FooterHeight));
+        ImGui.SetNextWindowSize(new Vector2(size.X, _settings.FooterHeight));
+        ImGui.SetNextWindowPos(new Vector2(0, size.Y-_settings.FooterHeight));
         
         ImGui.Begin("Footer", windowFlags);
 
         float width = ImGui.GetContentRegionAvail().X;
         
         //Left of the footer
-        ImGui.Text($"Current tool: {structureEditor.CurrentTool.ToString().Replace('_', ' ')}");
+        ImGui.Text($"Current tool: {Regex.Replace(_structureEditor.CurrentTool.ToString(), "(?<!^)([A-Z])"," $1")}");
         //Right of the footer
 
-        if (sceneRenderer.SceneWindowHovered)
+        if (_sceneRenderer.SceneWindowHovered)
         {
-            string mousePosition = structureEditor.GetRealCoordinates(sceneRenderer.GetScenePos(ImGui.GetMousePos())).ToString();
+            string mousePosition = _structureEditor.GetRealCoordinates(_sceneRenderer.GetScenePos(ImGui.GetMousePos())).ToString();
             ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
             ImGui.Text(mousePosition);
         }
@@ -96,15 +97,14 @@ public class UserInterface
         
         ImGui.PopStyleVar(10);
     }
-
     public void DrawHoveredPropertyViewer()
     {
         ImGui.Begin("Property Viewer");
-        if (CurrentOperation == OperationMode.Editor)
+        if (_currentOperation == OperationMode.Editor)
         {
-            structureEditor.DrawHoveredPropertiesViewer();
+            _structureEditor.DrawHoveredPropertiesViewer();
         }
-        else if (CurrentOperation == OperationMode.Solver)
+        else if (_currentOperation == OperationMode.Solver)
         {
             ImGui.Text("Switch back to editor to see properties!");
         }
@@ -114,7 +114,7 @@ public class UserInterface
     public void DrawMainDockSpace()
     {
         float mainMenuBarHeight = ImGui.GetFrameHeight();
-        float footerHeight = settings.FooterHeight;
+        float footerHeight = _settings.FooterHeight;
         Vector2 viewportSize = ImGui.GetMainViewport().Size;
         
         ImGui.SetNextWindowPos(new Vector2(0, mainMenuBarHeight));
@@ -144,34 +144,24 @@ public class UserInterface
         ImGui.PopStyleVar(2);
 
     }
-
-    public void Test()
-    {
-        ImGui.Text("This is a test window!");
-        if (ImGui.Button("Test button"))
-        {
-            Console.WriteLine("pressed button!");
-        }
-    }
     public void DrawStructureOperationWindow()
     {
-        // TODO rename
         ImGui.Begin("Structure Operations");
 
         if (ImGui.BeginTabBar("Structure Operations Tab Bar"))
         {
             if (ImGui.BeginTabItem("Editor"))
             {
-                CurrentOperation = OperationMode.Editor;
-                structureEditor.DrawOperationWindow();
+                _currentOperation = OperationMode.Editor;
+                _structureEditor.DrawOperationWindow();
                 
                 ImGui.EndTabItem();
             }
 
             if (ImGui.BeginTabItem("Solver"))
             {
-                CurrentOperation = OperationMode.Solver;
-                structureSolver.DrawOperationWindow();
+                _currentOperation = OperationMode.Solver;
+                _structureSolver.DrawOperationWindow();
                 
                 ImGui.EndTabItem();
             }
@@ -188,17 +178,17 @@ public class UserInterface
             {
                 if (ImGui.MenuItem("New Project"))
                 {
-                    ShouldShowNewProjectModal = true;
+                    _shouldShowNewProjectModal = true;
                 }
 
                 if (ImGui.MenuItem("Open Project"))
                 {
-                    ShouldShowOpenProjectModal = true;
+                    _shouldShowOpenProjectModal = true;
                 }
 
-                if (StructureLoaded && !VolatileStructure && ImGui.MenuItem("Save Project As"))
+                if (StructureLoaded && !_volatileStructure && ImGui.MenuItem("Save Project As"))
                 {
-                    //todo save structure as popup
+                    _shouldShowSaveProjectAsModal = true;
                 }
                 
                 ImGui.EndMenu();
@@ -208,35 +198,194 @@ public class UserInterface
             {
                 if (ImGui.MenuItem("Add new material"))
                 {
-                    structureEditor.OpenAddMaterialModal = true;
+                    _structureEditor.OpenAddMaterialModal = true;
                 }
 
                 if (ImGui.MenuItem("Add new section"))
                 {
-                    structureEditor.OpenAddSectionModal = true;
+                    _structureEditor.OpenAddSectionModal = true;
                 }
                 ImGui.EndMenu();
             }
 
-            if (ImGui.BeginMenu("Options"))
-            {
-                if (ImGui.MenuItem("Preferences"))
-                {
-                    ShouldShowPreferencesModal = true;
-                }
-
-                ImGui.EndMenu();
-            }
+            // if (ImGui.BeginMenu("Options"))
+            // {
+            //     if (ImGui.MenuItem("Preferences"))
+            //     {
+            //         ShouldShowPreferencesModal = true;
+            //     }
+            //
+            //     ImGui.EndMenu();
+            // }
             ImGui.EndMainMenuBar();
         }
     }
+    public void DrawToolbar()
+    {
+        ImGui.Begin("Toolbar");
+        foreach (Tool t in Enum.GetValues(typeof(Tool))) 
+        {
+            ImGui.SameLine();
+            if (ImGui.Button(Regex.Replace(t.ToString(), "(?<!^)([A-Z])"," $1")))
+            {
+                _structureEditor.SwitchTool(t);
+            }
+        }
+    }
+    
+    
+    //Input Handling
+    private void HandleCameraMovement()
+    {
+        if (ImGui.IsKeyDown(ImGuiKey.RightArrow))
+        {
+            _sceneRenderer.OperateCamera(CameraOperation.Right);
+        }
+        if (ImGui.IsKeyDown(ImGuiKey.LeftArrow))
+        {
+            _sceneRenderer.OperateCamera(CameraOperation.Left);
+        }
+        if (ImGui.IsKeyDown(ImGuiKey.DownArrow))
+        {
+            _sceneRenderer.OperateCamera(CameraOperation.Down);
+        }
+        if (ImGui.IsKeyDown(ImGuiKey.UpArrow))
+        {
+            _sceneRenderer.OperateCamera(CameraOperation.Up);
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.PageUp))
+        {
+            _sceneRenderer.OperateCamera(CameraOperation.ZoomIn);
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
+        {
+            _sceneRenderer.OperateCamera(CameraOperation.ZoomOut);
+        }
+    }
+    public void HandleInputs()
+    {
+        Vector2 scenePos = _sceneRenderer.GetScenePos(ImGui.GetMousePos());
+        _structureEditor.SetLivePos(scenePos);
+        if (_sceneRenderer.SceneWindowHovered)
+        {
+            HandleCameraMovement();
 
-    private string NewProjectModalErrorMessage = String.Empty;
-    private string NewProjectModalFilepath = String.Empty;
-    private string NewProjectModalProjectName = String.Empty;
-    private float NewProjectModalGridSpacingSize = 0f;
+            if (_currentOperation != OperationMode.Editor) return;
+            _structureEditor.UpdateHoveredItems();
+            HandleToolSwitchInputs();
+            if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
+            {
+                HandleRightClickPopupDisplay();
+            }
+            
+            if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
+            {
+                _structureEditor.HandleMouseKeyDownEvent();
+            }
+            else if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+            {
+                _structureEditor.HandleMouseKeyUpEvent();
+            }
+            if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
+            {
+                _structureEditor.HandleMouseKeyPressedEvent();
+            }
+
+            if (ImGui.IsKeyPressed(ImGuiKey.Delete))
+            {
+                //todo delete confirmation?
+                _structureEditor.DeleteSelectedElements();
+                _structureEditor.DeleteSelectedNodes();
+            }
+
+            
+        }
+
+    }
+    public void HandlePopups()
+    {
+        if (StructureLoaded)
+        {
+            _structureEditor.HandlePopups();
+            _structureSolver.HandlePopups();
+        }
+
+        DefineNewProjectModal();
+        DefineOpenProjectModal();
+        DefineSaveProjectAsModal();
+        //DefinePreferencesModal();
+
+        //todo popup flag names
+        // if (ShouldShowPreferencesModal)
+        // {
+        //     ImGui.OpenPopup("Preferences");
+        //     ShouldShowPreferencesModal = false;
+        // }
+
+        if (_shouldShowNewProjectModal)
+        {
+            ImGui.OpenPopup("New Project");
+            _shouldShowNewProjectModal = false;
+        }
+
+        if (_shouldShowOpenProjectModal)
+        {
+            ImGui.OpenPopup("Open Project");
+            _shouldShowOpenProjectModal = false;
+        }
+
+        if (_shouldShowSaveProjectAsModal)
+        {
+            ImGui.OpenPopup("Save Project As");
+            _shouldShowSaveProjectAsModal = false;
+        }
+    }
+    private void HandleToolSwitchInputs()
+    {
+        if (ImGui.IsKeyPressed(_settings.AddNodeToolKey))
+        {
+            _structureEditor.SwitchTool(Tool.AddNode);
+        }
+        else if (ImGui.IsKeyPressed(_settings.AddElementToolKey))
+        {
+            _structureEditor.SwitchTool(Tool.AddElement);
+        }
+        else if (ImGui.IsKeyPressed(_settings.SelectNodesToolKey))
+        {
+            _structureEditor.SwitchTool(Tool.SelectNodes);
+        }
+        else if (ImGui.IsKeyPressed(_settings.SelectElementsToolKey))
+        {
+            _structureEditor.SwitchTool(Tool.SelectElements);
+        }
+        else if (ImGui.IsKeyPressed(_settings.MouseSelectToolKey))
+        {
+            _structureEditor.SwitchTool(Tool.MouseSelect);
+        }
+    }
+    private void HandleRightClickPopupDisplay()
+    {
+        if (_structureEditor.SelectedNodeCount != 0 && _structureEditor.SelectedElementCount == 0)
+        {
+            ImGui.OpenPopup("SelectedNodePopup");
+        }
+    }
+
+    //Popups
     const int MaxStringInputLength = 1024;
-    public void DefineNewProjectModal()
+    
+    private string _newProjectModalErrorMessage = string.Empty;
+    private string _newProjectModalFilepath = string.Empty;
+    private string _newProjectModalProjectName = string.Empty;
+    private float _newProjectModalGridSpacingSize;
+
+    private string _saveProjectAsModalFilepath = string.Empty;
+    private string _saveProjectAsModalFilename = string.Empty; 
+    private string _saveProjectAsModalErrorMessage = string.Empty;
+    
+    private string _openProjectModalFilePath = string.Empty;
+    private string _openProjectModalErrorMessage = string.Empty;
+    private void DefineNewProjectModal()
     {
         if (ImGui.BeginPopupModal("New Project", ImGuiWindowFlags.AlwaysAutoResize))
         {
@@ -249,21 +398,22 @@ public class UserInterface
                     ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Warning! Structure cannot be saved!");
                     ImGui.SeparatorText("Grid spacing distance");
                     ImGui.TextWrapped("What distance one grid step will be equal to, in metres");
-                    ImGui.InputFloat("Grid Spacing", ref NewProjectModalGridSpacingSize);
+                    ImGui.InputFloat("Grid Spacing", ref _newProjectModalGridSpacingSize);
                     if (ImGui.Button("Create"))
                     {
-                        if (NewProjectModalGridSpacingSize == 0f)
+                        if (_newProjectModalGridSpacingSize == 0f)
                         {
-                            NewProjectModalErrorMessage = "The grid spacing size cannot be zero!";
+                            _newProjectModalErrorMessage = "The grid spacing size cannot be zero!";
                         }
                         else
                         {
                             IStructure newStructure = new InMemoryStructure(
                                 "In Memory Structure",
-                                new StructureSettings(NewProjectModalGridSpacingSize));
-                            VolatileStructure = true;
-                            NewProjectModalErrorMessage = String.Empty;
-                            NewProjectModalProjectName = String.Empty;
+                                new StructureSettings(_newProjectModalGridSpacingSize));
+                            _volatileStructure = true;
+                            _currentStructureFilepath = string.Empty;
+                            _newProjectModalErrorMessage = String.Empty;
+                            _newProjectModalProjectName = String.Empty;
                             SwitchStructure(newStructure);
                             ImGui.CloseCurrentPopup();
                         }
@@ -271,65 +421,65 @@ public class UserInterface
                     ImGui.SameLine();
                     if (ImGui.Button("Cancel"))
                     {
-                        NewProjectModalErrorMessage = String.Empty;
-                        NewProjectModalProjectName = String.Empty;
+                        _newProjectModalErrorMessage = String.Empty;
+                        _newProjectModalProjectName = String.Empty;
                         ImGui.CloseCurrentPopup();
                     }
 
-                    ImGui.TextWrapped(NewProjectModalErrorMessage);
+                    ImGui.TextWrapped(_newProjectModalErrorMessage);
                     ImGui.EndTabItem();
                 }
                 if (ImGui.BeginTabItem("Database"))
                 {
                     ImGui.SeparatorText("Filepath");
                     ImGui.TextWrapped("The filepath of the project");
-                    ImGui.InputText("Path", ref NewProjectModalFilepath, MaxStringInputLength);
+                    ImGui.InputText("Path", ref _newProjectModalFilepath, MaxStringInputLength);
                     ImGui.SeparatorText("Project name");
                     ImGui.TextWrapped(
                         "The name of the project. The project will be saved as a .structure file with this name on the given path.");
-                    ImGui.InputText("Name", ref NewProjectModalProjectName, MaxStringInputLength);
+                    ImGui.InputText("Name", ref _newProjectModalProjectName, MaxStringInputLength);
                     ImGui.SeparatorText("Grid spacing distance");
                     ImGui.TextWrapped("What distance one grid step will be equal to, in metres");
-                    ImGui.InputFloat("Grid Spacing", ref NewProjectModalGridSpacingSize);
+                    ImGui.InputFloat("Grid Spacing", ref _newProjectModalGridSpacingSize);
 
                     if (ImGui.Button("Create"))
                     {
-                        if (!Path.Exists(NewProjectModalFilepath))
+                        if (!Path.Exists(_newProjectModalFilepath))
                         {
-                            NewProjectModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
+                            _newProjectModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
                         }
-                        else if (NewProjectModalProjectName == String.Empty)
+                        else if (_newProjectModalProjectName == String.Empty)
                         {
-                            NewProjectModalErrorMessage = "The project name cannot be blank!";
+                            _newProjectModalErrorMessage = "The project name cannot be blank!";
                         }
-                        else if (Path.GetInvalidFileNameChars().Any(NewProjectModalProjectName.Contains))
+                        else if (Path.GetInvalidFileNameChars().Any(_newProjectModalProjectName.Contains))
                         {
-                            NewProjectModalErrorMessage =
+                            _newProjectModalErrorMessage =
                                 "The project name has invalid characters! Use characters that are valid for a filename.";
                         }
-                        else if (File.Exists(NewProjectModalFilepath))
+                        else if (File.Exists(_newProjectModalFilepath))
                         {
-                            NewProjectModalErrorMessage =
+                            _newProjectModalErrorMessage =
                                 "Filepath points to a file! Check and correct filepath to remove extension.";
                         }
-                        else if (Path.Exists(Path.Combine(NewProjectModalFilepath,
-                                     NewProjectModalProjectName + ".structure")))
+                        else if (Path.Exists(Path.Combine(_newProjectModalFilepath,
+                                     _newProjectModalProjectName + ".structure")))
                         {
-                            NewProjectModalErrorMessage = "This file already exists! Try opening the project instead.";
+                            _newProjectModalErrorMessage = "This file already exists! Try opening the project instead.";
                         }
-                        else if (NewProjectModalGridSpacingSize == 0f)
+                        else if (_newProjectModalGridSpacingSize == 0f)
                         {
-                            NewProjectModalErrorMessage = "The grid spacing size cannot be zero!";
+                            _newProjectModalErrorMessage = "The grid spacing size cannot be zero!";
                         }
                         else
                         {
+                            _currentStructureFilepath = Path.Combine(_newProjectModalFilepath, _newProjectModalProjectName + SaveFileExtension);
                             IStructure newStructure = new DatabaseStructure(
-                                NewProjectModalFilepath,
-                                NewProjectModalProjectName,
-                                new StructureSettings(NewProjectModalGridSpacingSize));
-                            VolatileStructure = false;
-                            NewProjectModalErrorMessage = String.Empty;
-                            NewProjectModalProjectName = String.Empty;
+                                _currentStructureFilepath,
+                                new StructureSettings(_newProjectModalGridSpacingSize));
+                            _volatileStructure = false;
+                            _newProjectModalErrorMessage = String.Empty;
+                            _newProjectModalProjectName = String.Empty;
                             SwitchStructure(newStructure);
                             ImGui.CloseCurrentPopup();
                         }
@@ -337,12 +487,12 @@ public class UserInterface
                     ImGui.SameLine();
                     if (ImGui.Button("Cancel"))
                     {
-                        NewProjectModalErrorMessage = String.Empty;
-                        NewProjectModalProjectName = String.Empty;
+                        _newProjectModalErrorMessage = String.Empty;
+                        _newProjectModalProjectName = String.Empty;
                         ImGui.CloseCurrentPopup();
                     }
 
-                    ImGui.TextWrapped(NewProjectModalErrorMessage);
+                    ImGui.TextWrapped(_newProjectModalErrorMessage);
                    
                     ImGui.EndTabItem();
                 }
@@ -352,35 +502,33 @@ public class UserInterface
             ImGui.EndPopup();
         }
     }
-
-    private string OpenProjectModalFilePath = String.Empty;
-    private string OpenProjectModalErrorMessage = String.Empty;
-    public void DefineOpenProjectModal()
+    private void DefineOpenProjectModal()
     {
         if (ImGui.BeginPopupModal("Open Project", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.SeparatorText("Filepath");
             ImGui.TextWrapped("The full filepath of the project");
-            ImGui.InputText("Path", ref OpenProjectModalFilePath, MaxStringInputLength);
+            ImGui.InputText("Path", ref _openProjectModalFilePath, MaxStringInputLength);
             if (ImGui.Button("Open"))
             {
-                if (!Path.Exists(OpenProjectModalFilePath))
+                if (!Path.Exists(_openProjectModalFilePath))
                 {
-                    OpenProjectModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
+                    _openProjectModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
                 }
-                else if (!File.Exists(OpenProjectModalFilePath))
+                else if (!File.Exists(_openProjectModalFilePath))
                 {
-                    OpenProjectModalErrorMessage = "File doesn't exist! Check path to ensure it points to a valid file.";
+                    _openProjectModalErrorMessage = "File doesn't exist! Check path to ensure it points to a valid file.";
                 }
-                else if (!DatabaseStructure.FileIsSqliteDatabase(OpenProjectModalFilePath))
+                else if (!DatabaseStructure.FileIsSqliteDatabase(_openProjectModalFilePath))
                 {
-                    OpenProjectModalErrorMessage = "The file is invalid! Might be corrupted.";
+                    _openProjectModalErrorMessage = "The file is invalid! Might be corrupted.";
                 }
                 else
                 {
-                    IStructure newStructure = new DatabaseStructure(OpenProjectModalFilePath);
-                    OpenProjectModalFilePath = String.Empty;
-                    OpenProjectModalErrorMessage = String.Empty;
+                    IStructure newStructure = new DatabaseStructure(_openProjectModalFilePath);
+                    _currentStructureFilepath = _openProjectModalFilePath;
+                    _openProjectModalFilePath = String.Empty;
+                    _openProjectModalErrorMessage = String.Empty;
                     SwitchStructure(newStructure);
                     ImGui.CloseCurrentPopup();
                 }
@@ -388,245 +536,156 @@ public class UserInterface
             ImGui.SameLine();
             if (ImGui.Button("Cancel"))
             {
-                OpenProjectModalFilePath = String.Empty;
-                OpenProjectModalErrorMessage = String.Empty;
+                _openProjectModalFilePath = String.Empty;
+                _openProjectModalErrorMessage = String.Empty;
                 ImGui.CloseCurrentPopup();
             }
-            ImGui.TextWrapped(OpenProjectModalErrorMessage);
+            ImGui.TextWrapped(_openProjectModalErrorMessage);
             ImGui.EndPopup();
         }
     }
-    public void DrawToolbar()
+    private void DefineSaveProjectAsModal()
     {
-        ImGui.Begin("Toolbar");
-        foreach (Tool t in Enum.GetValues(typeof(Tool))) 
+        if (ImGui.BeginPopupModal("Save Project As", ImGuiWindowFlags.AlwaysAutoResize))
         {
+            
+            ImGui.SeparatorText("Filepath");
+            ImGui.TextWrapped("Save location");
+            ImGui.InputText("Path", ref _saveProjectAsModalFilepath, MaxStringInputLength);
+            ImGui.SeparatorText("Filename");
+            ImGui.TextWrapped(
+                "The new name of the file.");
+            ImGui.InputText("Name", ref _saveProjectAsModalFilename, MaxStringInputLength);
+            if (ImGui.Button("Save"))
+            {
+                if (!Path.Exists(_saveProjectAsModalFilepath))
+                {
+                    _saveProjectAsModalErrorMessage = "The filepath is inaccessible! Check for invalid characters.";
+                }
+                else if (_saveProjectAsModalFilename == String.Empty)
+                {
+                    _saveProjectAsModalErrorMessage = "The project name cannot be blank!";
+                }
+                else if (Path.GetInvalidFileNameChars().Any(_saveProjectAsModalFilename.Contains))
+                {
+                    _saveProjectAsModalFilepath =
+                        "The project name has invalid characters! Use characters that are valid for a filename.";
+                }
+                else if (File.Exists(_saveProjectAsModalFilepath))
+                {
+                    _saveProjectAsModalErrorMessage =
+                        "Filepath points to a file! Remove the file from the file path.";
+                }
+                else if (File.Exists(Path.Combine(_saveProjectAsModalFilepath, _saveProjectAsModalFilename + SaveFileExtension)))
+                {
+                    _saveProjectAsModalErrorMessage = "There is a file with the same name in the given path!";
+                }
+                else
+                {
+                    File.Copy(_currentStructureFilepath, Path.Combine(_saveProjectAsModalFilepath, _saveProjectAsModalFilename + SaveFileExtension));
+                    _saveProjectAsModalFilepath = String.Empty;
+                    _saveProjectAsModalErrorMessage = String.Empty;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
             ImGui.SameLine();
-            if (ImGui.Button(t.ToString().Replace('_', ' ')))
+            if (ImGui.Button("Cancel"))
             {
-                structureEditor.SwitchTool(t);
+                _saveProjectAsModalFilepath = String.Empty;
+                _saveProjectAsModalErrorMessage = String.Empty;
+                ImGui.CloseCurrentPopup();
             }
-        }
-    }
-    //Input Handling
-    public void HandleCameraMovement()
-    {
-        if (ImGui.IsKeyDown(ImGuiKey.RightArrow))
-        {
-            sceneRenderer.OperateCamera(CameraOperation.Right);
-        }
-        if (ImGui.IsKeyDown(ImGuiKey.LeftArrow))
-        {
-            sceneRenderer.OperateCamera(CameraOperation.Left);
-        }
-        if (ImGui.IsKeyDown(ImGuiKey.DownArrow))
-        {
-            sceneRenderer.OperateCamera(CameraOperation.Down);
-        }
-        if (ImGui.IsKeyDown(ImGuiKey.UpArrow))
-        {
-            sceneRenderer.OperateCamera(CameraOperation.Up);
-        }
-        if (ImGui.IsKeyPressed(ImGuiKey.PageUp))
-        {
-            sceneRenderer.OperateCamera(CameraOperation.ZoomIn);
-        }
-        if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
-        {
-            sceneRenderer.OperateCamera(CameraOperation.ZoomOut);
-        }
-    }
-    public void HandleInputs()
-    {
-        Vector2 scenePos = sceneRenderer.GetScenePos(ImGui.GetMousePos());
-        structureEditor.SetLivePos(scenePos);
-        if (sceneRenderer.SceneWindowHovered)
-        {
-            HandleCameraMovement();
-
-            if (CurrentOperation != OperationMode.Editor) return;
-            structureEditor.UpdateHoveredItems();
-            HandleToolSwitchInputs();
-            if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
-            {
-                HandleRightClickPopupDisplay();
-            }
-            
-            if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
-            {
-                structureEditor.HandleMouseKeyDownEvent();
-            }
-            else if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
-            {
-                structureEditor.HandleMouseKeyUpEvent();
-            }
-            if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
-            {
-                structureEditor.HandleMouseKeyPressedEvent();
-            }
-
-            if (ImGui.IsKeyPressed(ImGuiKey.Delete))
-            {
-                //todo delete confirmation?
-                structureEditor.DeleteSelectedElements();
-                structureEditor.DeleteSelectedNodes();
-            }
-
-            
-        }
-
-    }
-
-    public void HandlePopups()
-    {
-        if (StructureLoaded)
-        {
-            structureEditor.HandlePopups();
-            structureSolver.HandlePopups();
-        }
-
-        DefinePreferencesModal();
-        DefineNewProjectModal();
-        DefineOpenProjectModal();
-        
-        //todo popup flag names
-        if (ShouldShowPreferencesModal)
-        {
-            ImGui.OpenPopup("Preferences");
-            ShouldShowPreferencesModal = false;
-        }
-
-        if (ShouldShowNewProjectModal)
-        {
-            ImGui.OpenPopup("New Project");
-            ShouldShowNewProjectModal = false;
-        }
-
-        if (ShouldShowOpenProjectModal)
-        {
-            ImGui.OpenPopup("Open Project");
-            ShouldShowOpenProjectModal = false;
-        }
-    }
-    public void HandleToolSwitchInputs()
-    {
-        if (ImGui.IsKeyPressed(settings.AddNodeToolKey))
-        {
-            structureEditor.SwitchTool(Tool.Add_Node);
-        }
-        else if (ImGui.IsKeyPressed(settings.AddElementToolKey))
-        {
-            structureEditor.SwitchTool(Tool.Add_Element);
-        }
-        else if (ImGui.IsKeyPressed(settings.SelectNodesToolKey))
-        {
-            structureEditor.SwitchTool(Tool.Select_Nodes);
-        }
-        else if (ImGui.IsKeyPressed(settings.SelectElementsToolKey))
-        {
-            structureEditor.SwitchTool(Tool.Select_Elements);
-        }
-        else if (ImGui.IsKeyPressed(settings.MouseSelectToolKey))
-        {
-            structureEditor.SwitchTool(Tool.Mouse_Select);
-        }
-    }
-
-    public void HandleRightClickPopupDisplay()
-    {
-        if (structureEditor.SelectedNodeCount != 0 && structureEditor.SelectedElementCount == 0)
-        {
-            ImGui.OpenPopup("SelectedNodePopup");
+            ImGui.TextWrapped(_saveProjectAsModalErrorMessage);
+            ImGui.EndPopup();
         }
     }
     
-    //Popups
-    // TODO rename properties to be better
+    // TO.DO rename properties to be better
     // Popup Properties
     //---------
-    private Vector4 sceneElementColor = new();
-    private Vector4 sceneNodeColor = new();
-    private Vector4 sceneSelectedElementColor = new();
-    private Vector4 sceneSelectedNodeColor = new();
-    private Vector4 sceneHoveredElementColor = new();
-    private Vector4 sceneHoveredNodeColor = new();
-    private Vector4 sceneSelectionBoxColor = new();
-    private float sceneElementThickness;
-    private float sceneNodeRadius;
-
-    //todo finish scenedrawsettings, add note saying please put something for all
-    private void DefineSceneDrawSettings()
-    {
-        ImGui.ColorEdit4("Element Color", ref sceneElementColor);
-        ImGui.ColorEdit4("Node Color", ref sceneNodeColor);
-        ImGui.ColorEdit4("Selected Element Color", ref sceneSelectedElementColor);
-        ImGui.ColorEdit4("Selected Node Color", ref sceneSelectedNodeColor);
-        ImGui.ColorEdit4("Hovered Element Color", ref sceneHoveredElementColor);
-        ImGui.ColorEdit4("Hovered Node Color", ref sceneHoveredNodeColor);
-        ImGui.ColorEdit4("Selection Box Color", ref sceneSelectionBoxColor);
-        ImGui.DragFloat("Element Thickness", ref sceneElementThickness, 0.1f, 1f, 5f);
-        ImGui.DragFloat("Node Radius", ref sceneNodeRadius, 0.1f, 1f, 5f);
-        //todo saving and loading userdata on program launch
-        if (ImGui.Button("Save Settings"))
-        {
-            drawSettings = new DrawSettings(
-                sceneElementColor,
-                sceneNodeColor,
-                sceneSelectedElementColor,
-                sceneSelectedNodeColor,
-                sceneHoveredElementColor,
-                sceneHoveredNodeColor,
-                sceneSelectionBoxColor,
-                sceneElementThickness,
-                sceneNodeRadius
-            );
-        }
-
-        if (ImGui.Button("Reset to defaults"))
-        {
-            drawSettings = DrawSettings.Default;
-        }
-    }
-    
-    private void DefineToolHotkeysSettings()
-    {
-
-    }
-
-    private void DefineEditorSettings()
-    {
-        
-    }
-
-    private bool ShouldShowPreferencesModal;
-    public void DefinePreferencesModal()
-    {
-
-        if (ImGui.BeginPopupModal("Preferences"))
-        {
-            if (ImGui.BeginTabBar("PreferencesTabBar"))
-            {
-                if (ImGui.BeginTabItem("Scene Draw settings"))
-                {
-                    DefineSceneDrawSettings();
-                }
-                if (ImGui.BeginTabItem("Tool Hotkeys"))
-                {
-                    DefineToolHotkeysSettings();
-                }
-
-                if (ImGui.BeginTabItem("Editor Settings"))
-                {
-                    DefineEditorSettings();
-                }
-                ImGui.EndTabBar();
-            }
-            ImGui.Separator();
-            if (ImGui.Button("Close"))
-            {
-                ImGui.CloseCurrentPopup();
-            }
-            ImGui.EndPopup();
-        }
-    }
+    // private Vector4 sceneElementColor = new();
+    // private Vector4 sceneNodeColor = new();
+    // private Vector4 sceneSelectedElementColor = new();
+    // private Vector4 sceneSelectedNodeColor = new();
+    // private Vector4 sceneHoveredElementColor = new();
+    // private Vector4 sceneHoveredNodeColor = new();
+    // private Vector4 sceneSelectionBoxColor = new();
+    // private float sceneElementThickness;
+    // private float sceneNodeRadius;
+    //
+    // //to.do finish scenedrawsettings, add note saying please put something for all
+    // private void DefineSceneDrawSettings()
+    // {
+    //     ImGui.ColorEdit4("Element Color", ref sceneElementColor);
+    //     ImGui.ColorEdit4("Node Color", ref sceneNodeColor);
+    //     ImGui.ColorEdit4("Selected Element Color", ref sceneSelectedElementColor);
+    //     ImGui.ColorEdit4("Selected Node Color", ref sceneSelectedNodeColor);
+    //     ImGui.ColorEdit4("Hovered Element Color", ref sceneHoveredElementColor);
+    //     ImGui.ColorEdit4("Hovered Node Color", ref sceneHoveredNodeColor);
+    //     ImGui.ColorEdit4("Selection Box Color", ref sceneSelectionBoxColor);
+    //     ImGui.DragFloat("Element Thickness", ref sceneElementThickness, 0.1f, 1f, 5f);
+    //     ImGui.DragFloat("Node Radius", ref sceneNodeRadius, 0.1f, 1f, 5f);
+    //     //todo saving and loading userdata on program launch
+    //     if (ImGui.Button("Save Settings"))
+    //     {
+    //         drawSettings = new DrawSettings(
+    //             sceneElementColor,
+    //             sceneNodeColor,
+    //             sceneSelectedElementColor,
+    //             sceneSelectedNodeColor,
+    //             sceneHoveredElementColor,
+    //             sceneHoveredNodeColor,
+    //             sceneSelectionBoxColor,
+    //             sceneElementThickness,
+    //             sceneNodeRadius
+    //         );
+    //     }
+    //
+    //     if (ImGui.Button("Reset to defaults"))
+    //     {
+    //         drawSettings = DrawSettings.Default;
+    //     }
+    // }
+    //
+    // private void DefineToolHotkeysSettings()
+    // {
+    //
+    // }
+    //
+    // private void DefineEditorSettings()
+    // {
+    //     
+    // }
+    //
+    // private bool ShouldShowPreferencesModal;
+    // public void DefinePreferencesModal()
+    // {
+    //
+    //     if (ImGui.BeginPopupModal("Preferences"))
+    //     {
+    //         if (ImGui.BeginTabBar("PreferencesTabBar"))
+    //         {
+    //             if (ImGui.BeginTabItem("Scene Draw settings"))
+    //             {
+    //                 DefineSceneDrawSettings();
+    //             }
+    //             if (ImGui.BeginTabItem("Tool Hotkeys"))
+    //             {
+    //                 DefineToolHotkeysSettings();
+    //             }
+    //
+    //             if (ImGui.BeginTabItem("Editor Settings"))
+    //             {
+    //                 DefineEditorSettings();
+    //             }
+    //             ImGui.EndTabBar();
+    //         }
+    //         ImGui.Separator();
+    //         if (ImGui.Button("Close"))
+    //         {
+    //             ImGui.CloseCurrentPopup();
+    //         }
+    //         ImGui.EndPopup();
+    //     }
+    // }
 }

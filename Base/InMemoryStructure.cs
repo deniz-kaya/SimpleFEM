@@ -1,36 +1,33 @@
 ﻿using System.Numerics;
-using Microsoft.Data.Sqlite;
-using SimpleFEM.Types;
 using SimpleFEM.Types.Settings;
-
-namespace SimpleFEM.Base;
 using SimpleFEM.Types.StructureTypes;
 using SimpleFEM.Interfaces;
 using SimpleFEM.Extensions;
+namespace SimpleFEM.Base;
 
 public class InMemoryStructure : IStructure
 {
-    public RecyclingList<Node> Nodes;
-    public Dictionary<int, Load> Loads;
-    public Dictionary<int, BoundaryCondition> BoundaryConditions;
-    public RecyclingList<Element> Elements;
-    public RecyclingList<Material> Materials;
-    public RecyclingList<Section> Sections;
+    private RecyclingList<Node> _nodes;
+    private Dictionary<int, Load> _loads;
+    private Dictionary<int, BoundaryCondition> _boundaryConditions;
+    private RecyclingList<Element> _elements;
+    private RecyclingList<Material> _materials;
+    private RecyclingList<Section> _sections;
     
     
-    private string StructureName;
-    private StructureSettings settings;
+    private readonly string _structureName;
+    private readonly StructureSettings _settings;
     // TODO maybe replace null checks with setting to default from the structure creation screen
     public InMemoryStructure(string name, StructureSettings? settings) 
     {
-        this.settings = settings ?? StructureSettings.Default;
-        Loads = new Dictionary<int, Load>();
-        BoundaryConditions = new Dictionary<int, BoundaryCondition>();
-        StructureName = name;
-        Nodes = new RecyclingList<Node>();
-        Elements = new RecyclingList<Element>();
-        Materials = new RecyclingList<Material>();
-        Sections = new RecyclingList<Section>();
+        _settings = settings ?? StructureSettings.Default;
+        _loads = new Dictionary<int, Load>();
+        _boundaryConditions = new Dictionary<int, BoundaryCondition>();
+        _structureName = name;
+        _nodes = new RecyclingList<Node>();
+        _elements = new RecyclingList<Element>();
+        _materials = new RecyclingList<Material>();
+        _sections = new RecyclingList<Section>();
         
         AddInitialElementProperties();
     }
@@ -46,22 +43,22 @@ public class InMemoryStructure : IStructure
     }
     public StructureSettings GetStructureSettings()
     {
-        return settings;
+        return _settings;
     }
-    public string GetName() => StructureName;
+    public string GetName() => _structureName;
 
     public bool ValidNodeID(int nodeID)
     {
-        return Nodes.ValidIndex(nodeID);
+        return _nodes.ValidIndex(nodeID);
     }
 
     public bool ValidElementID(int elementID)
     {
-        return Elements.ValidIndex(elementID);
+        return _elements.ValidIndex(elementID);
     }
     public bool AddNode(Vector2 pos)
     {
-        foreach (Node n in Nodes)
+        foreach (Node n in _nodes)
         {
             if (n.Pos == pos)
             {
@@ -69,9 +66,9 @@ public class InMemoryStructure : IStructure
             }
         }
 
-        Nodes.Add(new Node(pos));
-        Loads[Nodes.LastAddedIndex] = default;
-        BoundaryConditions[Nodes.LastAddedIndex] = default;
+        _nodes.Add(new Node(pos));
+        _loads[_nodes.LastAddedIndex] = default;
+        _boundaryConditions[_nodes.LastAddedIndex] = default;
 
         return true;
     }
@@ -79,14 +76,14 @@ public class InMemoryStructure : IStructure
     public bool AddElement(Element element)
     {
         if (element.Node1ID == element.Node2ID) return false;
-        if (!Nodes.ValidIndex(element.Node1ID)) return false;
-        if (!Nodes.ValidIndex(element.Node2ID)) return false;
-        if (!Materials.ValidIndex(element.MaterialID)) return false;
-        if (!Sections.ValidIndex(element.SectionID)) return false;
+        if (!_nodes.ValidIndex(element.Node1ID)) return false;
+        if (!_nodes.ValidIndex(element.Node2ID)) return false;
+        if (!_materials.ValidIndex(element.MaterialID)) return false;
+        if (!_sections.ValidIndex(element.SectionID)) return false;
         
         
         bool duplicate = false;
-        foreach (Element e in Elements)
+        foreach (Element e in _elements)
         {
             if ((e.Node1ID == element.Node2ID && e.Node2ID == element.Node1ID) || (e.Node1ID == element.Node1ID && e.Node2ID == element.Node2ID))
             {
@@ -97,7 +94,7 @@ public class InMemoryStructure : IStructure
 
         if (!duplicate)
         {
-            Elements.Add(element);
+            _elements.Add(element);
             return true;
         }
         return false;
@@ -105,10 +102,10 @@ public class InMemoryStructure : IStructure
 
     public bool AddElement(Element element, out int index)
     {
-        if (Nodes.ValidIndex(element.Node1ID) && Nodes.ValidIndex(element.Node2ID) && element.Node1ID != element.Node2ID)
+        if (_nodes.ValidIndex(element.Node1ID) && _nodes.ValidIndex(element.Node2ID) && element.Node1ID != element.Node2ID)
         {
             bool duplicate = false;
-            foreach (Element e in Elements)
+            foreach (Element e in _elements)
             {
                 if ((e.Node1ID == element.Node2ID && e.Node2ID == element.Node1ID) || (e.Node1ID == element.Node1ID && e.Node2ID == element.Node2ID))
                 {
@@ -118,8 +115,8 @@ public class InMemoryStructure : IStructure
             }
             if (!duplicate)
             {
-                Elements.Add(element);
-                index = Elements.LastAddedIndex;
+                _elements.Add(element);
+                index = _elements.LastAddedIndex;
                 return true;
             }
         }
@@ -130,37 +127,37 @@ public class InMemoryStructure : IStructure
 
     public bool AddNode(Vector2 pos, out int index)
     {
-        foreach (int i in Nodes.GetIndexes())
+        foreach (int i in _nodes.GetIndexes())
         {
-            if (Nodes[i].Pos == pos)
+            if (_nodes[i].Pos == pos)
             {
                 index = i;
                 return false;
             }
         } 
         
-        Nodes.Add(new Node(pos));
-        index = Nodes.LastAddedIndex;
-        Loads[index] = default;
-        BoundaryConditions[index] = default;
+        _nodes.Add(new Node(pos));
+        index = _nodes.LastAddedIndex;
+        _loads[index] = default;
+        _boundaryConditions[index] = default;
         return true;
     }
 
     public void RemoveNode(int nodeID)
     {
-        if (Nodes.ValidIndex(nodeID))
+        if (_nodes.ValidIndex(nodeID))
         {
-            foreach (int i in Elements.GetIndexes())
+            foreach (int i in _elements.GetIndexes())
             {
-                if (Elements[i].Node1ID == nodeID || Elements[i].Node2ID == nodeID)
+                if (_elements[i].Node1ID == nodeID || _elements[i].Node2ID == nodeID)
                 {
-                    Elements.RemoveAt(i);
+                    _elements.RemoveAt(i);
                 }
             }
 
-            Loads[nodeID] = default;
-            BoundaryConditions[nodeID] = default;
-            Nodes.RemoveAt(nodeID);
+            _loads[nodeID] = default;
+            _boundaryConditions[nodeID] = default;
+            _nodes.RemoveAt(nodeID);
         }
         else
         {
@@ -171,9 +168,9 @@ public class InMemoryStructure : IStructure
     
     public void RemoveElement(int elementID)
     {
-        if (Elements.ValidIndex(elementID))
+        if (_elements.ValidIndex(elementID))
         {
-            Elements.RemoveAt(elementID);
+            _elements.RemoveAt(elementID);
         }
         else
         {
@@ -183,9 +180,9 @@ public class InMemoryStructure : IStructure
 
     public Node GetNode(int nodeID)
     {
-        if (Nodes.ValidIndex(nodeID))
+        if (_nodes.ValidIndex(nodeID))
         {
-            return Nodes[nodeID];
+            return _nodes[nodeID];
         }
         else
         {
@@ -195,32 +192,32 @@ public class InMemoryStructure : IStructure
 
     public void AddMaterial(Material mat)
     {
-        foreach (Material m in Materials)
+        foreach (Material m in _materials)
         {
             if (m.E == mat.E && m.Yield == mat.Yield)
             {
                 return;
             }
         }
-        Materials.Add(mat);
+        _materials.Add(mat);
     }
 
     public void AddSection(Section sect)
     {
-        foreach (Section s in Sections)
+        foreach (Section s in _sections)
         {
             if (s.I == sect.I && s.A == sect.A)
             {
                 return;
             }
         }
-        Sections.Add(sect);
+        _sections.Add(sect);
     }
     public Element GetElement(int elementID)
     {
-        if (Elements.ValidIndex(elementID))
+        if (_elements.ValidIndex(elementID))
         {
-            return Elements[elementID];
+            return _elements[elementID];
         }
         else
         {
@@ -230,36 +227,36 @@ public class InMemoryStructure : IStructure
 
     public List<int> GetSectionIndexesSorted()
     {
-        return Sections.GetIndexes();
+        return _sections.GetIndexes();
     }
 
     public List<int> GetMaterialIndexesSorted()
     {
-        return Materials.GetIndexes();
+        return _materials.GetIndexes();
     }
     public Section GetSection(int sectionID)
     {
-        if (Sections.ValidIndex(sectionID))
+        if (_sections.ValidIndex(sectionID))
         {
-            return Sections[sectionID];
+            return _sections[sectionID];
         }
 
         throw new IndexOutOfRangeException("Invalid SectionID");
     } 
     public Material GetMaterial(int materialID)
     {
-        if (Materials.ValidIndex(materialID))
+        if (_materials.ValidIndex(materialID))
         {
-            return Materials[materialID];
+            return _materials[materialID];
         }
 
         throw new IndexOutOfRangeException("Invalid MaterialID");
     }
     public void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition)
     {
-        if (Nodes.ValidIndex(nodeID))
+        if (_nodes.ValidIndex(nodeID))
         {
-            BoundaryConditions[nodeID] = boundaryCondition;;
+            _boundaryConditions[nodeID] = boundaryCondition;;
         }
         else
         {
@@ -269,9 +266,9 @@ public class InMemoryStructure : IStructure
 
     public BoundaryCondition GetBoundaryCondition(int nodeID)
     {
-        if (Nodes.ValidIndex(nodeID))
+        if (_nodes.ValidIndex(nodeID))
         {
-            return BoundaryConditions[nodeID];
+            return _boundaryConditions[nodeID];
         }
         else
         {
@@ -282,9 +279,9 @@ public class InMemoryStructure : IStructure
 
     public void SetLoad(int nodeID, Load load)
     {
-        if (Nodes.ValidIndex(nodeID))
+        if (_nodes.ValidIndex(nodeID))
         {
-            Loads[nodeID] = load;
+            _loads[nodeID] = load;
         }
         else
         {
@@ -294,9 +291,9 @@ public class InMemoryStructure : IStructure
 
     public Load GetLoad(int nodeID)
     {
-        if (Nodes.ValidIndex(nodeID))
+        if (_nodes.ValidIndex(nodeID))
         {
-            return Loads[nodeID];
+            return _loads[nodeID];
         }
         else
         {
@@ -306,28 +303,28 @@ public class InMemoryStructure : IStructure
 
     public List<int> GetElementIndexesSorted()
     {
-        return Elements.GetIndexes();
+        return _elements.GetIndexes();
     }
 
     public List<int> GetNodeIndexesSorted()
     {
-        return Nodes.GetIndexes();
+        return _nodes.GetIndexes();
     }
 
     public int GetNodeCount()
     {
-        return Nodes.Count;
+        return _nodes.Count;
     }
 
     public int GetElementCount()
     {
-        return Elements.Count;
+        return _elements.Count;
     }
 
     public int GetBoundaryConditionCount()
     {
         int count = 0;
-        foreach (BoundaryCondition bc in BoundaryConditions.Values)
+        foreach (BoundaryCondition bc in _boundaryConditions.Values)
         {
             if (bc.FixedX){count++;}
             if (bc.FixedY){count++;}
@@ -340,7 +337,7 @@ public class InMemoryStructure : IStructure
     public int GetLoadCount()
     {
         int count = 0;
-        foreach (Load l in Loads.Values)
+        foreach (Load l in _loads.Values)
         {
             if (l.ForceX != 0) {count++;}
             if (l.ForceY != 0) {count++;}

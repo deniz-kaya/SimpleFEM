@@ -1,14 +1,7 @@
-﻿using System.Data;
-using System.Net.NetworkInformation;
-using System.Numerics;
-using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
+﻿using System.Numerics;
 using System.Text;
-using System.Transactions;
 using SimpleFEM.Interfaces;
 using Microsoft.Data.Sqlite;
-using SimpleFEM.Derived;
 using SimpleFEM.Types.Settings;
 using SimpleFEM.Types.StructureTypes;
 
@@ -17,25 +10,23 @@ namespace SimpleFEM.Base;
 
 public class DatabaseStructure : IStructure
 {
-    private const string FileExtension = ".structure";
-    private string StructureName;
-    private string connectionString;
-    public DatabaseStructure(string folderPath, string fileName, StructureSettings settings)
+    private readonly string _structureName;
+    private readonly string _connectionString;
+    public DatabaseStructure(string filepath, StructureSettings settings)
     {
-        string filepath = Path.Combine(folderPath, fileName + FileExtension);
-        StructureName = fileName;
-        connectionString = $"Data Source={filepath}";
-        InitialiseDatabase(filepath);
+        _structureName = Path.GetFileNameWithoutExtension(filepath);
+        _connectionString = $"Data Source={filepath}";
+        InitialiseDatabase();
         InitialiseStructureSettings(settings);
         InitialiseMaterialsAndSections();
     }
 
     public DatabaseStructure(string fullFilepath)
     {
-        StructureName = Path.GetFileNameWithoutExtension(fullFilepath);
-        connectionString = $"Data Source={fullFilepath}";
+        _structureName = Path.GetFileNameWithoutExtension(fullFilepath);
+        _connectionString = $"Data Source={fullFilepath}";
 
-        InitialiseDatabase(fullFilepath);
+        InitialiseDatabase();
         InitialiseMaterialsAndSections();
     }
     private void InitialiseMaterialsAndSections()
@@ -48,10 +39,10 @@ public class DatabaseStructure : IStructure
         AddSection(Section.SHS100x100x5);
     }
     
-    private void InitialiseDatabase(string filepath)
+    private void InitialiseDatabase()
     {
 
-         using (SqliteConnection conn = new SqliteConnection(connectionString))
+         using (SqliteConnection conn = new SqliteConnection(_connectionString))
          {
              conn.Open();
              SqliteCommand command = conn.CreateCommand();
@@ -108,11 +99,11 @@ public class DatabaseStructure : IStructure
              command.ExecuteNonQuery();
              conn.Close();
          }
-     }
+    }
 
     private void InitialiseStructureSettings(StructureSettings settings)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             using (SqliteTransaction transaction = conn.BeginTransaction())
@@ -121,7 +112,7 @@ public class DatabaseStructure : IStructure
                 setSettingsCommand.CommandText = @"
                     INSERT INTO Settings (ID, GridSpacing) VALUES (1, @gridSpacing);
                 ";
-                setSettingsCommand.Parameters.AddWithValue("@gridSpacing", settings.gridSpacing);
+                setSettingsCommand.Parameters.AddWithValue("@gridSpacing", settings.GridSpacing);
                 
                 setSettingsCommand.ExecuteNonQuery();
                 transaction.Commit();
@@ -139,66 +130,6 @@ public class DatabaseStructure : IStructure
         }
         string header = Encoding.ASCII.GetString(bytes);
         return header.Contains("SQLite format");
-    }
-    private int GetSectionID(Section section, SqliteConnection conn)
-    {
-        SqliteCommand getSectionIDCommand = conn.CreateCommand();
-
-        int id = -1;
-        getSectionIDCommand.CommandText = @"
-            SELECT ID FROM Sections WHERE A = @a AND I = @i;
-        ";
-        getSectionIDCommand.Parameters.AddWithValue("@a", section.A);
-        getSectionIDCommand.Parameters.AddWithValue("@i", section.I);
-        object result = getSectionIDCommand.ExecuteScalar();
-
-        if (result != null)
-        {
-            id = Convert.ToInt32(result);
-        }
-        else
-        {
-            SqliteCommand insertSectionCommand = conn.CreateCommand();
-            insertSectionCommand.CommandText = @"
-                INSERT INTO Sections (A, I) VALUES (@a, @i); SELECT last_insert_rowid();
-            ";
-            insertSectionCommand.Parameters.AddWithValue("@a", section.A);
-            insertSectionCommand.Parameters.AddWithValue("@i", section.I);
-            result = insertSectionCommand.ExecuteScalar();
-            id = Convert.ToInt32(result);
-        }
-        return id;
-    }
-    private int GetMaterialID(Material material, SqliteConnection conn)
-    {
-        SqliteCommand getMaterialIDCommand = conn.CreateCommand();
-
-        int id = -1;
-        
-        getMaterialIDCommand.CommandText = @"
-                SELECT ID FROM Materials WHERE E = @e;
-        ";
-        getMaterialIDCommand.Parameters.AddWithValue("@e", material.E);
-        object result = getMaterialIDCommand.ExecuteScalar();
-
-        if (result != null)
-        {
-            id = Convert.ToInt32(result);
-        }
-        else
-        {
-            SqliteCommand insertMaterialCommand = conn.CreateCommand();
-            insertMaterialCommand.CommandText = @"
-                INSERT INTO Materials (E, Yield) VALUES (@e, @yield); SELECT last_insert_rowid();
-            ";
-            insertMaterialCommand.Parameters.AddWithValue("@e", material.E);
-            insertMaterialCommand.Parameters.AddWithValue("@yield", material.Yield);
-
-            result = insertMaterialCommand.ExecuteScalar();
-            id = Convert.ToInt32(result);
-        }
-        
-        return id; 
     }
     private bool ValidElement(Element e, SqliteConnection conn)
     {
@@ -227,8 +158,8 @@ public class DatabaseStructure : IStructure
 
     public bool ValidNodeID(int nodeID)
     {
-        bool valid = false;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        bool valid;
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             valid = NodeExists(nodeID, conn);
@@ -240,8 +171,8 @@ public class DatabaseStructure : IStructure
 
     public bool ValidElementID(int elementID)
     {
-        bool valid = false;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        bool valid;
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             valid = ElementExists(elementID, conn);
@@ -311,7 +242,7 @@ public class DatabaseStructure : IStructure
     public bool AddNode(Vector2 v, out int index)
     {
         index = -1;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!ValidNode(v, conn, out int idx))
@@ -344,7 +275,7 @@ public class DatabaseStructure : IStructure
 
     public void RemoveElement(int elementID)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!ElementExists(elementID, conn))
@@ -386,7 +317,7 @@ public class DatabaseStructure : IStructure
     }
     public void RemoveNode(int nodeID)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!NodeExists(nodeID, conn))
@@ -420,7 +351,7 @@ public class DatabaseStructure : IStructure
 
     public string GetName()
     {
-        return StructureName;
+        return _structureName;
     }
 
     public bool AddElement(Element e)
@@ -431,7 +362,7 @@ public class DatabaseStructure : IStructure
     public List<int> GetElementIndexesSorted()
     {
         List<int> indexes = new List<int>();
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
@@ -454,7 +385,7 @@ public class DatabaseStructure : IStructure
 
     public StructureSettings GetStructureSettings()
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             SqliteCommand getCommand = conn.CreateCommand();
@@ -473,7 +404,7 @@ public class DatabaseStructure : IStructure
     public bool AddElement(Element e, out int index)
     {
         index = -1;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!ValidElement(e, conn))
@@ -506,7 +437,7 @@ public class DatabaseStructure : IStructure
         return true;
     }
 
-    public bool MaterialExists(int materialID, SqliteConnection conn)
+    private bool MaterialExists(int materialID, SqliteConnection conn)
     {
         SqliteCommand materialIDCheck = conn.CreateCommand();
 
@@ -544,7 +475,7 @@ public class DatabaseStructure : IStructure
     public Load GetLoad(int nodeIndex)
     {
         Load load;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
@@ -575,7 +506,7 @@ public class DatabaseStructure : IStructure
     public List<int> GetNodeIndexesSorted()
     {
         List<int> indexes = new List<int>();
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
@@ -597,7 +528,7 @@ public class DatabaseStructure : IStructure
 
     public void SetLoad(int nodeID, Load load)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!NodeExists(nodeID, conn))
@@ -630,7 +561,7 @@ public class DatabaseStructure : IStructure
     public BoundaryCondition GetBoundaryCondition(int nodeIndex)
     {
         BoundaryCondition bc;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!NodeExists(nodeIndex, conn))
@@ -646,7 +577,6 @@ public class DatabaseStructure : IStructure
 
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
-                //ensures that the selection exists
                 if (reader.Read())
                 {
                     bc = new BoundaryCondition(reader.GetBoolean(1), reader.GetBoolean(2), reader.GetBoolean(3));
@@ -666,7 +596,7 @@ public class DatabaseStructure : IStructure
     public Element GetElement(int elementID)
     {
         Element e = new Element();
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!ElementExists(elementID, conn))
@@ -708,7 +638,7 @@ public class DatabaseStructure : IStructure
     {
         //todo potential issue with getNode and way BC and Loads are defined
         Node n = new();
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!NodeExists(nodeID, conn))
@@ -743,7 +673,7 @@ public class DatabaseStructure : IStructure
 
     public void SetBoundaryCondition(int nodeID, BoundaryCondition boundaryCondition)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!NodeExists(nodeID, conn))
@@ -777,8 +707,8 @@ public class DatabaseStructure : IStructure
 
     public int GetElementCount()
     {
-        int count = 0;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        int count;
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             
@@ -794,8 +724,8 @@ public class DatabaseStructure : IStructure
     }
     public int GetNodeCount()
     {
-        int count = 0;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        int count;
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             
@@ -812,7 +742,7 @@ public class DatabaseStructure : IStructure
     //todo error handling
     public int GetBoundaryConditionCount()
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             SqliteCommand countCommand = conn.CreateCommand();
             countCommand.CommandText = @"
@@ -835,7 +765,7 @@ public class DatabaseStructure : IStructure
 
     public int GetLoadCount()
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             SqliteCommand countCommand = conn.CreateCommand();
             countCommand.CommandText = @"
@@ -859,7 +789,7 @@ public class DatabaseStructure : IStructure
     public List<int> GetSectionIndexesSorted()
     {
         List<int> indexes = new List<int>();
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
@@ -883,7 +813,7 @@ public class DatabaseStructure : IStructure
     public Section GetSection(int sectionID)
     {
         Section sect = Section.Dummy;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             
@@ -910,7 +840,7 @@ public class DatabaseStructure : IStructure
     public List<int> GetMaterialIndexesSorted() 
     {
         List<int> indexes = new List<int>();
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             SqliteCommand retrieveCommand = conn.CreateCommand();
@@ -933,7 +863,7 @@ public class DatabaseStructure : IStructure
     public Material GetMaterial(int materialID)
     {
         Material mat = Material.Dummy;
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             
@@ -969,7 +899,7 @@ public class DatabaseStructure : IStructure
         checkCommand.Parameters.AddWithValue("@i", sect.I);
         
         object? result = checkCommand.ExecuteScalar();    
-        return result == null ? false : true;             
+        return result != null;             
     }
 
     private bool MaterialExists(Material mat, SqliteConnection conn)
@@ -983,11 +913,11 @@ public class DatabaseStructure : IStructure
         checkCommand.Parameters.AddWithValue("@yield", mat.Yield);
         
         object? result = checkCommand.ExecuteScalar();
-        return result == null ? false : true;
+        return result != null;
     } 
     public void AddMaterial(Material mat)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (MaterialExists(mat, conn))
@@ -1015,7 +945,7 @@ public class DatabaseStructure : IStructure
 
     public void AddSection(Section sect)
     {
-        using (SqliteConnection conn = new SqliteConnection(connectionString))
+        using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (SectionExists(sect, conn))
