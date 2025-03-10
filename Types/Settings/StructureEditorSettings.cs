@@ -8,7 +8,7 @@ public struct StructureEditorSettings
     {
         get
         {
-            return new StructureEditorSettings() { IdleSelectionFeather = 10f };
+            return new StructureEditorSettings() { IdleSelectionFeather = 0.05f };
         }
     } 
 }

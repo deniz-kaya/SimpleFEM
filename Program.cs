@@ -64,18 +64,18 @@ class Program
         Raylib.SetExitKey(KeyboardKey.Null);
         rlImGui.Setup(true, true);
         Raylib.SetTargetFPS(60);
-        bool databaseStructure = false;
+        bool databaseStructure = true;
         IStructure structure;
         if (databaseStructure)
         {
             structure = new DatabaseStructure(
                 @"C:\Users\blind\RiderProjects\SimpleFEM\SimpleFEM\DBs",
                 "testStructure",
-                new StructureSettings() { gridSpacing = 50f });
+                new StructureSettings() { gridSpacing = 0.50f });
         }
         else
         {
-            structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  50f});
+            structure = new InMemoryStructure("test structure", new StructureSettings() {gridSpacing =  0.50f});
 
             //STRUCTURE SETUP
             // Material mat = Material.Steel;
@@ -106,9 +106,9 @@ class Program
             
             ui.DrawFooter();
             ui.DrawToolbar();
-            ui.DefineAllPopups();
+            ui.HandlePopups();
 
-            ui.DrawSolveSystemWindow();
+            ui.DrawStructureOperationWindow();
             ui.DrawSceneWindow();
             //ui.DefineSettingsEditorWindow();
 

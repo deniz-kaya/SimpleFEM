@@ -42,6 +42,31 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
             }
         }
     }
+    public void HandlePopups()
+    {
+        DefineSolverErrorModal();
+        if (ErrorDuringSolution)
+        {
+            ImGui.OpenPopup("SolverErrorModal");
+            ErrorDuringSolution = false;
+        }
+    }
+    public void DefineSolverErrorModal()
+    {
+        if (ImGui.BeginPopupModal("SolverErrorModal", ImGuiWindowFlags.AlwaysAutoResize))
+        {
+            ImGui.Text("An error occured while solving system!");
+            ImGui.SeparatorText("Error type:");
+            ImGui.Text(lastError.GetType().Name);
+            ImGui.SeparatorText("Error message:");
+            ImGui.Text(lastError.Message);
+            
+            if (ImGui.Button("Close"))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+        }
+    }
     private Dictionary<int, Vector2> GetDisplacedNodePositions()
     {
         Dictionary<int, Vector2> positions = new Dictionary<int, Vector2>();
@@ -59,7 +84,14 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
 
         return positions;
     }
-    
+    public Vector2 GetSceneCoordinates(Vector2 realPosition)
+    {
+        return (realPosition * SceneRenderer.ScenePixelGridSpacing) / structure.GetStructureSettings().gridSpacing;
+    }
+    public Vector2 GetRealCoordinates(Vector2 screenPosition)
+    {
+        return (screenPosition / SceneRenderer.ScenePixelGridSpacing) * structure.GetStructureSettings().gridSpacing;
+    }
     public Queue<ISceneObject> GetSceneObjects(DrawSettings settings)
     {
         Queue<ISceneObject> renderQueue = new Queue<ISceneObject>();
@@ -111,7 +143,7 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         SpheresObject nodes = new SpheresObject(settings.nodeColor, settings.nodeRadius);
         foreach (Vector2 v in displacedNodes.Values)
         {
-            nodes.AddSphere(v);
+            nodes.AddSphere(GetSceneCoordinates(v));
         }
 
         LinesObject elements = new LinesObject(settings.elementColor, settings.elementThickness);
@@ -119,7 +151,7 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         foreach (int i in structure.GetElementIndexesSorted())
         {
             Element e = structure.GetElement(i);
-            elements.AddLine(displacedNodes[e.Node1ID], displacedNodes[e.Node2ID]);
+            elements.AddLine(GetSceneCoordinates(displacedNodes[e.Node1ID]), GetSceneCoordinates(displacedNodes[e.Node2ID]));
         }
 
         //draw nodes last so that it overlaps the elements
@@ -132,7 +164,7 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         SpheresObject nodes = new SpheresObject(settings.nodeColor, settings.nodeRadius);
         foreach (int nodeID in structure.GetNodeIndexesSorted())
         {
-            nodes.AddSphere(structure.GetNode(nodeID).Pos);
+            nodes.AddSphere(GetSceneCoordinates(structure.GetNode(nodeID).Pos));
         }
 
         LinesObject elements = new LinesObject(settings.elementColor, settings.elementThickness);
@@ -140,8 +172,8 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         foreach (int elementID in structure.GetElementIndexesSorted())
         {
             Element e = structure.GetElement(elementID);
-            Vector2 pos1 = structure.GetNode(e.Node1ID).Pos;
-            Vector2 pos2 = structure.GetNode(e.Node2ID).Pos;
+            Vector2 pos1 = GetSceneCoordinates(structure.GetNode(e.Node1ID).Pos);
+            Vector2 pos2 = GetSceneCoordinates(structure.GetNode(e.Node2ID).Pos);
             elements.AddLine(pos1, pos2);
         }
         renderQueue.Enqueue(elements);

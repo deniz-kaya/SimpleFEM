@@ -1,4 +1,5 @@
-﻿using SimpleFEM.Extensions;
+﻿using ImGuiNET;
+using SimpleFEM.Extensions;
 using Vector2 = System.Numerics.Vector2;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
@@ -15,6 +16,10 @@ public class StructureSolver
     protected Graph CurrentStructureGraph;
     protected Vector CurrentForceVector;
     protected Vector CurrentSolution;
+    protected Exception lastError;
+    protected bool ErrorDuringSolution;
+    
+    public bool StructureHasBeenChanged => structure.GetNodeCount() != CurrentStructureGraph.NodeCount; 
     public StructureSolver(IStructure structure)
     {
         this.structure = structure;
@@ -22,28 +27,43 @@ public class StructureSolver
         CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
         CurrentForceVector = GetForceVector();
     }
-    public void Solve()
-    {
-        //stability checks
-        CurrentStructureGraph = ConstructStructureGraph();
-        if (!CurrentStructureGraph.IsConnected())
-        {
-            return;
-        }
-        
-        //todo user error handling with this part of the program
-        //construct shit
-        CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
-        CurrentForceVector = GetForceVector();
-        CurrentStiffnessMatrix.DebugPrint();
-        
-        //Thread.Sleep(100000);
-        CurrentSolution = LinAlgMethods.Solve(CurrentStiffnessMatrix, CurrentForceVector);
-        CurrentSolution.DebugPrint();
-    }
 
     
-    
+    public bool Solve()
+    {
+        
+        //todo switch to using own exceptions?
+        try
+        {
+            //stability checks
+            //todo implement load exists check
+            //todo implement boundary condition exists check
+            CurrentStructureGraph = ConstructStructureGraph();
+            if (!CurrentStructureGraph.IsConnected())
+            {
+                throw new Exception("The structure graph is not connected. Have you checked for floating nodes?");
+            }
+
+            //construct shit
+            CurrentStiffnessMatrix = GetGlobalStiffnessMatrix();
+            CurrentForceVector = GetForceVector();
+
+            CurrentSolution = LinAlgMethods.Solve(CurrentStiffnessMatrix, CurrentForceVector);
+        }
+        catch (Exception e)
+        {
+            lastError = e;
+            ErrorDuringSolution = true;
+            return false;
+        }
+        finally
+        {
+            
+        }
+
+
+        return true;
+    }
     public Graph ConstructStructureGraph()
     {
         Graph graph = new Graph();
@@ -170,7 +190,6 @@ public class StructureSolver
         //apply BC's 
         foreach (int nodeID in structure.GetNodeIndexesSorted())
         {
-            //TODO must be a cleaner way to write this
             BoundaryCondition bc = structure.GetBoundaryCondition(nodeID);
             if (bc.FixedX)
             {

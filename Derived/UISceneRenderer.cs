@@ -3,31 +3,23 @@ using ImGuiNET;
 using Raylib_cs;
 using rlImGui_cs;
 using SimpleFEM.Base;
+using SimpleFEM.Types.Settings;
 
 namespace SimpleFEM.Derived;
-public class UISceneRenderer(Vector2 initialSize) : SceneRenderer(initialSize)
+public class UISceneRenderer : SceneRenderer
 {
 
+    public UISceneRenderer(SceneRendererSettings settings) : base(settings)
+    {
+        
+    }
     public bool SceneWindowHovered { get; private set; }
     public Vector2 TextureStartPosition;
-    public Vector2 CurrentTarget;
-    public bool MoveStarted;
     public Vector2 GetScenePos(Vector2 screenPos)
     {
         return Raylib.GetScreenToWorld2D((screenPos - TextureStartPosition), camera) * new Vector2(1f,-1f);
     }
-
-    public void MoveCameraTarget(Vector2 delta)
-    {
-        camera.Target = CurrentTarget + delta;
-    }
-
-    public void FinaliseMoveCameraTarget()
-    {
-        
-    }
-    public UISceneRenderer() : this(new Vector2(100f,100f)) {}
-
+    
     public void ShowSceneWindow()
     {
         ImGui.Begin("Scene Window");

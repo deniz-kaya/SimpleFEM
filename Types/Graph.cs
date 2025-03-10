@@ -8,7 +8,7 @@ public class Graph
         adjacencyList = new Dictionary<int, List<int>>();
         
     }
-
+    public int NodeCount => adjacencyList.Count;
     public void AddVertex(int vertexID)
     {
         if (!adjacencyList.ContainsKey(vertexID))
@@ -25,7 +25,7 @@ public class Graph
         adjacencyList[vertex1ID].Add(vertex2ID);
         adjacencyList[vertex2ID].Add(vertex1ID);
     }
-    
+
     public bool IsConnected()
     {
         //implement graph traversal and keep track of visited vertices, if all aren't visited, something wrong

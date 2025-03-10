@@ -4,7 +4,7 @@ using SimpleFEM.Interfaces;
 
 namespace SimpleFEM.SceneObjects;
 
-public class RingObjects : ISceneObject
+public class RingsObject : ISceneObject
 {
     private List<Vector2> positions;
     private float innerRadius;
@@ -13,7 +13,7 @@ public class RingObjects : ISceneObject
     private float endAngle;
     private int segments;
     private Color color;
-    public RingObjects(float innerRadius, float outerRadius, float startAngle, float endAngle, int segments, Color color)
+    public RingsObject(float innerRadius, float outerRadius, float startAngle, float endAngle, int segments, Color color)
     {
         positions = new List<Vector2>();
         this.innerRadius = innerRadius;

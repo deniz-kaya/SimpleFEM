@@ -18,21 +18,30 @@ public class UserInterface
     private UIStructureEditor structureEditor;
     private UISceneRenderer sceneRenderer;
     private UIStructureSolver structureSolver;
+    private StructureEditorSettings structureSettings;
     private DrawSettings drawSettings;
     private HotkeySettings settings;
-    
+    private OperationMode CurrentOperation;
     public UserInterface(IStructure structure, HotkeySettings settings)
     {
+        CurrentOperation = OperationMode.Editor;
         structureSolver = new UIStructureSolver(structure);
         structureEditor = new UIStructureEditor(structure, StructureEditorSettings.Default);
         drawSettings = DrawSettings.Default;
-        sceneRenderer = new UISceneRenderer();
+        sceneRenderer = new UISceneRenderer(SceneRendererSettings.Default);
         this.settings = settings;
     }
 
     public void DrawSceneWindow()
     {
-        sceneRenderer.SetRenderQueue(structureEditor.GetSceneObjects(drawSettings));
+        if (CurrentOperation == OperationMode.Editor)
+        {
+            sceneRenderer.SetRenderQueue(structureEditor.GetSceneObjects(drawSettings));
+        }
+        else if (CurrentOperation == OperationMode.Solver)
+        {
+            sceneRenderer.SetRenderQueue(structureSolver.GetSceneObjects(drawSettings));
+        }
         sceneRenderer.ShowSceneWindow();
     }
     public void DrawFooter()
@@ -62,7 +71,7 @@ public class UserInterface
 
         if (sceneRenderer.SceneWindowHovered)
         {
-            string mousePosition = sceneRenderer.GetScenePos(ImGui.GetMousePos()).ToString();
+            string mousePosition = structureEditor.GetRealCoordinates(sceneRenderer.GetScenePos(ImGui.GetMousePos())).ToString();
             ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
             ImGui.Text(mousePosition);
         }
@@ -74,7 +83,17 @@ public class UserInterface
 
     public void DrawHoveredPropertyViewer()
     {
-        structureEditor.DrawHoveredPropertiesViewer();
+        ImGui.Begin("Property Viewer");
+        if (CurrentOperation == OperationMode.Editor)
+        {
+            structureEditor.DrawHoveredPropertiesViewer();
+        }
+        else if (CurrentOperation == OperationMode.Solver)
+        {
+            ImGui.Text("Switch back to editor to see properties!");
+        }
+        ImGui.End();
+
     }
     public void DrawMainDockSpace()
     {
@@ -118,28 +137,46 @@ public class UserInterface
             Console.WriteLine("pressed button!");
         }
     }
-    public void DrawSolveSystemWindow()
+    public void DrawStructureOperationWindow()
     {
         // TODO rename
-        ImGui.Begin("Solve system window");
-        
-        if (ImGui.Button("Solve current system"))
+        ImGui.Begin("Structure Operations");
+
+        if (ImGui.BeginTabBar("Structure Operations Tab Bar"))
         {
-            structureSolver.Solve();
-            
-        }
-        //todo fix?
-        if (ImGui.Button("test element intersection"))
-        {
-            if (structureSolver.CheckElementIntersections())
+            if (ImGui.BeginTabItem("Editor"))
             {
-                Console.WriteLine("there are no intersection");
+                CurrentOperation = OperationMode.Editor;
+                structureEditor.DrawOperationWindow();
+                
+                ImGui.EndTabItem();
             }
-            else
+
+            if (ImGui.BeginTabItem("Solver"))
             {
-                Console.WriteLine("there is intersections");
+                CurrentOperation = OperationMode.Solver;
+                structureSolver.DrawOperationWindow();
+                ImGui.EndTabItem();
             }
+            ImGui.EndTabBar();
         }
+        // if (ImGui.Button("Solve current system"))
+        // {
+        //     structureSolver.Solve();
+        //     
+        // }
+        // //todo fix?
+        // if (ImGui.Button("test element intersection"))
+        // {
+        //     if (structureSolver.CheckElementIntersections())
+        //     {
+        //         Console.WriteLine("there are no intersection");
+        //     }
+        //     else
+        //     {
+        //         Console.WriteLine("there is intersections");
+        //     }
+        // }
         
         ImGui.End();
     }
@@ -188,19 +225,7 @@ public class UserInterface
 
             if (ImGui.BeginMenu("Options"))
             {
-                if (ImGui.MenuItem("Edit keybinds"))
-                {
-                    //todo keybind editor 
-                }
-
-                if (ImGui.MenuItem("Edit colours"))
-                {
-                    // todo draw-colour editor 
-                }
-                if (ImGui.MenuItem("Edit selection settings"))
-                {
-                    //todo selection settings editor
-                }
+                openSettingsEditorModal = true;
                 ImGui.EndMenu();
             }
             ImGui.EndMainMenuBar();
@@ -218,31 +243,49 @@ public class UserInterface
                 structureEditor.SwitchTool(t);
             }
         }
-
-        structureEditor.MaterialSelectComboBox();
-        structureEditor.SectionSelectComboBox();
     }
     //Input Handling
+    public void HandleCameraMovement()
+    {
+        if (ImGui.IsKeyDown(ImGuiKey.RightArrow))
+        {
+            sceneRenderer.OperateCamera(CameraOperation.Right);
+        }
+        if (ImGui.IsKeyDown(ImGuiKey.LeftArrow))
+        {
+            sceneRenderer.OperateCamera(CameraOperation.Left);
+        }
+        if (ImGui.IsKeyDown(ImGuiKey.DownArrow))
+        {
+            sceneRenderer.OperateCamera(CameraOperation.Down);
+        }
+        if (ImGui.IsKeyDown(ImGuiKey.UpArrow))
+        {
+            sceneRenderer.OperateCamera(CameraOperation.Up);
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.PageUp))
+        {
+            sceneRenderer.OperateCamera(CameraOperation.ZoomIn);
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
+        {
+            sceneRenderer.OperateCamera(CameraOperation.ZoomOut);
+        }
+    }
     public void HandleInputs()
     {
         Vector2 scenePos = sceneRenderer.GetScenePos(ImGui.GetMousePos());
         structureEditor.SetLivePos(scenePos);
-        if (sceneRenderer.SceneWindowHovered)
+        HandleCameraMovement();
+        if (sceneRenderer.SceneWindowHovered && CurrentOperation == OperationMode.Editor)
         {
+            
             structureEditor.UpdateHoveredItems();
             HandleToolSwitchInputs();
             if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
             {
-                HandlePopupDisplay();
+                HandleRightClickPopupDisplay();
             }
-            
-            
-            if (structureEditor.CurrentTool == Tool.Move && structureEditor.Dragging)
-            {
-                //todo make this not make me want to kill myself
-                sceneRenderer.MoveCameraTarget(structureEditor.GetMousePositionChange());
-            }
-            
             
             if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
             {
@@ -268,17 +311,22 @@ public class UserInterface
         }
     }
 
-    public void DefineAllPopups()
+    public void HandlePopups()
     {
-        structureEditor.DefinePopups();
+        structureEditor.HandlePopups();
+        structureSolver.HandlePopups();
+        DefineSettingsEditorModal();
+
+        if (openSettingsEditorModal)
+        {
+            ImGui.OpenPopup("SettingsEditorModal");
+            openSettingsEditorModal = false;
+        }
+        
     }
     public void HandleToolSwitchInputs()
     {
-        if (ImGui.IsKeyPressed(settings.MoveToolKey))
-        {
-            structureEditor.SwitchTool(Tool.Move);
-        }
-        else if (ImGui.IsKeyPressed(settings.AddNodeToolKey))
+        if (ImGui.IsKeyPressed(settings.AddNodeToolKey))
         {
             structureEditor.SwitchTool(Tool.Add_Node);
         }
@@ -300,7 +348,7 @@ public class UserInterface
         }
     }
 
-    public void HandlePopupDisplay()
+    public void HandleRightClickPopupDisplay()
     {
         if (structureEditor.SelectedNodeCount != 0 && structureEditor.SelectedElementCount == 0)
         {
@@ -322,6 +370,7 @@ public class UserInterface
     private float sceneElementThickness;
     private float sceneNodeRadius;
 
+    //todo finish scenedrawsettings, add note saying please put something for all
     private void DefineSceneDrawSettings()
     {
         ImGui.ColorEdit4("Element Color", ref sceneElementColor);
@@ -357,8 +406,6 @@ public class UserInterface
     
     private void DefineToolHotkeysSettings()
     {
-        ImGui.GetIO();
-
 
     }
 
@@ -366,32 +413,36 @@ public class UserInterface
     {
         
     }
-    private bool DisplaySettingsEditorWindow = true;
 
-    public void DefineSettingsEditorWindow()
+    private bool openSettingsEditorModal;
+    public void DefineSettingsEditorModal()
     {
-        if (!DisplaySettingsEditorWindow) return;
 
-        ImGui.Begin("Settings Editor");
-        if (ImGui.BeginTabBar("SettingsTabBar"))
+        if (ImGui.BeginPopupModal("SettingsEditorModal"))
         {
-            if (ImGui.BeginTabItem("Scene Draw settings"))
+            if (ImGui.BeginTabBar("SettingsTabBar"))
             {
-                DefineSceneDrawSettings();
-            }
+                if (ImGui.BeginTabItem("Scene Draw settings"))
+                {
+                    DefineSceneDrawSettings();
+                }
+                if (ImGui.BeginTabItem("Tool Hotkeys"))
+                {
+                    DefineToolHotkeysSettings();
+                }
 
-            if (ImGui.BeginTabItem("Tool Hotkeys"))
+                if (ImGui.BeginTabItem("Editor Settings"))
+                {
+                    DefineEditorSettings();
+                }
+                ImGui.EndTabBar();
+            }
+            ImGui.Separator();
+            if (ImGui.Button("Close"))
             {
-                DefineToolHotkeysSettings();
+                ImGui.CloseCurrentPopup();
             }
-
-            if (ImGui.BeginTabItem("Editor Settings"))
-            {   
-                DefineEditorSettings();
-            }
-            ImGui.EndTabBar();
+            ImGui.EndPopup();
         }
-
-        ImGui.End();
     }
 }

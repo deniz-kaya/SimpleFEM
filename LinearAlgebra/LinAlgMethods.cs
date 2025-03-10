@@ -15,12 +15,11 @@ public static class LinAlgMethods
         return BackwardSubstitute(U, Y);
     }
     
-    //todo error handling
     public static (Matrix L, Matrix U) LUDecompose(Matrix K)
     {
         if (K.Rows != K.Columns)
         {
-            throw new ArgumentOutOfRangeException("Matrix must be square");
+            throw new ArgumentOutOfRangeException("Matrix must be square!");
         }
 
         int size = K.Rows;
@@ -63,17 +62,16 @@ public static class LinAlgMethods
         return (L, U);
     }
     
-    //todo error handling
     public static Vector ForwardSubstitute(Matrix m, Vector v)
     {
         if (m.Rows != m.Columns)
         {
-            throw new ArgumentOutOfRangeException("Matrix must be square");
+            throw new ArgumentOutOfRangeException("Matrix must be square!");
         }
 
         if (m.Rows != v.Size)
         {
-            throw new ArgumentOutOfRangeException("Vector dimension must be same as matrix cols/rows");
+            throw new ArgumentOutOfRangeException("Vector dimension must be same as matrix cols/rows!");
         }
 
         int size = m.Rows;
@@ -93,17 +91,16 @@ public static class LinAlgMethods
         return x;
     }
 
-    //todo error handling
     public static Vector BackwardSubstitute(Matrix m, Vector v)
     {
         if (m.Rows != m.Columns)
         {
-            throw new ArgumentOutOfRangeException("Matrix must be square");
+            throw new ArgumentOutOfRangeException("Matrix must be square!");
         }
 
         if (m.Rows != v.Size)
         {
-            throw new ArgumentOutOfRangeException("Vector dimension must be same as matrix cols/rows");
+            throw new ArgumentOutOfRangeException("Vector dimension must be same as matrix cols/rows!");
         }
 
         int size = m.Rows;
@@ -114,7 +111,7 @@ public static class LinAlgMethods
 
             if (m[i, i] == 0)
             {
-                throw new DivideByZeroException("Zero exists in rank");
+                throw new DivideByZeroException("Zero in upper matrix rank, System is most likely unstable.");
             }
             for (int j = i; j < size; j++)
             {
