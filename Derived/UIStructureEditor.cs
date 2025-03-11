@@ -1,4 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Numerics;
 using ImGuiNET;
 using Raylib_cs;
@@ -50,8 +53,6 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     public void DrawOperationWindow()
     {
         MaterialSelectComboBox();
-        
-        SectionSelectComboBox();
         SectionSelectComboBox();
     }
     public void DrawHoveredPropertiesViewer()
@@ -585,7 +586,8 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         switch (CurrentTool)
         {
             case Tool.AddNode:
-                renderQueue.Enqueue(new SphereObject(LivePos.RoundToNearest(Structure.GetStructureSettings().GridSpacing), drawSettings.SelectedNodeColor, drawSettings.NodeRadius));
+                Vector2 newNodeScenePosition = GetSceneCoordinates(LivePos.RoundToNearest(Structure.GetStructureSettings().GridSpacing));
+                renderQueue.Enqueue(new SphereObject(newNodeScenePosition, drawSettings.SelectedNodeColor, drawSettings.NodeRadius));
                 break;
             case Tool.AddElement:
                 if (!MultiInputStarted) break;

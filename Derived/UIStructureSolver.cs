@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Generic;
+using System.Numerics;
 using ImGuiNET;
 using Raylib_cs;
 using SimpleFEM.Base;
@@ -44,9 +45,9 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         {
             ImGui.Text("An error occured while solving system!");
             ImGui.SeparatorText("Error type:");
-            ImGui.Text(LastError.GetType().Name);
+            ImGui.Text((string)LastError.GetType().Name);
             ImGui.SeparatorText("Error message:");
-            ImGui.TextWrapped(LastError.Message);
+            ImGui.TextWrapped((string)LastError.Message);
             
             if (ImGui.Button("Close"))
             {

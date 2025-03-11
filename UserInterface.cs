@@ -1,4 +1,7 @@
-﻿using System.Numerics;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using ImGuiNET;
 using SimpleFEM.Base;

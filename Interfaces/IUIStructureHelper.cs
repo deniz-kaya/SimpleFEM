@@ -1,4 +1,5 @@
-﻿using SimpleFEM.Types.Settings;
+﻿using System.Collections.Generic;
+using SimpleFEM.Types.Settings;
 
 namespace SimpleFEM.Interfaces;
 

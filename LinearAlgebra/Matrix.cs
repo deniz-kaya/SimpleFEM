@@ -1,4 +1,5 @@
-﻿using SimpleFEM.Interfaces;
+﻿using System;
+using SimpleFEM.Interfaces;
 
 namespace SimpleFEM.LinearAlgebra;
 
@@ -43,6 +44,39 @@ public struct Matrix : ILinearAlgebra
         }
     }
 
+    public static Matrix operator *(Matrix left, Matrix right)
+    {
+        if (left.Columns != right.Rows)
+        {
+            throw new ArgumentException("First matrix columns is not equal to the second matrix rows!");
+        }
+        Matrix final = new Matrix(left.Rows, right.Columns);
+        for (int row = 0; row < left.Rows; row++)
+        {
+            for (int col = 0; col < right.Columns; col++)
+            {
+                for (int k = 0; k < 6; k++)
+                {
+                    final[row, col] += left[row, k] * right[k, col];
+                }
+            }
+        }
+        return final;
+    }
+
+    public static Matrix operator *(float scalar, Matrix matrix)
+    {
+        Matrix final = new Matrix(matrix.Rows, matrix.Columns);
+        for (int rows = 0; rows < matrix.Rows; rows++)
+        {
+            for (int cols = 0; cols < matrix.Columns; cols++)
+            {
+                final[rows, rows] = scalar * matrix[rows, rows];
+            }
+        }
+
+        return final;
+    }
     public void DebugPrint()
     {
         for (int r = 0; r < rows; r++)

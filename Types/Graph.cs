@@ -1,4 +1,7 @@
-﻿namespace SimpleFEM.Types;
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace SimpleFEM.Types;
 
 public class Graph
 {

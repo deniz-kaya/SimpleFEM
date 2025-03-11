@@ -1,4 +1,6 @@
-﻿using SimpleFEM.Extensions;
+﻿using System;
+using System.Collections.Generic;
+using SimpleFEM.Extensions;
 using Vector2 = System.Numerics.Vector2;
 using SimpleFEM.Interfaces;
 using SimpleFEM.LinearAlgebra;
@@ -86,13 +88,13 @@ public class StructureSolver
 
         return graph;
     }
-    private Matrix6 TransformLocalMatrixIntoGlobal(Matrix6 matrix, Element element)
+    private Matrix TransformLocalMatrixIntoGlobal(Matrix matrix, Element element)
     {
         float angle = GetElementAngle(element);
         float cosAngle = MathF.Cos(angle);
         float sinAngle = MathF.Sin(angle);
         
-        Matrix6 transformation = new Matrix6();
+        Matrix transformation = new Matrix(6,6);
 
         for (int i = 0; i < 4; i+= 3)
         {
@@ -103,7 +105,7 @@ public class StructureSolver
             transformation[i + 1, i] = -sinAngle;
         }
 
-        Matrix6 transpose = transformation;
+        Matrix transpose = transformation;
 
         for (int i = 0; i < 4; i += 3)
         {
@@ -146,7 +148,7 @@ public class StructureSolver
     {
         Dictionary<int, int> nodeIDMap = GetMappedNodeIndexes();
         List<int> elementIndexes = Structure.GetElementIndexesSorted();
-        Matrix6[] elementStiffnessMatrices = new Matrix6[elementIndexes.Count];
+        Matrix[] elementStiffnessMatrices = new Matrix[elementIndexes.Count];
         (int, int)[] elementNodeIndexes = new (int, int)[elementStiffnessMatrices.Length];
 
         for (int i = 0; i < elementStiffnessMatrices.Length; i++)
@@ -163,7 +165,7 @@ public class StructureSolver
 
         for (int i = 0; i < elementStiffnessMatrices.Length; i++)
         {
-            Matrix6 m = elementStiffnessMatrices[i];
+            Matrix m = elementStiffnessMatrices[i];
             
             int firstIdx = nodeIDMap[elementNodeIndexes[i].Item1] * DOF;
             int secondIdx = nodeIDMap[elementNodeIndexes[i].Item2] * DOF;
@@ -238,7 +240,7 @@ public class StructureSolver
     }
 
 
-    private Matrix6 GetLocalStiffnessMatrix(Element element)
+    private Matrix GetLocalStiffnessMatrix(Element element)
     {
         Material mat = Structure.GetMaterial(element.MaterialID);
         Section sect = Structure.GetSection(element.SectionID);
@@ -248,7 +250,7 @@ public class StructureSolver
         float beSSq = 6f * (beS / length);  // bending stiffness squared
         float beSCb = 2f * (beSSq / length);  // bending stiffness cubed
 
-        Matrix6 m = new();
+        Matrix m = new Matrix(6,6);
         
         for (int corner = 0; corner < 4; corner++)
         {

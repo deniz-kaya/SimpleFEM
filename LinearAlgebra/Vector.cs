@@ -12,13 +12,4 @@ public struct Vector
     {
         get => ref _data[index];
     }
-
-    public void DebugPrint()
-    {
-        Console.WriteLine();
-        for (int i = 0; i < _data.Length; i++)
-        {
-            Console.Write($"{_data[i]:0.##E+0} ");
-        }
-    }
 }

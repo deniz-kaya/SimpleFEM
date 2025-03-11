@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Generic;
+using System.Numerics;
 using SimpleFEM.Extensions;
 using SimpleFEM.Types.StructureTypes;
 using SimpleFEM.Interfaces;
