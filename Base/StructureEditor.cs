@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using SimpleFEM.Extensions;
 using SimpleFEM.Types.StructureTypes;
@@ -10,6 +11,8 @@ public class StructureEditor
 {
     protected List<int> SelectedElements { get; private set; }
     protected List<int> SelectedNodes { get; private set; }
+    
+    public string StructureName => Structure.GetName();
     public int SelectedNodeCount => SelectedNodes.Count;
     public int SelectedElementCount => SelectedElements.Count;
     protected bool MultiInputStarted;
@@ -30,7 +33,7 @@ public class StructureEditor
     /// <summary>
     /// Resets the selection lists.
     /// </summary>
-    public void ResetSelection()
+    protected void ResetSelection()
     {
         SelectedElements.Clear();
         SelectedNodes.Clear();
@@ -62,7 +65,6 @@ public class StructureEditor
 
 
     
-    // todo error handling potential with bool instead of void in calling method
     public void SelectNode(int nodeID)
     {
         if (!SelectedNodes.Contains(nodeID))
@@ -78,6 +80,7 @@ public class StructureEditor
             SelectedNodes.Remove(nodeID);
         }
     }
+
 
     public void DeselectElement(int elementID)
     {

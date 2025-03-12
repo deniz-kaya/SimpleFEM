@@ -15,11 +15,11 @@ using Material = SimpleFEM.Types.StructureTypes.Material;
 
 namespace SimpleFEM.Derived;
 
-// TODO not necessarily here but overall, manage protected, private and public fields to make sense
 
 public class UIStructureEditor : StructureEditor, IUIStructureHelper
 {
     public Tool CurrentTool { get; private set; }
+    
 
     private int _currentMaterialID;
     private int _currentSectionID;
@@ -33,7 +33,6 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         ResetHovered();
         ResetSelection();
 
-        //todo maybe find a better way to do this rather than getting the whole list of elements
         _currentMaterialID = structure.GetMaterialIndexesSorted().First();
         _currentSectionID = structure.GetSectionIndexesSorted().First();
         _settings = settings;
@@ -105,7 +104,6 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             {
                 if (ImGui.BeginTable("Load", 2, ImGuiTableFlags.Borders))
                 {
-                    //TOdo naming
                     ImGui.TableNextColumn();
                     ImGui.Text("X Load");
                     ImGui.TableNextColumn();
@@ -212,13 +210,22 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         }
     }
     
-    //imgui popups
-    //todo naming
+    //Popups
+    
     //Load Editor
-    private float _loadX, _loadY, _moment;
+    private float _loadEditorModalLoadX, _loadEditorModalLoadY, _loadEditorModalMoment;
     //Boundary Condition Editor
-    private bool _fixedX, _fixedY, _fixedMoment;
-    //---------
+    private bool _bcEditorModalFixedX, _bcEditorModalFixedY, _bcEditorModalFixedRotation;
+    //Add section
+    private string _addMaterialModalDescription = string.Empty;
+    private float _addMaterialModalE;
+    private float _addMaterialModalYield;
+    private string _addMaterialModalErrorMessage = string.Empty;
+    //Add Material
+    private string _addSectionModalDescription = string.Empty;
+    private float _addSectionModalI;
+    private float _addSectionModalA;
+    private string _addSectionModalErrorMessage = string.Empty;
     //Flags
     private bool _openBcEditor, _openLoadEditor;
     public bool OpenAddMaterialModal, OpenAddSectionModal;
@@ -284,25 +291,27 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
 
     private void DefineLoadEditorModal()
     {
+        void ResetValues()
+        {
+            _loadEditorModalLoadX = 0;
+            _loadEditorModalLoadY = 0;
+            _loadEditorModalMoment = 0;
+        }
         if (ImGui.BeginPopupModal("Load Editor", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.Text($"Editing load for {SelectedNodeCount} node(s)");
-            ImGui.InputFloat("Load in X", ref _loadX);
-            ImGui.InputFloat("Load in Y", ref _loadY);
-            ImGui.InputFloat("Moment", ref _moment);
+            ImGui.InputFloat("Load in X", ref _loadEditorModalLoadX);
+            ImGui.InputFloat("Load in Y", ref _loadEditorModalLoadY);
+            ImGui.InputFloat("Moment", ref _loadEditorModalMoment);
             if (ImGui.Button("Reset values to default"))
             {
-                _loadX = 0;
-                _loadY = 0;
-                _moment = 0;
+                ResetValues();
             }
             ImGui.Separator();
             if (ImGui.Button("Add Load(s)"))
             {
-                AddLoadToSelectedNodes(new Load(_loadX, _loadY, _moment));
-                _loadX = 0;
-                _loadY = 0;
-                _moment = 0;
+                AddLoadToSelectedNodes(new Load(_loadEditorModalLoadX, _loadEditorModalLoadY, _loadEditorModalMoment));
+                ResetValues();
                 ImGui.CloseCurrentPopup();
             }
             ImGui.SameLine();
@@ -317,32 +326,33 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
 
     private void DefineBoundaryConditionEditorModal()
     {
-        
+        void ResetValues()
+        {
+            _bcEditorModalFixedX = false;
+            _bcEditorModalFixedY = false;
+            _bcEditorModalFixedRotation = false;
+        }
         if (ImGui.BeginPopupModal("Boundary Condition Editor", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.Text($"Editing boundary condition for {SelectedNodeCount} node(s)");
-            ImGui.Checkbox("Fixed X", ref _fixedX);
-            ImGui.Checkbox("Fixed Y", ref _fixedY);
-            ImGui.Checkbox("Fixed Moment", ref _fixedMoment);
+            ImGui.Checkbox("Fixed X", ref _bcEditorModalFixedX);
+            ImGui.Checkbox("Fixed Y", ref _bcEditorModalFixedY);
+            ImGui.Checkbox("Fixed Rotation", ref _bcEditorModalFixedRotation);
 
-            if (ImGui.Button("Reset to default"))
+            if (ImGui.Button("Reset values to default"))
             {
-                _fixedX = false;
-                _fixedY = false;
-                _fixedMoment = false;
+                ResetValues();
             }
             ImGui.Separator();
             if (ImGui.Button("Add BC(s)"))
             {
-                AddBoundaryConditionToSelectedNodes(new BoundaryCondition(_fixedX, _fixedY, _fixedMoment));
-                _fixedX = false;
-                _fixedY = false;
-                _fixedMoment = false;
+                AddBoundaryConditionToSelectedNodes(new BoundaryCondition(_bcEditorModalFixedX, _bcEditorModalFixedY, _bcEditorModalFixedRotation));
                 ImGui.CloseCurrentPopup();
             }
             ImGui.SameLine();
             if (ImGui.Button("Cancel"))
             {
+                ResetValues();
                 ImGui.CloseCurrentPopup();
             }
             ImGui.EndPopup();
@@ -350,12 +360,19 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     }
 
     private const int DescriptionMaxLength = 160;
-    private string _addMaterialModalDescription = string.Empty;
-    private float _addMaterialModalE;
-    private float _addMaterialModalYield;
+    
+
 
     private void DefineAddMaterialModal()
     {
+        void CloseAction()
+        {
+            _addMaterialModalDescription = string.Empty;
+            _addMaterialModalE = 0;
+            _addMaterialModalYield = 0;
+            _addMaterialModalErrorMessage = string.Empty;
+            ImGui.CloseCurrentPopup();
+        }
         if (ImGui.BeginPopupModal("Add Material", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.InputText("Description", ref _addMaterialModalDescription, DescriptionMaxLength);
@@ -364,30 +381,40 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             ImGui.Separator();
             if (ImGui.Button("Add material"))
             {
-                Structure.AddMaterial(new Material(_addMaterialModalDescription, _addMaterialModalE, _addMaterialModalYield));
-                _addMaterialModalDescription = String.Empty;
-                _addMaterialModalE = 0;
-                _addMaterialModalYield = 0;
-                ImGui.CloseCurrentPopup();
+                if (_addMaterialModalE > 0 && _addMaterialModalYield > 0 && _addMaterialModalDescription.Length > 0)
+                {
+                    Structure.AddMaterial(new Material(_addMaterialModalDescription, _addMaterialModalE,
+                        _addMaterialModalYield));
+                    CloseAction();
+                }
+                else
+                {
+                    _addMaterialModalErrorMessage = "Material values cannot be blank/zero!";
+                }
             }
             ImGui.SameLine();
             if (ImGui.Button("Close"))
             {
-                _addMaterialModalDescription = String.Empty;
-                _addMaterialModalE = 0;
-                _addMaterialModalYield = 0;
-                ImGui.CloseCurrentPopup();
+                CloseAction();
             }
+
+            ImGui.TextWrapped(_addMaterialModalErrorMessage);
             ImGui.EndPopup();
         }
     }
 
-    private string _addSectionModalDescription = "";
-    private float _addSectionModalI;
-    private float _addSectionModalA;
-    
+
+
     private void DefineAddSectionModal()
     {
+        void CloseAction()
+        {
+            _addSectionModalDescription = string.Empty;
+            _addSectionModalI = 0;
+            _addSectionModalA = 0;
+            _addSectionModalErrorMessage = string.Empty;
+            ImGui.CloseCurrentPopup();
+        }
         if (ImGui.BeginPopupModal("Add Section", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.InputText("Description", ref _addSectionModalDescription, DescriptionMaxLength);
@@ -396,20 +423,23 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
             ImGui.Separator();
             if (ImGui.Button("Add section"))
             {
-                Structure.AddSection(new Section(_addSectionModalDescription, _addSectionModalI, _addSectionModalA));
-                _addSectionModalDescription = string.Empty;
-                _addSectionModalI = 0;
-                _addSectionModalA = 0;
-                ImGui.CloseCurrentPopup();
+                if (_addSectionModalI > 0 && _addSectionModalA > 0)
+                {
+                    Structure.AddSection(new Section(_addSectionModalDescription, _addSectionModalI,
+                        _addSectionModalA));
+                    CloseAction();
+                }
+                else
+                {
+                    _addSectionModalErrorMessage = "Section values cannot be blank/zero!";
+                }
             }
             ImGui.SameLine();
             if (ImGui.Button("Close"))
             {
-                _addSectionModalDescription = string.Empty;
-                _addSectionModalI = 0;
-                _addSectionModalA = 0;
-                ImGui.CloseCurrentPopup();
+                CloseAction();
             }
+            ImGui.TextWrapped(_addSectionModalErrorMessage);
             ImGui.EndPopup();
         }
     }
@@ -471,7 +501,6 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
     {
         switch (newTool)
         {
-            //TODO clean up
             case Tool.AddNode:
                 ResetSelection();
                 break;
@@ -573,7 +602,6 @@ public class UIStructureEditor : StructureEditor, IUIStructureHelper
         renderQueue.Enqueue(new BackgroundObject(Color.White));
         
         //grid
-        //todo base this off of somethign else? it feels uncomfortable for it to be based on scenepixelgridspacing
         renderQueue.Enqueue(new GridObject(UISceneRenderer.SceneGridSlices, UISceneRenderer.ScenePixelGridSpacing));
         
         //Elements

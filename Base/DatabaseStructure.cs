@@ -635,7 +635,6 @@ public class DatabaseStructure : IStructure
 
     public Node GetNode(int nodeID)
     {
-        //todo potential issue with getNode and way BC and Loads are defined
         Node n = new();
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
@@ -738,19 +737,19 @@ public class DatabaseStructure : IStructure
 
         return count;
     }
-    //todo error handling
     public int GetBoundaryConditionCount()
     {
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
+            conn.Open();
             SqliteCommand countCommand = conn.CreateCommand();
             countCommand.CommandText = @"
                 SELECT SUM(
                     CASE WHEN FixedX <> FALSE THEN 1 ELSE 0 END +
                     CASE WHEN FixedY <> FALSE THEN 1 ELSE 0 END +
-                    CASE WHEN FixedRotation <> FALSE THEN 1 ELSE 0 END +                       
+                    CASE WHEN FixedRotation <> FALSE THEN 1 ELSE 0 END                       
                 )
-                FROM BoundaryConditions
+                FROM BoundaryConditions;
             ";
             object? result = countCommand.ExecuteScalar();
             conn.Close();
@@ -758,7 +757,7 @@ public class DatabaseStructure : IStructure
             {
                 return Convert.ToInt32(result);
             }
-            throw new NullReferenceException("null value returned by sum command, what went wrong?");
+            return 0;
         }
     }
 
@@ -766,14 +765,15 @@ public class DatabaseStructure : IStructure
     {
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
+            conn.Open();
             SqliteCommand countCommand = conn.CreateCommand();
             countCommand.CommandText = @"
                 SELECT SUM(
                     CASE WHEN ForceX <> 0 THEN 1 ELSE 0 END +
                     CASE WHEN ForceY <> 0 THEN 1 ELSE 0 END +
-                    CASE WHEN Moment <> 0 THEN 1 ELSE 0 END +                       
+                    CASE WHEN Moment <> 0 THEN 1 ELSE 0 END                 
                 )
-                FROM Loads
+                FROM Loads;
             ";
             object? result = countCommand.ExecuteScalar();
             conn.Close();
@@ -781,7 +781,8 @@ public class DatabaseStructure : IStructure
             {
                 return Convert.ToInt32(result);
             }
-            throw new NullReferenceException("null value returned by sum command, what went wrong?");
+
+            return 0;
         }
     }
 
@@ -916,6 +917,10 @@ public class DatabaseStructure : IStructure
     } 
     public void AddMaterial(Material mat)
     {
+        if (mat.Yield <= 0 || mat.E <= 0)
+        {
+            return;
+        }
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
@@ -944,6 +949,10 @@ public class DatabaseStructure : IStructure
 
     public void AddSection(Section sect)
     {
+        if (sect.I <= 0 || sect.A <= 0)
+        {
+            return;
+        }
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();

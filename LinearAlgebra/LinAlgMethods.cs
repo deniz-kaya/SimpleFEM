@@ -15,7 +15,6 @@ public static class LinAlgMethods
         Vector y = ForwardSubstitute(l, v);
         return BackwardSubstitute(u, y);
     }
-    
     public static (Matrix L, Matrix U) LUDecompose(Matrix K)
     {
         if (K.Rows != K.Columns)

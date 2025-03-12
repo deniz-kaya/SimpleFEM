@@ -34,12 +34,11 @@ public class StructureSolver
     protected bool Solve()
     {
         
-        //todo switch to using own exceptions?
         try
         {
+            //todo potential rank check
             //stability checks
-            //todo something funky with constrained nodes and forces
-            if (Structure.GetElementCount() == 0)
+            if (Structure.GetElementCount() == 0)   
             {
                 throw new EmptyStructure();
             }
@@ -48,10 +47,11 @@ public class StructureSolver
                 throw new NoLoads();
             }
 
-            if (Structure.GetBoundaryConditionCount() == 0)
+            if (!ValidBoundaryConditions())
             {
-                throw new NoBoundaryConditions();
+                throw new InvalidBoundaryConditions();
             }
+            
             _currentStructureGraph = ConstructStructureGraph();
             if (!_currentStructureGraph.IsConnected())
             {
@@ -94,7 +94,7 @@ public class StructureSolver
         float cosAngle = MathF.Cos(angle);
         float sinAngle = MathF.Sin(angle);
         
-        Matrix transformation = new Matrix(6,6);
+        Matrix transformation = new Matrix(DOF * 2,DOF * 2);
 
         for (int i = 0; i < 4; i+= 3)
         {
@@ -156,7 +156,7 @@ public class StructureSolver
             int index = elementIndexes[i];
             Element e = Structure.GetElement(index);
             elementNodeIndexes[i] = (e.Node1ID, e.Node2ID);
-            elementStiffnessMatrices[i] = TransformLocalMatrixIntoGlobal(GetLocalStiffnessMatrix(e), e);
+            elementStiffnessMatrices[i] = TransformLocalMatrixIntoGlobal(GetElementStiffnessMatrix(e), e);
         }
         
         int nodeCount = Structure.GetNodeCount();
@@ -240,7 +240,7 @@ public class StructureSolver
     }
 
 
-    private Matrix GetLocalStiffnessMatrix(Element element)
+    private Matrix GetElementStiffnessMatrix(Element element)
     {
         Material mat = Structure.GetMaterial(element.MaterialID);
         Section sect = Structure.GetSection(element.SectionID);
@@ -250,7 +250,7 @@ public class StructureSolver
         float beSSq = 6f * (beS / length);  // bending stiffness squared
         float beSCb = 2f * (beSSq / length);  // bending stiffness cubed
 
-        Matrix m = new Matrix(6,6);
+        Matrix m = new Matrix(DOF * 2,DOF * 2);
         
         for (int corner = 0; corner < 4; corner++)
         {
@@ -282,35 +282,37 @@ public class StructureSolver
         float angle = MathF.Atan((node1Pos.Y- node2Pos.Y)/(node1Pos.X - node2Pos.X));
         return angle < 0 ? angle + MathF.PI : angle;
     }
-    
-    //stability checking
-    public bool CheckElementIntersections()
+
+    private bool ValidBoundaryConditions()
     {
-        List<int> elementIndexes = Structure.GetElementIndexesSorted();
-        int currentIndex = 0;
-        foreach (int idx in Structure.GetElementIndexesSorted())
+        int xCount = 0;
+        int yCount = 0;
+        int rotCount = 0;
+        foreach (int i in Structure.GetNodeIndexesSorted())
         {
-            Element e = Structure.GetElement(idx);
-            Vector2 pos1 = Structure.GetNode(e.Node1ID).Pos;
-            Vector2 pos2 = Structure.GetNode(e.Node2ID).Pos;
-            currentIndex++;
-            for (int i = currentIndex; i < elementIndexes.Count; i++)
+            BoundaryCondition bc = Structure.GetBoundaryCondition(i);
+            if (bc.FixedX)
             {
-                Element testE = Structure.GetElement(elementIndexes[i]);
-                Vector2 testPos1 = Structure.GetNode(testE.Node1ID).Pos;
-                Vector2 testPos2 = Structure.GetNode(testE.Node2ID).Pos;
-                if (Vector2Extensions.CheckSegmentIntersections(testPos1, pos1, testPos2, pos2))
-                {
-                    return false;
-                }
-                
+                xCount++;
+            }
+
+            if (bc.FixedY)
+            {
+                yCount++;
+            }
+
+            if (bc.FixedRotation)
+            {
+                rotCount++;
+            }
+
+            if (xCount > 0 && yCount > 0 && rotCount > 0)
+            {
+                return true;
             }
         }
 
-        return true;
-    } 
-    public bool CheckStructureConnected()
-    {
-        return _currentStructureGraph.IsConnected();
+        return false;
+
     }
 }

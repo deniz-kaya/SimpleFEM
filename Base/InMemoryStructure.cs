@@ -19,7 +19,6 @@ public class InMemoryStructure : IStructure
     
     private readonly string _structureName;
     private readonly StructureSettings _settings;
-    // TODO maybe replace null checks with setting to default from the structure creation screen
     public InMemoryStructure(string name, StructureSettings? settings) 
     {
         _settings = settings ?? StructureSettings.Default;
@@ -194,6 +193,10 @@ public class InMemoryStructure : IStructure
 
     public void AddMaterial(Material mat)
     {
+        if (mat.Yield <= 0 || mat.E <= 0)
+        {
+            return;
+        }
         foreach (Material m in _materials)
         {
             if (m.E == mat.E && m.Yield == mat.Yield)
@@ -206,6 +209,10 @@ public class InMemoryStructure : IStructure
 
     public void AddSection(Section sect)
     {
+        if (sect.I <= 0 || sect.A <= 0)
+        {
+            return;
+        }
         foreach (Section s in _sections)
         {
             if (s.I == sect.I && s.A == sect.A)

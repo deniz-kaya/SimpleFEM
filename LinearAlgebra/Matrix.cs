@@ -33,7 +33,7 @@ public struct Matrix : ILinearAlgebra
     public ref float this[int row, int col] {
         get
         {
-            if (row < rows && col < columns)
+            if (row < rows && col < columns && row > -1 && col > -1)
             {
                 return ref data[row * columns + col];
             }
@@ -46,16 +46,19 @@ public struct Matrix : ILinearAlgebra
 
     public static Matrix operator *(Matrix left, Matrix right)
     {
+        //this is a criteria that is required for matrix multiplication
         if (left.Columns != right.Rows)
         {
             throw new ArgumentException("First matrix columns is not equal to the second matrix rows!");
         }
+        //an axn matrix multiplied by a nxb matrix results in an axb matrix
         Matrix final = new Matrix(left.Rows, right.Columns);
         for (int row = 0; row < left.Rows; row++)
         {
             for (int col = 0; col < right.Columns; col++)
             {
-                for (int k = 0; k < 6; k++)
+                //calculate the dot product of the corresponding row-column pair and add it to the final matrix
+                for (int k = 0; k < left.Columns; k++)
                 {
                     final[row, col] += left[row, k] * right[k, col];
                 }
@@ -71,10 +74,10 @@ public struct Matrix : ILinearAlgebra
         {
             for (int cols = 0; cols < matrix.Columns; cols++)
             {
-                final[rows, rows] = scalar * matrix[rows, rows];
+                final[rows, cols] = scalar * matrix[rows, cols];
             }
         }
-
+    
         return final;
     }
     public void DebugPrint()

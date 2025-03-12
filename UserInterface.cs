@@ -103,6 +103,8 @@ public class UserInterface
     public void DrawHoveredPropertyViewer()
     {
         ImGui.Begin("Property Viewer");
+        ImGui.Text($"Structure Name: {_structureEditor.StructureName}");
+        ImGui.SeparatorText("Hovered Item Properties");
         if (_currentOperation == OperationMode.Editor)
         {
             _structureEditor.DrawHoveredPropertiesViewer();
@@ -214,16 +216,6 @@ public class UserInterface
                 }
                 ImGui.EndMenu();
             }
-
-            // if (ImGui.BeginMenu("Options"))
-            // {
-            //     if (ImGui.MenuItem("Preferences"))
-            //     {
-            //         ShouldShowPreferencesModal = true;
-            //     }
-            //
-            //     ImGui.EndMenu();
-            // }
             ImGui.EndMainMenuBar();
         }
     }
@@ -422,7 +414,7 @@ public class UserInterface
                 {
                     ImGui.TextWrapped("Perfect for quick mockups and testing of structures.");
                     ImGui.Separator();
-                    ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Warning! Structure cannot be saved!");
+                    ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Warning! In-memory structures cannot be saved!");
                     ImGui.SeparatorText("Grid spacing distance");
                     ImGui.TextWrapped("What distance one grid step will be equal to, in metres");
                     ImGui.InputFloat("Grid Spacing", ref _newProjectModalGridSpacingSize);

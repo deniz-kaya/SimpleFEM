@@ -88,7 +88,6 @@ public class UIStructureSolver : StructureSolver, IUIStructureHelper
         renderQueue.Enqueue(new BackgroundObject(Color.White));
 
         //grid
-        // TODO variables
         renderQueue.Enqueue(new GridObject(UISceneRenderer.SceneGridSlices, UISceneRenderer.ScenePixelGridSpacing));
 
         if (StructureHasBeenChanged)
