@@ -20,21 +20,26 @@ class Program
         {
             Raylib.BeginDrawing();
             rlImGui.Begin();
+            //clear the background each frame to avoid ghosting when windows are moved
             Raylib.ClearBackground(Color.Black);
             //DRAW EVERYTHING BELOW ME
             
+            //these are always drawn
             ui.DrawMainDockSpace();
             ui.DrawMainMenuBar();
 
             if (ui.StructureLoaded)
             {
+                //draw all windows
                 ui.DrawToolbar();
                 ui.DrawStructureOperationWindow();
                 ui.DrawSceneWindow();
-                ui.HandleInputs();
                 ui.DrawHoveredPropertyViewer();
                 ui.DrawFooter();
-
+                ui.HandleInputs();
+                //note: order of handle inputs doesnt exactly matter as the UI is redrawn many times a second
+                //this means that even though changes might reflect in the next frame
+                //the next frame arrives too fast to make a discernable difference
             }
             else
             {

@@ -1,4 +1,6 @@
-﻿namespace SimpleFEM.LinearAlgebra;
+﻿using SimpleFEM.Interfaces;
+
+namespace SimpleFEM.LinearAlgebra;
 
 public struct Vector
 {

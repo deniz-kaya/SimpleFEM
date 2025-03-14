@@ -16,28 +16,7 @@ public struct DrawSettings
     public float ElementThickness;
     public float NodeRadius;
     
-    public DrawSettings(
-        Vector4 elementColor,
-        Vector4 nodeColor,
-        Vector4 selectedElementColor,
-        Vector4 selectedNodeColor,
-        Vector4 hoveredElementColor,
-        Vector4 hoveredNodeColor,
-        Vector4 selectionBoxColor,
-        float elementThickness,
-        float nodeRadius
-        )
-    {
-        ElementColor = elementColor.Vector4ToColor();
-        NodeColor = nodeColor.Vector4ToColor();
-        SelectedElementColor = selectedElementColor.Vector4ToColor();
-        SelectedNodeColor = selectedNodeColor.Vector4ToColor();
-        HoveredElementColor = hoveredElementColor.Vector4ToColor();
-        HoveredNodeColor = hoveredNodeColor.Vector4ToColor();
-        SelectionBoxColor = selectionBoxColor.Vector4ToColor();
-        ElementThickness = elementThickness;
-        NodeRadius = nodeRadius;
-    }
+    
     public static DrawSettings Default =>
         new DrawSettings()
         {

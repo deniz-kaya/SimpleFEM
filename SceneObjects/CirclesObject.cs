@@ -5,19 +5,19 @@ using SimpleFEM.Interfaces;
 
 namespace SimpleFEM.SceneObjects;
 
-public class SpheresObject : ISceneObject
+public class CirclesObject : ISceneObject
 {
     private Queue<Vector2> _spheres;
     private readonly float _radius;
     private readonly Color _color;
-    public SpheresObject(Color color, float radius)
+    public CirclesObject(Color color, float radius)
     {
         _spheres = new();
         _color = color;
         _radius = radius;
     }
 
-    public void AddSphere(Vector2 position)
+    public void AddCircle(Vector2 position)
     {
         _spheres.Enqueue(position);
     }

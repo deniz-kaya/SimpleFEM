@@ -35,6 +35,7 @@ public class UserInterface
     private OperationMode _currentOperation;
     public UserInterface()
     {
+        //initialise all settings to their defaults
         StructureLoaded = false;
         _currentOperation = OperationMode.Editor;
         _structureEditorSettings = StructureEditorSettings.Default;
@@ -46,6 +47,8 @@ public class UserInterface
 
     private void SwitchStructure(IStructure structure)
     {
+        //change the operation to editor mode to ensure we are loaded into editor mode
+        //create new instances of structureeditor and structuresoler with the new structure as reference
         _currentOperation = OperationMode.Editor;
         StructureLoaded = true;
         _structureEditor = new UIStructureEditor(structure, _structureEditorSettings);
@@ -55,6 +58,7 @@ public class UserInterface
     //imgui windows
     public void DrawSceneWindow()
     {
+        //queue the relevant scene objects depending on which mode we are in
         if (_currentOperation == OperationMode.Editor)
         {
             _sceneRenderer.SetRenderQueue(_structureEditor.GetSceneObjects(_drawSettings));
@@ -63,10 +67,13 @@ public class UserInterface
         {
             _sceneRenderer.SetRenderQueue(_structureSolver.GetSceneObjects(_drawSettings));
         }
+        //show the scene window
         _sceneRenderer.ShowSceneWindow();
     }
     public void DrawFooter()
     {
+        //flags necessary to prevent the user interacting with the footer 
+        //and to prevent it from displaying things we dont want it to e.g. its title bar
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoTitleBar 
                                        | ImGuiWindowFlags.NoCollapse
                                        | ImGuiWindowFlags.NoDocking
@@ -74,10 +81,13 @@ public class UserInterface
                                        | ImGuiWindowFlags.NoScrollbar
                                        | ImGuiWindowFlags.NoNav;
         
+        //change window borrder size so that footer us borderless
+        //add padding to ensure text is somewhat centred in the available area of footer 
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(5,3));
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
         
         Vector2 size = ImGui.GetMainViewport().Size;
+        //sets the position and size of the footer according to the current window size and the settings
         ImGui.SetNextWindowSize(new Vector2(size.X, _settings.FooterHeight));
         ImGui.SetNextWindowPos(new Vector2(0, size.Y-_settings.FooterHeight));
         
@@ -86,19 +96,22 @@ public class UserInterface
         float width = ImGui.GetContentRegionAvail().X;
         
         //Left of the footer
+        // regex expression matches a lowercase character followed by an uppercase character that isnt at the start of the string,
+        // it then adds a space between the lowercase and uppercase character
+        // this is to avoid having to write the label of each tool button manually
         ImGui.Text($"Current tool: {Regex.Replace(_structureEditor.CurrentTool.ToString(), "(?<!^)([A-Z])"," $1")}");
+        
         //Right of the footer
-
         if (_sceneRenderer.SceneWindowHovered)
         {
-            string mousePosition = _structureEditor.GetRealCoordinates(_sceneRenderer.GetScenePos(ImGui.GetMousePos())).ToString();
+            string mousePosition = _structureEditor.GetStructureCoordinates(_sceneRenderer.GetScenePos(ImGui.GetMousePos())).ToString();
             ImGui.SameLine(width - ImGui.CalcTextSize(mousePosition).X);
             ImGui.Text(mousePosition);
         }
 
         ImGui.End();
-        
-        ImGui.PopStyleVar(10);
+        //pop style variables to return to default values for other windows
+        ImGui.PopStyleVar(2);
     }
     public void DrawHoveredPropertyViewer()
     {
@@ -107,10 +120,12 @@ public class UserInterface
         ImGui.SeparatorText("Hovered Item Properties");
         if (_currentOperation == OperationMode.Editor)
         {
+            //draw the hovered objects property viewer if program is in editor mode
             _structureEditor.DrawHoveredPropertiesViewer();
         }
         else if (_currentOperation == OperationMode.Solver)
         {
+            //hovering does not work in solver mode, therefore this message is displayed
             ImGui.Text("Switch back to editor to see properties!");
         }
         ImGui.End();
@@ -118,13 +133,16 @@ public class UserInterface
     }
     public void DrawMainDockSpace()
     {
+        //get information about the size of the main menu bar and footer
         float mainMenuBarHeight = ImGui.GetFrameHeight();
         float footerHeight = _settings.FooterHeight;
         Vector2 viewportSize = ImGui.GetMainViewport().Size;
         
+        //set the dockspace size and position to avoid main menu bar and footer
         ImGui.SetNextWindowPos(new Vector2(0, mainMenuBarHeight));
         ImGui.SetNextWindowSize(new Vector2(viewportSize.X, (viewportSize.Y - mainMenuBarHeight) - footerHeight));
         
+        //necessary flags to ensure that the dockspace is completely empty of any features, and it cannot be interracted by the user
         ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar 
                                  | ImGuiWindowFlags.NoCollapse 
                                  | ImGuiWindowFlags.NoResize 
@@ -139,13 +157,16 @@ public class UserInterface
                                  | ImGuiWindowFlags.NoBackground 
                                  | ImGuiWindowFlags.NoDocking;
         
+        //windowpadding and bordersize are set to 0 to ensure that docked windows are not padded around the edges
         ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
         
         ImGui.Begin("Dockspace", flags);
         
+        //create the dockspace
         ImGui.DockSpace(ImGui.GetID("MainDockSpace"), Vector2.Zero, ImGuiDockNodeFlags.PassthruCentralNode);
         ImGui.End();
+        //style variables are removed to prevent unwanted effects on later windows
         ImGui.PopStyleVar(2);
 
     }
@@ -157,6 +178,7 @@ public class UserInterface
         {
             if (ImGui.BeginTabItem("Editor"))
             {
+                //switch operation and draw the relevant window provided by UIStructureEditor
                 _currentOperation = OperationMode.Editor;
                 _structureEditor.DrawOperationWindow();
                 
@@ -165,6 +187,7 @@ public class UserInterface
 
             if (ImGui.BeginTabItem("Solver"))
             {
+                //change the operation and draw the relevant window of options provided by UIStrutureSolver
                 _currentOperation = OperationMode.Solver;
                 _structureSolver.DrawOperationWindow();
                 
@@ -181,6 +204,9 @@ public class UserInterface
         {
             if (ImGui.BeginMenu("File"))
             {
+                //set flags to show popups to true
+                //this is implemented this way as setting the status of the popup to open in this context does not set it to be open globally
+                //i.e. a workaround for a silly imgui quirk
                 if (ImGui.MenuItem("New Project"))
                 {
                     _shouldShowNewProjectModal = true;
@@ -222,14 +248,20 @@ public class UserInterface
     public void DrawToolbar()
     {
         ImGui.Begin("Toolbar");
+        //for each tool in tools, add a button on the toolbar which when selected switches the current tool
         foreach (Tool t in Enum.GetValues(typeof(Tool))) 
         {
             ImGui.SameLine();
+            // regex expression matches a lowercase character followed by an uppercase character that isnt at the start of the string,
+            // it then adds a space between the lowercase and uppercase character
+            // this is to avoid having to write the label of each tool button manually
             if (ImGui.Button(Regex.Replace(t.ToString(), "(?<!^)([A-Z])"," $1")))
             {
                 _structureEditor.SwitchTool(t);
             }
         }
+
+        ImGui.End();
     }
     
     
@@ -263,45 +295,53 @@ public class UserInterface
     }
     public void HandleInputs()
     {
+        //we dont care about handling input when the scene window isnt hovered
+        if (!_sceneRenderer.SceneWindowHovered) { return; }
+
+        //we also dont care about handling input if we are not in editor mode
+        if (_currentOperation != OperationMode.Editor) return;
+        
+        //set live pos and handle any camera movement and hotkey tool switches
         Vector2 scenePos = _sceneRenderer.GetScenePos(ImGui.GetMousePos());
         _structureEditor.SetLivePos(scenePos);
-        if (_sceneRenderer.SceneWindowHovered)
+        HandleCameraMovement();
+        HandleToolSwitchInputs();
+
+        //update the hovered items
+        _structureEditor.UpdateHoveredItems();
+        
+        if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
         {
-            HandleCameraMovement();
-
-            if (_currentOperation != OperationMode.Editor) return;
-            
-            _structureEditor.UpdateHoveredItems();
-            HandleToolSwitchInputs();
-            
-            if (ImGui.IsKeyPressed(ImGuiKey.MouseRight))
-            {
-                HandleRightClickPopupDisplay();
-            }
-            
-            if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
-            {
-                _structureEditor.HandleMouseKeyDownEvent();
-            }
-            else if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
-            {
-                _structureEditor.HandleMouseKeyUpEvent();
-            }
-            if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
-            {
-                _structureEditor.HandleMouseKeyPressedEvent();
-            }
-
-            if (ImGui.IsKeyPressed(ImGuiKey.Delete))
-            {
-                _structureEditor.DeleteSelected();
-            }
+            HandleRightClickPopupDisplay();
         }
+        
+        if (ImGui.IsKeyDown(ImGuiKey.MouseLeft))
+        {
+            _structureEditor.HandleMouseKeyDownEvent();
+        }
+        else if (ImGui.IsKeyReleased(ImGuiKey.MouseLeft))
+        {
+            _structureEditor.HandleMouseKeyUpEvent();
+        }
+        if (ImGui.IsKeyPressed(ImGuiKey.MouseLeft))
+        {
+            _structureEditor.HandleMouseKeyPressedEvent();
+        }
+
+        if (ImGui.IsKeyPressed(ImGuiKey.Delete))
+        {
+            _structureEditor.DeleteSelected();
+        }
+        
     }
 
-    public void InitialiseWindowPositionsAndDocking()
+    private void InitialiseWindowPositionsAndDocking()
     {
-        //I got this by removing my .ini file, docking the windows to my desired default location, and then movoing 
+        //this .ini file initialises the default positions of all of the relevant windows on launch, so that the user does not have to bother with docking them manually
+        //I got this by removing my .ini file, docking and sizing windows to the desired default location and then copying the contents of the newly created .ini file 
+        
+        //while there are ways to do this in code, the 'clean'/'algorithmic' way to do it in code is not included in the c# bindings for imgui (i.e. ImGui_NET)
+        //so I opted to just hardcode the string
         string defaultImguiIni = "[Window][Dockspace]\nPos=0,19\nSize=1600,851\nCollapsed=0\n\n[Window][SimpleFEM Start Window]\nPos=0,19\nSize=1600,851\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][New Project]\nPos=637,12\nSize=312,221\nCollapsed=0\n\n[Window][Toolbar]\nPos=0,19\nSize=1177,34\nCollapsed=0\nDockId=0x00000005,0\n\n[Window][Structure Operations]\nPos=1179,19\nSize=421,407\nCollapsed=0\nDockId=0x00000003,0\n\n[Window][Scene Window]\nPos=0,55\nSize=1177,815\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][Footer]\nPos=0,870\nSize=1600,32\nCollapsed=0\n\n[Window][Property Viewer]\nPos=1179,428\nSize=421,442\nCollapsed=0\nDockId=0x00000004,0\n\n[Docking][Data]\nDockSpace     ID=0x0ACA1264 Window=0x5B816B74 Pos=0,19 Size=1600,851 Split=X Selected=0xB575ABF8\n  DockNode    ID=0x00000001 Parent=0x0ACA1264 SizeRef=1177,851 Split=Y\n    DockNode  ID=0x00000005 Parent=0x00000001 SizeRef=1177,34 HiddenTabBar=1 Selected=0x738351EE\n    DockNode  ID=0x00000006 Parent=0x00000001 SizeRef=1177,815 CentralNode=1 HiddenTabBar=1 Selected=0x9F2D9299\n  DockNode    ID=0x00000002 Parent=0x0ACA1264 SizeRef=421,851 Split=Y Selected=0x9BD2ECEC\n    DockNode  ID=0x00000003 Parent=0x00000002 SizeRef=128,407 Selected=0x3D655616\n    DockNode  ID=0x00000004 Parent=0x00000002 SizeRef=128,442 Selected=0x9BD2ECEC\n\n";
         string defaultFilepath = "imgui.ini";
 
@@ -317,6 +357,8 @@ public class UserInterface
         ImGui.TextWrapped("Begin by going to the top left\n'File'\nand choosing either New Project or Open Project!");
         ImGui.NewLine();
         ImGui.TextWrapped("...or, click the buttons below:");
+        
+        //set popup display flags to true depending on button press
         if (ImGui.Button("New Project"))
         {
            _shouldShowNewProjectModal = true; 
@@ -331,6 +373,7 @@ public class UserInterface
     }
     public void HandlePopups()
     {
+        //if the structure is loaded, define the popups for the 
         if (StructureLoaded)
         {
             _structureEditor.HandlePopups();
@@ -384,6 +427,7 @@ public class UserInterface
     }
     private void HandleRightClickPopupDisplay()
     {
+        //if node selection is not empty, open the selected node popup
         if (_structureEditor.SelectedNodeCount != 0 && _structureEditor.SelectedElementCount == 0)
         {
             ImGui.OpenPopup("SelectedNodePopup");
@@ -391,21 +435,34 @@ public class UserInterface
     }
 
     //Popups
-    const int MaxStringInputLength = 1024;
     
+    //imgui requires us to specify a maximum character length for text input fields
+    //the value 2048 has no real significance apart from the fact that 99.99% of reasonable file directories will be smaller than that length,
+    //and to risk making a harsh remark, if one tries to save or load a structure at a path that has a length longer than 2048 characters
+    //i think they should think about the stupidity of their action rather than complain that the program doesnt let them
+    const int MaxStringInputLength = 2048;
+    
+    //new project popup modal variables
     private string _newProjectModalErrorMessage = string.Empty;
     private string _newProjectModalFilepath = string.Empty;
     private string _newProjectModalProjectName = string.Empty;
     private float _newProjectModalGridSpacingSize;
 
+    //save project popup modal variables
     private string _saveProjectAsModalFilepath = string.Empty;
     private string _saveProjectAsModalFilename = string.Empty; 
     private string _saveProjectAsModalErrorMessage = string.Empty;
     
+    //open project popup modal variables
     private string _openProjectModalFilePath = string.Empty;
     private string _openProjectModalErrorMessage = string.Empty;
     private void DefineNewProjectModal()
     {
+        void ResetValues()
+        {
+            _newProjectModalErrorMessage = String.Empty;
+            _newProjectModalProjectName = String.Empty;
+        }
         if (ImGui.BeginPopupModal("New Project", ImGuiWindowFlags.AlwaysAutoResize))
         {
             if (ImGui.BeginTabBar("Structure Type Tab Bar"))
@@ -426,30 +483,35 @@ public class UserInterface
                         }
                         else
                         {
+                            //create new in memory structure
                             IStructure newStructure = new InMemoryStructure(
                                 "In Memory Structure",
                                 new StructureSettings(_newProjectModalGridSpacingSize));
-                            _volatileStructure = true;
+                            //set current structure filepath to empty as it doesnt have one, as it is an in memory structure
                             _currentStructureFilepath = string.Empty;
-                            _newProjectModalErrorMessage = String.Empty;
-                            _newProjectModalProjectName = String.Empty;
+                            //volatile meaning in memory
+                            _volatileStructure = true;
                             SwitchStructure(newStructure);
+                            ResetValues();
                             ImGui.CloseCurrentPopup();
                         }
                     }
                     ImGui.SameLine();
                     if (ImGui.Button("Cancel"))
                     {
-                        _newProjectModalErrorMessage = String.Empty;
-                        _newProjectModalProjectName = String.Empty;
+                        _currentStructureFilepath = string.Empty;
+                        ResetValues();
                         ImGui.CloseCurrentPopup();
                     }
+                    //show error message at the bottom of popup
 
                     ImGui.TextWrapped(_newProjectModalErrorMessage);
                     ImGui.EndTabItem();
                 }
+                //the database tab of the new project popup
                 if (ImGui.BeginTabItem("Database"))
                 {
+                    //descriptive text and input fields
                     ImGui.SeparatorText("Filepath");
                     ImGui.TextWrapped("The filepath of the project");
                     ImGui.InputText("Path", ref _newProjectModalFilepath, MaxStringInputLength);
@@ -492,13 +554,15 @@ public class UserInterface
                         }
                         else
                         {
+                            //all validation checks have been passed
+                            //construct path of structure using name and file extension
                             _currentStructureFilepath = Path.Combine(_newProjectModalFilepath, _newProjectModalProjectName + SaveFileExtension);
+                            //create database structure instance
                             IStructure newStructure = new DatabaseStructure(
                                 _currentStructureFilepath,
                                 new StructureSettings(_newProjectModalGridSpacingSize));
                             _volatileStructure = false;
-                            _newProjectModalErrorMessage = String.Empty;
-                            _newProjectModalProjectName = String.Empty;
+                            ResetValues();
                             SwitchStructure(newStructure);
                             ImGui.CloseCurrentPopup();
                         }
@@ -506,23 +570,29 @@ public class UserInterface
                     ImGui.SameLine();
                     if (ImGui.Button("Cancel"))
                     {
-                        _newProjectModalErrorMessage = String.Empty;
-                        _newProjectModalProjectName = String.Empty;
+                         ResetValues();
                         ImGui.CloseCurrentPopup();
                     }
+                    
+                    //show error message at the bottom of popup
 
                     ImGui.TextWrapped(_newProjectModalErrorMessage);
                    
                     ImGui.EndTabItem();
                 }
                 ImGui.EndTabBar();
-            }
                 
+            }
             ImGui.EndPopup();
         }
     }
     private void DefineOpenProjectModal()
     {
+        void ResetValues()
+        {
+            _openProjectModalFilePath = String.Empty;
+            _openProjectModalErrorMessage = String.Empty;
+        }
         if (ImGui.BeginPopupModal("Open Project", ImGuiWindowFlags.AlwaysAutoResize))
         {
             ImGui.SeparatorText("Filepath");
@@ -544,10 +614,12 @@ public class UserInterface
                 }
                 else
                 {
+                    //create new database structure using filepath
                     IStructure newStructure = new DatabaseStructure(_openProjectModalFilePath);
+                    //change current filepath
                     _currentStructureFilepath = _openProjectModalFilePath;
-                    _openProjectModalFilePath = String.Empty;
-                    _openProjectModalErrorMessage = String.Empty;
+                    ResetValues();
+                    //switch structure
                     SwitchStructure(newStructure);
                     ImGui.CloseCurrentPopup();
                 }
@@ -555,16 +627,21 @@ public class UserInterface
             ImGui.SameLine();
             if (ImGui.Button("Cancel"))
             {
-                _openProjectModalFilePath = String.Empty;
-                _openProjectModalErrorMessage = String.Empty;
+                ResetValues();
                 ImGui.CloseCurrentPopup();
             }
+            //show error message at the bottom of popup
             ImGui.TextWrapped(_openProjectModalErrorMessage);
             ImGui.EndPopup();
         }
     }
     private void DefineSaveProjectAsModal()
     {
+        void ResetValues() 
+        {
+            _saveProjectAsModalFilepath = String.Empty;
+            _saveProjectAsModalErrorMessage = String.Empty;
+        }
         if (ImGui.BeginPopupModal("Save Project As", ImGuiWindowFlags.AlwaysAutoResize))
         {
             
@@ -602,18 +679,17 @@ public class UserInterface
                 else
                 {
                     File.Copy(_currentStructureFilepath, Path.Combine(_saveProjectAsModalFilepath, _saveProjectAsModalFilename + SaveFileExtension));
-                    _saveProjectAsModalFilepath = String.Empty;
-                    _saveProjectAsModalErrorMessage = String.Empty;
+                    ResetValues();
                     ImGui.CloseCurrentPopup();
                 }
             }
             ImGui.SameLine();
             if (ImGui.Button("Cancel"))
             {
-                _saveProjectAsModalFilepath = String.Empty;
-                _saveProjectAsModalErrorMessage = String.Empty;
+                ResetValues();
                 ImGui.CloseCurrentPopup();
             }
+            //show error message at the bottom of popup
             ImGui.TextWrapped(_saveProjectAsModalErrorMessage);
             ImGui.EndPopup();
         }

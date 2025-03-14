@@ -4,5 +4,9 @@ public struct StructureEditorSettings
 {
     public float HoveringDistanceTreshold;
 
-    public static StructureEditorSettings Default => new StructureEditorSettings() { HoveringDistanceTreshold = 10f };
+    public StructureEditorSettings(float hoveringDistanceTreshold)
+    {
+        HoveringDistanceTreshold = hoveringDistanceTreshold;
+    }
+    public static StructureEditorSettings Default => new StructureEditorSettings(10f);
 }

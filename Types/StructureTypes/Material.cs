@@ -2,22 +2,20 @@
 
 public struct Material
 {
-    public Material(string description, float e, float yield)
+    public Material(string description, float e)
     {
         Description = description;
         E = e;
-        Yield = yield;
     }
     public float E;
-    public float Yield;
     public string Description;
 
-    //from eurocode
-    public static Material Steel235 => new Material("Steel 235",2.1e11f, 2.35e8f);
-    public static Material Steel275 => new Material("Steel 275",2.1e11f, 2.75e8f);
-    public static Material Steel355 => new Material("Steel 355",2.1e11f, 3.55e8f);
+    //default materials are from eurocode
+    public static Material Steel235 => new Material("Steel 235",2.1e11f);
+    public static Material Steel275 => new Material("Steel 275",2.1e11f);
+    public static Material Steel355 => new Material("Steel 355",2.1e11f);
     
     
-    public static Material Dummy => new Material("Dummy",1f ,1f);
+    public static Material Dummy => new Material("Dummy",1f);
     
 }

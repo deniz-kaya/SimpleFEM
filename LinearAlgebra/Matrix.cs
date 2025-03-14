@@ -3,10 +3,11 @@ using SimpleFEM.Interfaces;
 
 namespace SimpleFEM.LinearAlgebra;
 
-public struct Matrix : ILinearAlgebra
+public struct Matrix
 {
     private int rows;
     private int columns;
+    //matrix data stored in one dimensional list
     private float[] data;
     public Matrix(int rows, int columns)
     {
@@ -17,19 +18,8 @@ public struct Matrix : ILinearAlgebra
     
     public int Rows => rows;
     public int Columns => columns;
-
-    public float Rank
-    {
-        get
-        {
-            float rank = 0;
-            for (int i = 0; i < rows; i++)
-            {
-                rank += this[i, i];
-            }
-            return rank;
-        }
-    }
+    
+    //convert two dimensional row-col reference to cells to one dimensional index of the array
     public ref float this[int row, int col] {
         get
         {
@@ -70,6 +60,7 @@ public struct Matrix : ILinearAlgebra
     public static Matrix operator *(float scalar, Matrix matrix)
     {
         Matrix final = new Matrix(matrix.Rows, matrix.Columns);
+        //scale each cell in the matrix by given scalar value
         for (int rows = 0; rows < matrix.Rows; rows++)
         {
             for (int cols = 0; cols < matrix.Columns; cols++)
@@ -79,17 +70,5 @@ public struct Matrix : ILinearAlgebra
         }
     
         return final;
-    }
-    public void DebugPrint()
-    {
-        for (int r = 0; r < rows; r++)
-        {
-            for (int c = 0; c < columns; c++)
-            {
-                Console.Write($"{Math.Abs(this[r,c]):0E+00} ");
-            }
-            
-            Console.WriteLine();
-        }
     }
 }

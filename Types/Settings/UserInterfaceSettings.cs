@@ -10,7 +10,7 @@ public struct UserInterfaceSettings
     public ImGuiKey SelectNodesToolKey;
     public ImGuiKey SelectElementsToolKey;
     public ImGuiKey MouseSelectToolKey;
-
+    
     public static UserInterfaceSettings Default =>
         new UserInterfaceSettings()
         {

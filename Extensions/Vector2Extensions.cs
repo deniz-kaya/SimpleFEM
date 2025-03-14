@@ -29,15 +29,18 @@ public static class Vector2Extensions
         {
             return false;
         }
+        //calculate the acceptable maximum and minimum values for x and y coordinates of the point
         float maxX = Math.Max(pos1.X, pos2.X);
         float minX = Math.Min(pos1.X, pos2.X);
         float maxY = Math.Max(pos1.Y, pos2.Y);
         float minY = Math.Min(pos1.Y, pos2.Y);
         
+        //true if individual coordinate components is within the acceptable range
         return vector.X >= minX && vector.X <= maxX && vector.Y >= minY && vector.Y <= maxY;
     }
     public static Vector2 Round(this Vector2 vector)
     {
+        //round each value of the vector2 to an integer
         return new(
             MathF.Round(vector.X),
             MathF.Round(vector.Y)
@@ -58,8 +61,9 @@ public static class Vector2Extensions
             );
     }
 
-    public static (int, int) ToInteger(this Vector2 vector)
+    public static (int, int) ToIntegerTuple(this Vector2 vector)
     {
+        //convert the vector to an integer tuple by rounding
         Vector2 roundedVec = Round(vector);
         return new((int)roundedVec.X, (int)roundedVec.Y);
     }

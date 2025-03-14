@@ -21,15 +21,18 @@ public class SceneRenderer
     static readonly Vector2 DefaultTextureSize = new Vector2(100f, 100f);
     public SceneRenderer(SceneRendererSettings settings)
     {
+        //initialise all objects to their default
         Settings = settings;
         CurrentTextureSize = DefaultTextureSize;
         _texture = RaylibExtensions.LoadRenderTextureV(CurrentTextureSize);
+        //set offset to the middle of the texture, and to target (0,0)
         Camera = new Camera2D(CurrentTextureSize / 2, Vector2.Zero, 0f, 1f);
         _sceneObjects = new Queue<ISceneObject>();
     }
 
     public void OperateCamera(CameraOperation operation)
     {
+        //self explanatory
         switch (operation)
         {
             case CameraOperation.Left:
@@ -52,33 +55,26 @@ public class SceneRenderer
                 break;
         }
     }
-    public void PushObject(ISceneObject sceneObject)
-    {
-        _sceneObjects.Enqueue(sceneObject);
-    }
-
     public void ClearQueue()
     {
+        //remove all elements of the queue
         _sceneObjects.Clear();
     }
     protected void ProcessTextureSizeChanges(Vector2 newSize)
     {
         if (CurrentTextureSize != newSize)
         {
+            //unload current texture, load the new texture, move camera offset to match the middle 
             Raylib.UnloadRenderTexture(_texture);
             _texture = RaylibExtensions.LoadRenderTextureV(newSize);
             Camera.Offset = Vector2.Divide(newSize, 2);
             CurrentTextureSize = newSize;
         }
     }
-
-    public void MoveTarget(Vector2 delta)
-    {
-        Camera.Target += delta;
-    }
+    
     public void SetRenderQueue(Queue<ISceneObject> queue)
     {
-        this._sceneObjects = queue;
+        _sceneObjects = queue;
     }
     public RenderTexture2D GetSceneTexture(Vector2 textureSize)
     {
@@ -87,21 +83,26 @@ public class SceneRenderer
         
         Raylib.BeginTextureMode(_texture);
         Raylib.BeginMode2D(Camera);
+        //using lower-level rlgl api to transform coordinates
         Rlgl.PushMatrix();
         //scale and backface culling thing is required to convert coordinate system into traditional cartesian coordinates
-        //not explicity necessary for program function, but it is good to have it this way as people are more used to it
+        //scale reflects all coordiantes along the x-z plane, changing the y values
+        //this is so that y increases as we move the mouse up on the scene, the coordiante system that people are more used to
+        //however, this also means that we have to modify out logic slightly when doing certain things
+        //all instances where this happens are commented
         Rlgl.Scalef(1f,-1f,1f);
         Rlgl.DisableBackfaceCulling();
+        
+        //dequeue all elements in the scene objects queue for rendering
         while (_sceneObjects.Count > 0)
         {
             _sceneObjects.Dequeue().Render();
         }
         Rlgl.PopMatrix();
+        
         Raylib.EndMode2D();
         Raylib.EndTextureMode();
         
-        //clear queue just in case
-        ClearQueue();
         return _texture;
     }
 }

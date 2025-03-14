@@ -13,6 +13,8 @@ public struct BoundaryCondition
     public bool FixedY;
     public bool FixedX;
     public bool FixedRotation;
-    public bool IsDefault => !FixedX && !FixedY && !FixedRotation;
+    //the boundary condition is empty if there are no constraints
+    public bool IsEmpty => !FixedX && !FixedY && !FixedRotation;
+    
     public static BoundaryCondition Default => new BoundaryCondition(false, false, false);
 }

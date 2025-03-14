@@ -5,14 +5,15 @@ namespace SimpleFEM.LinearAlgebra;
 
 public static class LinAlgMethods
 {
-    public static Vector Solve(Matrix m, Vector v)
+    public static Vector Solve(Matrix k, Vector f)
     {
-        (Matrix l, Matrix u) = LUDecompose(m);
-        // V = ME
-        // V = LUE
-        // Y = UE
-        // V = LY
-        Vector y = ForwardSubstitute(l, v);
+        (Matrix l, Matrix u) = LUDecompose(k);
+        // matrix equations that are happening:
+        // F = KE
+        // F = LUE
+        // UE = Forwards(L, F)
+        // E = Backwards(U, UE)
+        Vector y = ForwardSubstitute(l, f);
         return BackwardSubstitute(u, y);
     }
     public static (Matrix L, Matrix U) LUDecompose(Matrix K)
@@ -32,6 +33,7 @@ public static class LinAlgMethods
         }
         Matrix U = new Matrix(size, size);
 
+        //vague comments here, details explained better in documented design
         for (int i = 0; i < size; i++)
         {
             //compute the relevant U row
@@ -76,6 +78,7 @@ public static class LinAlgMethods
 
         int size = m.Rows;
         Vector x = new Vector(v.Size);
+        //for each value of the solution vector, find the current value using values previously found
         for (int i = 0; i < size; i++)
         {
             float sum = 0;
@@ -105,12 +108,15 @@ public static class LinAlgMethods
 
         int size = m.Rows;
         Vector x = new Vector(v.Size);
+        
+        //for each value of the solution vector, find the current value using values previously found
         for (int i = size - 1; i >= 0; i--)
         {
             float sum = 0;
 
             if (m[i, i] == 0)
             {
+                //this usually happens when the original matrix is not invertable, which means that there is probably not a solution to the system of equations
                 throw new DivideByZeroException("Zero in upper matrix rank, System is most likely unstable.");
             }
             for (int j = i; j < size; j++)

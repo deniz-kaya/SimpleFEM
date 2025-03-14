@@ -25,6 +25,7 @@ public class LinesObject : ISceneObject
 
     public void Render()
     {
+        //dequeue all lines and draw them in their positions
         while (_lines.Count > 0)
         {
             (Vector2 position1, Vector2 position2) line = _lines.Dequeue();
