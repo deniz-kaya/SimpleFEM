@@ -11,7 +11,7 @@ public class UISceneRenderer : SceneRenderer
     //constant values for the grid spacing
     public const int ScenePixelGridSpacing = 50;
     public const int SceneGridSlices = 200;
-    public UISceneRenderer(SceneRendererSettings settings) : base(settings)
+    public UISceneRenderer(CameraSettings settings) : base(settings)
     {
         
     }

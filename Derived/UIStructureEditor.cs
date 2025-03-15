@@ -120,7 +120,8 @@ public class UIStructureEditor : StructureEditor
                     ImGui.TableNextColumn();
                     ImGui.Text("Y Load");
                     ImGui.TableNextColumn();
-                    ImGui.Text(l.ForceY.ToString());
+                    //the - is because we inverted the Y axis while rendering the scene
+                    ImGui.Text((-l.ForceY).ToString());
                     ImGui.TableNextRow();
                     ImGui.TableNextColumn();
                     ImGui.Text("Moment");

@@ -13,6 +13,43 @@ namespace SimpleFEM.Base;
 
 public class DatabaseStructure : IStructure
 {
+    /*
+        COMMENTS FOR COMMON PATTERNS
+        Comments for common patterns can be found here, I will not copy and paste the same comments for each time these patterns appear.
+                     
+        using (SqliteConnection conn = new SqliteConnection(_connectionString)) 
+        {
+            conn.Open();
+            SqliteCommand command = conn.CreateCommand();
+            ...other things...
+            conn.Close();
+        }
+        This pattern creates a new connection to the database specified by the connection string,
+        and then creates a command associated with this connection
+        After having done all necessary operations, the connection is closed by conn.Close()
+        and the conn object is properly disposed of by C#s garbage collection
+        
+        command.Parameters.AddWithValue("@paramIdentifier", paramValue);
+        This pattern replaces the @paramIdentifier in the CommandText of command with the value of paramValue.
+
+        public bool SomeFunction(var V, SqliteConnection conn) {}
+        The key thing to notice here is that we pass the already present connection to the function here
+        This pattern is used when validating things while a connection is open, 
+        e.g. if a candidate element is valid.
+             
+        using (SqliteTransaction transaction = conn.BeginTransaction()) {
+             ...
+             transaction.Commit();
+        }
+        Using transactions is a safer way to modify the elements of the structure, as if at any point there is an error, the changes to the database are not committed.
+        this reduces the risk of corruption of the database
+        
+        using (SqliteDataReader reader = retrieveCommand.ExecuteReader()) {
+            ...
+        }
+        This is similar to how we create a transaction and a connection. By creating the reader like this, 
+        we ensure that garbage is collected after we are done with the reader
+    */
     private readonly string _structureName;
     private readonly string _connectionString;
     public DatabaseStructure(string filepath, StructureSettings settings)
@@ -20,6 +57,7 @@ public class DatabaseStructure : IStructure
         _structureName = Path.GetFileNameWithoutExtension(filepath);
         _connectionString = $"Data Source={filepath}";
         InitialiseDatabase();
+        //settings are given therefore we must initialise them
         InitialiseStructureSettings(settings);
         InitialiseMaterialsAndSections();
     }
@@ -34,9 +72,9 @@ public class DatabaseStructure : IStructure
     }
     private void InitialiseMaterialsAndSections()
     {
-        AddMaterial(Material.Steel235);
-        AddMaterial(Material.Steel275);
-        AddMaterial(Material.Steel355);
+        AddMaterial(Material.Steel);
+        AddMaterial(Material.Aluminium);
+        AddMaterial(Material.Concrete);
         AddSection(Section.UB533x312x273);
         AddSection(Section.UC254x254x132);
         AddSection(Section.SHS100x100x5);
@@ -44,7 +82,7 @@ public class DatabaseStructure : IStructure
     
     private void InitialiseDatabase()
     {
-
+        //create database tables if they do not exist
          using (SqliteConnection conn = new SqliteConnection(_connectionString))
          {
              conn.Open();
@@ -90,7 +128,7 @@ public class DatabaseStructure : IStructure
                      CREATE TABLE IF NOT EXISTS Materials (
                          ID INTEGER PRIMARY KEY,
                          Description STRING NOT NULL,
-                         E REAL NOT NULL,
+                         E REAL NOT NULL
                      );
                     CREATE TABLE IF NOT EXISTS Settings (
                         ID INTEGER PRIMARY KEY CHECK (ID = 1),
@@ -123,13 +161,17 @@ public class DatabaseStructure : IStructure
     }
     public static bool FileIsSqliteDatabase(string filepath)
     {
+        //the header size of the sqlite file
         const int sqliteHeaderSize = 16;
         byte[] bytes = new byte[sqliteHeaderSize];
+        //use a filestream to read the first 16 bytes of the file, i.e. the header
         using (FileStream stream = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         {
             stream.Read(bytes, 0, sqliteHeaderSize);
         }
+        //convert read bytes to ASCII encoded string
         string header = Encoding.ASCII.GetString(bytes);
+        //if the header contains this, then it must be an Sqlite database therefore we return the result 
         return header.Contains("SQLite format");
     }
     private bool ValidElement(Element e, SqliteConnection conn)
@@ -147,12 +189,14 @@ public class DatabaseStructure : IStructure
             
         checkNodeIds.Parameters.AddWithValue("@n1", e.Node1ID);
         checkNodeIds.Parameters.AddWithValue("@n2", e.Node2ID);
-            
+        
+        //executecalar can return null if there are no matches
         object? checkNodeIdResult = checkNodeIds.ExecuteScalar();
         if (checkNodeIdResult != null)
         {
             return false;
         }
+        //return true if there were no matches therefore it is a valid element
         return true;
         
     }
@@ -184,6 +228,7 @@ public class DatabaseStructure : IStructure
     } 
     private bool ValidNode(Vector2 v, SqliteConnection conn, out int index)
     {
+        //initialise index as an invalid index
         index = -1;
         SqliteCommand checkNodeValidity = conn.CreateCommand();
         checkNodeValidity.CommandText = @"
@@ -194,13 +239,16 @@ public class DatabaseStructure : IStructure
         checkNodeValidity.Parameters.AddWithValue("@x", v.X);
         checkNodeValidity.Parameters.AddWithValue("@y", v.Y);
             
+        //execute scalar can return null if there were no matches
         object? checkNodeResult = checkNodeValidity.ExecuteScalar();
         
         if (checkNodeResult != null)
         {
+            //if a node was matchewd, set index variable to the ID of the node
             index = Convert.ToInt32(checkNodeResult);
             return false;
         }
+        // return true if executescalar value was null, meaning no ID's for said property were matched
         return true;
     }
 
@@ -213,12 +261,14 @@ public class DatabaseStructure : IStructure
         ";
 
         elementIDCheck.Parameters.AddWithValue("@id", elementID);
+        
+        //null if no ID was matched
         object? result = elementIDCheck.ExecuteScalar();
         if (result == null)
         {
             return false;
         }
-
+        //return true if a matching element was found
         return true;
     }
 
@@ -231,22 +281,26 @@ public class DatabaseStructure : IStructure
         ";
 
         nodeIDCheck.Parameters.AddWithValue("@id", nodeID);
+        
+        //executescalar returns null if no X was matched
         object? result = nodeIDCheck.ExecuteScalar();
         if (result == null)
         {
             return false;
         }
-
+        //return true if a matching node was found
         return true;
     }
     public bool AddNode(Vector2 v, out int index)
     {
+        //set index of added node from the start to an invalid value
         index = -1;
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
             if (!ValidNode(v, conn, out int idx))
             {
+                //if not a valid new node, set index to index of the existing node and return 
                 conn.Close();
                 index = idx;
                 return false;
@@ -280,8 +334,9 @@ public class DatabaseStructure : IStructure
             conn.Open();
             if (!ElementExists(elementID, conn))
             {
+                //if element doesnt exist, fail silently
                 conn.Close();
-                throw new IndexOutOfRangeException("Tried deleting nonexistent elementID");
+                return;
             }
 
             using (SqliteTransaction transaction = conn.BeginTransaction())
@@ -322,10 +377,12 @@ public class DatabaseStructure : IStructure
             conn.Open();
             if (!NodeExists(nodeID, conn))
             {
+                //if node doesnt exist, fail silently
                 conn.Close();
-                throw new IndexOutOfRangeException("Tried deleting nonexistent nodeID");
+                return;
             }
             
+            //first remove the connected features of the node from other tables
             RemoveNodeConnectedFeatures(nodeID, conn);
             using (SqliteTransaction transaction = conn.BeginTransaction())
             {
@@ -361,6 +418,7 @@ public class DatabaseStructure : IStructure
 
     public List<int> GetElementIndexesSorted()
     {
+        //initialise indexes as a new list
         List<int> indexes = new List<int>();
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
@@ -372,6 +430,7 @@ public class DatabaseStructure : IStructure
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
+                //until there are no other columns that have been matched, keep adding the indexes to the list
                 while (reader.Read())
                 {
                     indexes.Add(reader.GetInt32(0));
@@ -395,6 +454,8 @@ public class DatabaseStructure : IStructure
             object? result = getCommand.ExecuteScalar();
             if (result == null)
             {
+                //this shouldnt happen, and has never happened within testing
+                //it exists as more of a debug failsafe, so that I know where the problem is if there is one during development
                 throw new Exception("Something went seriously wrong, please make sure that this doesnt happen again.");
             }
             conn.Close();
@@ -403,6 +464,7 @@ public class DatabaseStructure : IStructure
     }
     public bool AddElement(Element e, out int index)
     {
+        //initialise invalid index from the start
         index = -1;
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
@@ -446,12 +508,14 @@ public class DatabaseStructure : IStructure
         ";
 
         materialIDCheck.Parameters.AddWithValue("@id", materialID);
+        
+        //executescalar returns null if nothing was matched
         object? result = materialIDCheck.ExecuteScalar();
         if (result == null)
         {
             return false;
         }
-
+        //if a material with the given id exists, return true
         return true;
     }
 
@@ -464,12 +528,14 @@ public class DatabaseStructure : IStructure
         ";
 
         sectionDCheck.Parameters.AddWithValue("@id", sectionID);
+        
+        //executescalar returns null if nothing was matched
         object? result = sectionDCheck.ExecuteScalar();
         if (result == null)
         {
             return false;
         }
-
+        //if a section with the given id exists, return true
         return true;
     }
     public Load GetLoad(int nodeIndex)
@@ -486,13 +552,14 @@ public class DatabaseStructure : IStructure
 
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
-                if (reader.Read())
+                if (reader.Read()) //this means that there is a row of values that was matched
                 {
                     load = new Load(reader.GetFloat(0), reader.GetFloat(1), reader.GetFloat(2));
                 }
                 else
                 {
-                    load = new Load(0f,0f,0f);
+                    //set to the default, empty load, as no row was matched
+                    load = Load.Default;
                 }
             
             }
@@ -503,6 +570,7 @@ public class DatabaseStructure : IStructure
     }
     public List<int> GetNodeIndexesSorted()
     {
+        //initialise indexes list 
         List<int> indexes = new List<int>();
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
@@ -513,6 +581,7 @@ public class DatabaseStructure : IStructure
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
+                //until there are no more rows left, keep adding the next matched index to the list
                 while (reader.Read())
                 {
                     indexes.Add(reader.GetInt32(0));
@@ -531,8 +600,9 @@ public class DatabaseStructure : IStructure
             conn.Open();
             if (!NodeExists(nodeID, conn))
             {
+                //fail silently if a node doesnt exist
                 conn.Close();
-                throw new IndexOutOfRangeException("invalid nodeID");
+                return;
             }
 
             using (SqliteTransaction transaction = conn.BeginTransaction())
@@ -565,6 +635,7 @@ public class DatabaseStructure : IStructure
             if (!NodeExists(nodeIndex, conn))
             {
                 conn.Close();
+                //the program is robust enough where this should not happen, however it is included for modularity
                 throw new IndexOutOfRangeException("Invalid nodeID");
             }
             SqliteCommand retrieveCommand = conn.CreateCommand();
@@ -581,7 +652,8 @@ public class DatabaseStructure : IStructure
                 }
                 else
                 {
-                    bc = default;
+                    //return default empty boundarycondition value
+                    bc = BoundaryCondition.Default;
                 }
             
             }
@@ -600,6 +672,7 @@ public class DatabaseStructure : IStructure
             if (!ElementExists(elementID, conn))
             {
                 conn.Close();
+                //the program as it is, is robust enough where this should not happen, however it is included for modularity
                 throw new IndexOutOfRangeException("Invalid element ID.");
             }
 
@@ -618,11 +691,6 @@ public class DatabaseStructure : IStructure
                     e.Node2ID = reader.GetInt32(1);
                     e.MaterialID = reader.GetInt32(2);
                     e.SectionID = reader.GetInt32(3);
-
-                }
-                else
-                {
-                    throw new Exception("reader is empty");
                 }
             }
 
@@ -641,6 +709,7 @@ public class DatabaseStructure : IStructure
             if (!NodeExists(nodeID, conn))
             {
                 conn.Close();
+                //the program is robust enough where this should not happen, however it is included for modularity
                 throw new IndexOutOfRangeException("Invalid node ID.");
             }
 
@@ -655,10 +724,6 @@ public class DatabaseStructure : IStructure
                 {
                     n.Pos.X = reader.GetFloat(0);
                     n.Pos.Y = reader.GetFloat(1);
-                }
-                else
-                {
-                    throw new NotSupportedException("reader empty");
                 }
             }
 
@@ -675,8 +740,9 @@ public class DatabaseStructure : IStructure
             conn.Open();
             if (!NodeExists(nodeID, conn))
             {
+                //fail silently if the nodeId is invalid
                 conn.Close();
-                throw new IndexOutOfRangeException("invalid nodeID");
+                return;
             }
 
             using (SqliteTransaction transaction = conn.BeginTransaction())
@@ -756,6 +822,7 @@ public class DatabaseStructure : IStructure
             {
                 return Convert.ToInt32(result);
             }
+            //return default value 0 mull value returned by executescalar (shouldnt happen, but for robustness sake)
             return 0;
         }
     }
@@ -780,7 +847,7 @@ public class DatabaseStructure : IStructure
             {
                 return Convert.ToInt32(result);
             }
-
+            //return default value 0 mull value returned by executescalar (shouldnt happen, but for robustness sake)
             return 0;
         }
     }
@@ -797,6 +864,7 @@ public class DatabaseStructure : IStructure
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
+                //until there are no more rows left, keep adding the next matched index to the list
                 while (reader.Read())
                 {
                     indexes.Add(reader.GetInt32(0));
@@ -815,7 +883,12 @@ public class DatabaseStructure : IStructure
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
-            
+            if (!SectionExists(sectionID, conn))
+            {
+                conn.Close();
+                //the program is robust enough where this should not happen, however it is included for modularity
+                throw new IndexOutOfRangeException("Invalid section ID.");
+            }       
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
                 SELECT Description, I, A FROM Sections WHERE ID = @id;
@@ -826,10 +899,6 @@ public class DatabaseStructure : IStructure
                 if (reader.Read())
                 {
                     sect = new Section(reader.GetString(0), reader.GetFloat(1), reader.GetFloat(2));
-                }
-                else
-                {                              
-                    throw new IndexOutOfRangeException("Invalid section ID");
                 }
             }   
             conn.Close();
@@ -848,6 +917,7 @@ public class DatabaseStructure : IStructure
             ";
             using (SqliteDataReader reader = retrieveCommand.ExecuteReader())
             {
+                //until there are no more rows left, keep adding the next matched index to the list
                 while (reader.Read())
                 {
                     indexes.Add(reader.GetInt32(0));
@@ -865,7 +935,12 @@ public class DatabaseStructure : IStructure
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
         {
             conn.Open();
-            
+            if (!MaterialExists(materialID, conn))
+            {
+                conn.Close();
+                //the program is robust enough where this should not happen, however it is included for modularity
+                throw new IndexOutOfRangeException("Invalid material ID.");
+            }
             SqliteCommand retrieveCommand = conn.CreateCommand();
             retrieveCommand.CommandText = @"
                 SELECT Description, E FROM Materials WHERE ID = @id;
@@ -877,10 +952,6 @@ public class DatabaseStructure : IStructure
                 {
                     mat = new Material(reader.GetString(0), reader.GetFloat(1));
                 }
-                else
-                {
-                    throw new IndexOutOfRangeException("Invalid material ID");
-                }
             }   
             conn.Close();
         }
@@ -890,13 +961,14 @@ public class DatabaseStructure : IStructure
     private bool SectionExists(Section sect, SqliteConnection conn)
     {
         SqliteCommand checkCommand = conn.CreateCommand();
-
+        
         checkCommand.CommandText = @"                                                 
         SELECT ID FROM Sections WHERE A = @a AND I = @i LIMIT 1;                 
     ";
         checkCommand.Parameters.AddWithValue("@a", sect.A);
         checkCommand.Parameters.AddWithValue("@i", sect.I);
         
+        //if an ID was matched, result will not be null so return will not be null
         object? result = checkCommand.ExecuteScalar();    
         return result != null;             
     }
@@ -910,6 +982,7 @@ public class DatabaseStructure : IStructure
         ";
         checkCommand.Parameters.AddWithValue("@e", mat.E);
         
+        //if an ID was matched, result will not be null so return will not be null
         object? result = checkCommand.ExecuteScalar();
         return result != null;
     } 
@@ -917,6 +990,7 @@ public class DatabaseStructure : IStructure
     {
         if (mat.E <= 0)
         {
+            //do not add silently if material E is invalid
             return;
         }
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
@@ -924,6 +998,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             if (MaterialExists(mat, conn))
             {
+                //if material already exists, do not add silently
                 conn.Close();
                 return;
             }
@@ -948,6 +1023,7 @@ public class DatabaseStructure : IStructure
     {
         if (sect.I <= 0 || sect.A <= 0)
         {
+            //do not add silently if section properties are invalid
             return;
         }
         using (SqliteConnection conn = new SqliteConnection(_connectionString))
@@ -955,6 +1031,7 @@ public class DatabaseStructure : IStructure
             conn.Open();
             if (SectionExists(sect, conn))
             {
+                //do not add silently if a duplicate section already exists
                 conn.Close();
                 return;
             }

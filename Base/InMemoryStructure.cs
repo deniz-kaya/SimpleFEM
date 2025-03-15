@@ -38,9 +38,9 @@ public class InMemoryStructure : IStructure
     private void AddInitialElementProperties()
     {
         //add initial materials and sections
-        AddMaterial(Material.Steel235);   
-        AddMaterial(Material.Steel275);   
-        AddMaterial(Material.Steel355);   
+        AddMaterial(Material.Steel);   
+        AddMaterial(Material.Aluminium);   
+        AddMaterial(Material.Concrete);   
         AddSection(Section.UB533x312x273);
         AddSection(Section.UC254x254x132);
         AddSection(Section.SHS100x100x5); 

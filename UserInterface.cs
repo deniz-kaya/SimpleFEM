@@ -41,7 +41,7 @@ public class UserInterface
         _structureEditorSettings = StructureEditorSettings.Default;
         _drawSettings = DrawSettings.Default;
         _settings = UserInterfaceSettings.Default;
-        _sceneRenderer = new UISceneRenderer(SceneRendererSettings.Default);
+        _sceneRenderer = new UISceneRenderer(CameraSettings.Default);
         InitialiseWindowPositionsAndDocking();
     }
 
@@ -477,9 +477,9 @@ public class UserInterface
                     ImGui.InputFloat("Grid Spacing", ref _newProjectModalGridSpacingSize);
                     if (ImGui.Button("Create"))
                     {
-                        if (_newProjectModalGridSpacingSize == 0f)
+                        if (_newProjectModalGridSpacingSize <= 0f)
                         {
-                            _newProjectModalErrorMessage = "The grid spacing size cannot be zero!";
+                            _newProjectModalErrorMessage = "The grid spacing size cannot be less than or equal to zero!";
                         }
                         else
                         {
@@ -548,9 +548,9 @@ public class UserInterface
                         {
                             _newProjectModalErrorMessage = "This file already exists! Try opening the project instead.";
                         }
-                        else if (_newProjectModalGridSpacingSize == 0f)
+                        else if (_newProjectModalGridSpacingSize <= 0f)
                         {
-                            _newProjectModalErrorMessage = "The grid spacing size cannot be zero!";
+                            _newProjectModalErrorMessage = "The grid spacing size cannot be less than or equal to zero!";
                         }
                         else
                         {
@@ -618,6 +618,7 @@ public class UserInterface
                     IStructure newStructure = new DatabaseStructure(_openProjectModalFilePath);
                     //change current filepath
                     _currentStructureFilepath = _openProjectModalFilePath;
+                    _volatileStructure = false;
                     ResetValues();
                     //switch structure
                     SwitchStructure(newStructure);
@@ -662,9 +663,10 @@ public class UserInterface
                 {
                     _saveProjectAsModalErrorMessage = "The project name cannot be blank!";
                 }
+                //LINQ statement which checks if any of the characters in the filename are invalid
                 else if (Path.GetInvalidFileNameChars().Any(_saveProjectAsModalFilename.Contains))
                 {
-                    _saveProjectAsModalFilepath =
+                    _saveProjectAsModalErrorMessage =
                         "The project name has invalid characters! Use characters that are valid for a filename.";
                 }
                 else if (File.Exists(_saveProjectAsModalFilepath))

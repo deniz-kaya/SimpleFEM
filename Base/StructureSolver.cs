@@ -57,10 +57,7 @@ public class StructureSolver
             }
 
             //constructing the force vector and stiffness matrix
-            if (StructureHasBeenChanged)
-            {
-                _currentStiffnessMatrix = GetGlobalStiffnessMatrix();
-            }
+            _currentStiffnessMatrix = GetGlobalStiffnessMatrix();
             _currentForceVector = GetForceVector();
             
             //attempt to solve system

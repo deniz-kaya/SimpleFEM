@@ -16,10 +16,10 @@ public class SceneRenderer
     protected Vector2 CurrentTextureSize;
     protected Camera2D Camera;
     private RenderTexture2D _texture;
-    protected SceneRendererSettings Settings;
+    protected CameraSettings Settings;
     
     static readonly Vector2 DefaultTextureSize = new Vector2(100f, 100f);
-    public SceneRenderer(SceneRendererSettings settings)
+    public SceneRenderer(CameraSettings settings)
     {
         //initialise all objects to their default
         Settings = settings;
@@ -32,7 +32,7 @@ public class SceneRenderer
 
     public void OperateCamera(CameraOperation operation)
     {
-        //self explanatory
+        
         switch (operation)
         {
             case CameraOperation.Left:

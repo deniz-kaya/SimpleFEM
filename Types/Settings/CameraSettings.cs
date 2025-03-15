@@ -1,6 +1,6 @@
 ﻿namespace SimpleFEM.Types.Settings;
 
-public struct SceneRendererSettings
+public struct CameraSettings
 {
     public float CameraSpeed;
     public float MaxZoom;
@@ -8,12 +8,12 @@ public struct SceneRendererSettings
     public float ZoomIncrement;
 
 
-    public SceneRendererSettings(float cameraSpeed, float maxZoom, float minZoom, float zoomIncrement)
+    public CameraSettings(float cameraSpeed, float maxZoom, float minZoom, float zoomIncrement)
     {
         CameraSpeed = cameraSpeed;
         MaxZoom = maxZoom;
         MinZoom = minZoom;
         ZoomIncrement = zoomIncrement;
     }
-    public static SceneRendererSettings Default => new SceneRendererSettings(10f, 20f,0.25f, 0.25f);
+    public static CameraSettings Default => new CameraSettings(10f, 20f,0.25f, 0.25f);
 }

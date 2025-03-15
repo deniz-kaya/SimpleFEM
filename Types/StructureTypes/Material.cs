@@ -11,9 +11,9 @@ public struct Material
     public string Description;
 
     //default materials are from eurocode
-    public static Material Steel235 => new Material("Steel 235",2.1e11f);
-    public static Material Steel275 => new Material("Steel 275",2.1e11f);
-    public static Material Steel355 => new Material("Steel 355",2.1e11f);
+    public static Material Steel => new Material("Steel",2.1e11f);
+    public static Material Aluminium => new Material("Aluminium",6.9e10f);
+    public static Material Concrete => new Material("Concrete",1.7e10f);
     
     
     public static Material Dummy => new Material("Dummy",1f);
